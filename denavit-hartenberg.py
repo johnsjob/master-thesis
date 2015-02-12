@@ -1,168 +1,88 @@
 from __future__ import division
 #--------------------------#
-import numpy as N
-import sympy as S
-from sympy import init_printing
-from numpy import pi
+import numpy as n
+from numpy import cos, sin, pi
+from numpy import array as mat
+import operator
 #--------------------------#
-def is_sympy_matrix(a):
-    return 'sympy.matrices' in str(type(a))
-def is_numpy_matrix(a):
-    return type(a) == N.ndarray
-def mul(A, B, mode='sympy'):
-    mode = mode.lower()
-    if mode == 'sympy':
-        if is_sympy_matrix(A) and is_sympy_matrix(B):
-            op = A.multiply(B)
-        else:
-            raise Exception("Conflicting types!")
-    elif mode == 'numpy':
-        if is_numpy_matrix(A) and is_numpy_matrix(B):
-            op = A.dot(B)
-        else:
-            raise Exception("Conflicting types!")
-    else:
-        raise Exception("Supported Modes: 'sympy', 'numpy'.")
-    return op
+def prod(factors):
+    return reduce(operator.mul, factors, 1)
 #--------------------------#
-#j = i-1
-#--------------------------#
-def matRotZj(oi = None, mode = 'sympy'):
-    mode = mode.lower()
-    if  mode == 'sympy':
-        mat = S.Matrix
-        if oi == None:
-            oi = S.sympify('\theta_i')
-        c = S.cos
-        s = S.sin
-    elif mode == 'numpy':
-        mat = N.array
-        if oi == None:
-            oi = 0;
-        c = N.cos
-        s = S.sin
-    else:
-        raise Exception("Supported Modes: 'sympy', 'numpy'.")
+def matmul(matrix_factors):
+	return reduce(n.dot, matrix_factors, 1)
 
-    M = [[ c(oi), -s(oi), 0, 0],
-         [ s(oi),  c(oi), 0, 0],
-         [ 0,          0, 1, 0],
-         [ 0,          0, 0, 1]]
-    return mat(M)
+def round(v, prec=1e-4):
+    factor = 1/prec
+    if v > 0:
+        return n.int32(v * factor + 0.5)/factor
+    elif v < 0:
+        return n.int32(v * factor - 0.5)/factor
+    return 0
 #--------------------------#
-def matTransZj(di = None, mode = 'sympy'):
-    mode = mode.lower()
-    if  mode == 'sympy':
-        mat = S.Matrix
-        if di == None:
-            di = S.sympify('d_i')
-    elif mode == 'numpy':
-        mat = N.array
-        if di == None:
-            di = 0;
-    else:
-        raise Exception("Supported Modes: 'sympy', 'numpy'.")
+def list_round(L):
+    sh = L.shape
+    L = L.reshape(prod(sh))
+    res = mat(map(round, L)).reshape(sh)
+    return res
+#--------------------------#
+def rotZj_theta_i(theta_i):
+    c = lambda: cos(theta_i)
+    s = lambda: sin(theta_i)
+    return mat([[c(), -s(), 0, 0],
+                [s(),  c(), 0 , 0],
+                [0,      0, 1,  0],
+                [0,      0, 0,  1]])    
 
-    M = [[ 1, 0, 0, 0],
-         [ 0, 1, 0, 0],
-         [ 0, 0, 1, di],
-         [ 0, 0, 0, 1]]
-    return mat(M)
-#--------------------------#
-def matTransXi(ai = None, mode = 'sympy'):
-    mode = mode.lower()
-    if  mode == 'sympy':
-        mat = S.Matrix
-        if ai == None:
-            ai = S.sympify('a_i')
-    elif mode == 'numpy':
-        mat = N.array
-        if ai == None:
-            ai = 0;
-    else:
-        raise Exception("Supported Modes: 'sympy', 'numpy'.")
+def rotXi_alpha_i(alpha_i):
+    c = lambda: cos(alpha_i)
+    s = lambda: sin(alpha_i)
+    return mat([[1, 0, 0, 0],
+                [0, c(), -s(), 0],
+                [0, s(),  c(), 0],
+                [0,   0,    0, 1]])
 
-    M = [[ 1, 0, 0, ai],
-         [ 0, 1, 0, 0],
-         [ 0, 0, 1, 0],
-         [ 0, 0, 0, 1]]
-    return mat(M)
-#--------------------------#
-def matRotXi(ai = None, mode = 'sympy'):
-    mode = mode.lower()
-    if  mode == 'sympy':
-        mat = S.Matrix
-        if ai == None:
-            ai = S.sympify('\alpha_i')
-        c = S.cos
-        s = S.sin
-    elif mode == 'numpy':
-        mat = N.array
-        if ai == None:
-            ai = 0;
-        c = N.cos
-        s = S.sin
-    else:
-        raise Exception("Supported Modes: 'sympy', 'numpy'.")
+def transZj_di(d_i):
+    return mat([[1, 0, 0,    0],
+                [0, 1, 0,    0],
+                [0, 0, 1,  d_i],
+                [0, 0, 0,    1]])    
 
-    M = [[  1,          0,      0, 0],
-         [  0,      c(ai), -s(ai), 0],
-         [ 0,      s(ai),  c(ai), 0],
-         [ 0,          0,      0, 1]]
-    return mat(M)
-#--------------------------#
-def DHji(ai= None, alphi = None, di = None, theti = None, mode = 'sympy'):
-    if mode.lower() == 'sympy':
-        ai = S.sympify(ai)
-        alphi = S.sympify(alphi)
-        di = S.sympify(di)
-        theti = S.sympify(theti)
-    left = mul(matRotZj(theti, mode),matTransZj(di,mode), mode)
-    right = mul(matTransXi(ai, mode), matRotXi(alphi, mode), mode)
-    Ai = mul(left,  right, mode)
-    return Ai
-#--------------------------#
-def DH(a, b, g, z, e, f, _mode = 'sympy'):
-    A01 = DHji(ai = 0,      alphi = 0,          di = 0.290, theti = 0       , mode = _mode)
-    A12 = DHji(ai = 0,      alphi = pi/2,       di = 0,     theti = pi      , mode = _mode)
-    A23 = DHji(ai = 340,    alphi = 0,          di = 0,     theti = pi/2    , mode = _mode)
-    A34 = DHji(ai = 0,      alphi = pi/2,       di = 0,     theti = pi    , mode = _mode)
-    A45 = DHji(ai = 0,      alphi = pi/2,       di = 302,   theti = pi    , mode = _mode)
-    A56 = DHji(ai = 0,      alphi = pi/2,       di = 0,     theti = pi       , mode = _mode)
-    A67 = DHji(ai = 0,      alphi = 0,          di = 72,    theti = 0       , mode = _mode)
+def transXi_ai(a_i):
+    return mat([[1, 0, 0,  a_i],
+                [0, 1, 0,    0],
+                [0, 0, 1,    0],
+                [0, 0, 0,    1]])
 
-    #maps from tool-space to world-space
-    if _mode.lower() == 'sympy':
-        return A01 * A12 * A23 * A34 * A45 * A56
-    else:
-        return A01.dot(A12).dot(A23).dot(A34).dot(A45).dot(A56)
-        
-#--------------------------#
-def round(a, prec=1e-3):
-    prec = 1/prec
-    return N.float64(N.int32(a * prec + 0.5) / prec)
-#--------------------------#
+def DHji(ai, alphai, di, thetai):
+    res = rotZj_theta_i(thetai)
+    res = res.dot( transZj_di(di) )
+    res = res.dot( transXi_ai(ai) )
+    res = res.dot( rotXi_alpha_i(alphai) )
+    return res
+
+def DH(a,b,c,d,e,f):
+    A01 = DHji(0,   pi/2,   0.290,    pi+a)
+    A12 = DHji(0.340, 0,      0,      pi/2+b)
+    A23 = DHji(0,   pi/2,   0,      pi+c)
+    A34 = DHji(0,   pi/2,   0.302,    pi+d)
+    A45 = DHji(0,   pi/2,   0,      pi+e)
+    A56 = DHji(0,   0,      0.72,     f)
+    matrices = (A01, A12, A23, A34, A45, A56)
+    return matmul(matrices)
+
+def pr(s):
+    print list_round(s)
+
 if __name__ == '__main__':
-    mat = N.array
-    init_printing()
-#============== Initial State =====================#
-    T44 = N.array([[0.000648032180188635, 0.0088508747110115, -0.99996062026019, 0], [7.93095000264074E-06, 0.999960830147902, 0.00885088170848774, 0], [0.999999789995675, -1.36662938540362E-05, 0.00064793660101917, 0], [0.374465331936172, -9.83973157376271E-07, 0.629797169829582, 1]])
-    T44 = T44.T
-    res = DH(0,0,0,0,0,0, 'numpy')
-    print "#Initial State#"
-    S.pprint(round(res[:,3]))
-    #print T44
-#============== Random State =====================#
-##    print "#Random State#"
-##    T44 = mat([[0.364179993608069, -0.88395872629214, -0.293240349317084, 0],
-##           [0.594536079422304, 0.463016221588474, -0.657375713584773, 0],
-##           [0.716868037033862, 0.0650611155599963, 0.694166600119385, 0],
-##           [0.0836863220332209, -0.0181462742616406, 0.648626596909796, 1]])
-##    T44 = T44.T
-##    res = DH(-35.4455740562938,
-##             -56.7487189266047,
-##             38.5964427732583,
-##             -43.7627466350371,
-##             -42.6628949333683,
-##             -0.0244652973799493)
-##    
+    T44 = mat([[0.364179993608069, -0.88395872629214, -0.293240349317084, 0],
+                [0.594536079422304, 0.463016221588474, -0.657375713584773, 0],
+                [0.716868037033862, 0.0650611155599963, 0.694166600119385, 0],
+                [0.0836863220332209, -0.0181462742616406, 0.648626596909796,1]]).T
+    j0 = -35.4455740562938
+    j1 = -56.7487189266047
+    j2 =  38.5964427732583
+    j3 = -43.7627466350371
+    j4 = -42.6628949333683
+    j5 = -0.0244652973799493
+    T = DH(j0,j1,j2,j3,j4,j5)
+    
