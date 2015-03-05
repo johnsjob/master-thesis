@@ -105,7 +105,7 @@ op, dxp, dyp, np = paper
 print; print "Placing points in coordinate systems.."
 p = []
 p_paper = []
-num_points = 3
+num_points = 4
 for i in range(0, num_points):
     x = rand(); y = rand()
     p.append(get_plane_point(pl,x,y))
@@ -123,7 +123,7 @@ p_paper_dir = p_paper_dir[:,0:2] #no z-coord
 print; print "solve for basis in world coordinates from our sampled directions:"
 if num_points == 3: #exact solution possible, (num_points - 1) * 3 direction eqs, (num_points * 2) unknowns
     plane_basis = linalg.solve(p_paper_dir, p_dir)
-elif numpoints > 3: #overdetermined system, ((num_points - 1) - 2) * 3 direction eqs extra and (num_points - 3) * 2 unknowns extra
+elif num_points > 3: #overdetermined system, ((num_points - 1) - 2) * 3 direction eqs extra and (num_points - 3) * 2 unknowns extra
     plane_basis = linalg.solve(p_paper_dir.T.dot(p_paper_dir), p_paper_dir.T.dot(p_dir))
 else: #Underdetermines system
     raise "Underdetermined system - too few points."
@@ -141,6 +141,7 @@ print o0
 print o1
 print o2
 ###========================================#
+print "Experimental solution? I think this is what I have in the report"
 import numpy
 mat = numpy.array
 
@@ -202,6 +203,9 @@ s = numpy.linalg.solve(A,B)
 print s
 print dprim
 print norm(s)
+
+print "All in all I remembr thinking these were all correct, but I will have to recheck my derivations and report."
+
 
 ###========================================#
 ##ax.scatter(p[:,0], p[:,1], p[:,2])
