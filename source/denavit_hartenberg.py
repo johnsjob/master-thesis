@@ -44,7 +44,7 @@ def transform_to_next(A, alpha, D, theta):
     Tz_J = mat_trans_z(D)
     Tx_I = mat_trans_x(A)
     Rx_I = mat_rot_x(alpha)
-    return matmul_series([Rz_J, Tz_J, Tx_I, Rx_I])
+    return matmul_series(Rz_J, Tz_J, Tx_I, Rx_I)
 #----------------------------------------------------------------------------------------------------------#
 def DH_params( *params ):
     nbr_of_sections = int(len(params) / 4)
@@ -57,7 +57,7 @@ def DH_params( *params ):
     for k in xrange(0, nbr_of_sections):
         A, alpha, D, theta = params[4*k:4*k+4]
         matrices.append( transform_to_next(A, alpha, D, theta) )
-    return matmul_series(matrices)
+    return matmul_series(*matrices)
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB120(a,b,c,d,e,f):
     flange = DH_params(
@@ -83,8 +83,8 @@ if __name__ == '__main__':
 
     A= calc_tool_IRB120(a,b,c,d,e,f)
 
-    print n.abs(T44 - A)
-    print n.linalg.norm( n.abs(T44 - A) )
+    print "T44 error compared to robot-studio: \n" + str(n.abs(T44 - A))
+    print "Error norm: " + str(n.linalg.norm( n.abs(T44 - A) ))
 
 ###############################################################
 ##

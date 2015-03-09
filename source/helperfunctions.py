@@ -45,7 +45,17 @@ def rotation_matrix_x(angle):
                   [ 0, cos(angle), -sin(angle) ],
                   [ 0, sin(angle),  cos(angle)]])
 #----------------------------------------#
-def rotation_matrix(rot, tilt, skew):
+def rotation_matrix_y(angle):
+    '''
+        creates a rotation Y-mapping from subspace to worldspace
+        using euler angles in degrees
+    '''
+    angle = deg_to_rad(angle)
+    return array([[ cos(angle),     0     ,   sin(angle) ],
+                  [ 0,              1     ,   0 ],
+                  [ -sin(angle),    0     ,   cos(angle)]])
+#----------------------------------------#
+def rotation_matrix_rot_tilt_skew(rot, tilt, skew):
     '''
         creates a rotation ZXZ-mapping from subspace to worldspace
         using euler angles in degrees
@@ -104,6 +114,9 @@ def define_plane(origin, dirx, diry):
     normal = cross(dirx, diry)
     return origin, dirx, diry, normal
 #----------------------------------------#
+def get_normalized_vector(*components):
+    return mat(components) / norm(components)
+#----------------------------------------#
 def get_plane_point(plane,x,y):
     """
         From a subspace plane coordinate system with local coordinates (x,y)
@@ -112,16 +125,6 @@ def get_plane_point(plane,x,y):
     origin, dx, dy, n = plane
     pos = origin + x*dx + y*dy
     return pos
-#----------------------------------------#
-def get_relative_point(plane,x,y,Dx,Dy,L):
-    origin, dx, dy, n = plane
-    pos = get_plane_point(plane,x,y)
-    vec = n + Dx*dx + Dy*dy
-    vec = vec / norm(vec)
-    rel = pos + L*vec
-    dir = pos - rel
-    dir = dir / norm(dir)
-    return rel, dir, pos,(dx*x,dy*y)
 #----------------------------------------#
 def init_plot():
     from mpl_toolkits.mplot3d import Axes3D
@@ -137,3 +140,15 @@ def plot_plane(ax, plane):
     ax.plot(dx[:,0],dx[:,1],dx[:,2],'b')
     ax.plot(dy[:,0],dy[:,1],dy[:,2],'g')
     ax.plot(dz[:,0],dz[:,1],dz[:,2],'r')
+#----------------------------------------#
+def _swap(a,b):
+        tmp = b
+        b = a
+        a = tmp
+        return a, b
+#----------------------------------------#
+def rand_range(low, high):
+        if low > high:
+                low, high = _swap(low, high)
+        return low + rand()*(high-low)
+#----------------------------------------#
