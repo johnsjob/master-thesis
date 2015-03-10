@@ -13,8 +13,8 @@ def get_plane_point(plane,x,y):
     pos = origin + x*basis_x+ y*basis_y
     return pos
 #========================================#
-##print; print "Init plots..."
-##ax,_ = init_plot()
+print; print "Init plots..."
+ax,_ = init_plot()
 #----------------------------------------#
 print; print "Define planes..."
 transformed_paper = define_plane([1,1,1],[2,-2,-1],[1,3,0])
@@ -62,29 +62,86 @@ for _ in xrange(0,100):
     calc_origin = transformed_point[index] - plane_basis[0]*untransformed_point[index][0] - plane_basis[1]*untransformed_point[index][1]
     err.append(origin_transformed_paper - calc_origin)
 print "origin error: " + str(numpy.max(numpy.abs(err),0))
-#----------------------------------------#
-def get_normalized_vector(*components):
-    return mat(components) / norm(components)
 ###========================================#
-#Part two of calibration algorithm
-import denavit_hartenberg as RK
-Xtcp = mat([0,0,0,1])
+##This part tests the theory of the algorithm
+##in the case of a flat surface where it works even when varying orientation
+##(I did not expect this, but the power of LS-methods are stronger than I thought?
+print "\nSecond stage of algorithm - find delta-prim"
+import numpy
+mat = numpy.array
 
-L = 0.1 #10cm
-delta_prim = L*get_normalized_vector(rand(), rand(), rand())
-delta_prim = mat(list(delta_prim) + [1])
 
-data = {'T':[], 'Xtcp':[], 'Xprim':[]}
-for _ in xrange(0,3):
-    a = rand_range(-45, 45)
-    b = rand_range(-45, 45)
-    c = rand_range(-45, 45)
-    d = rand_range(-45, 45)
-    e = rand_range(-45, 45)
-    f = rand_range(-45, 45)
-    T44 = RK.calc_tool_IRB120(a,b,c,d,e,f)
-    data['T'].append(T44)
-    data['Xtcp'].append(T44.dot([0,0,0,1]))
-    data['Xprim'].append(data['Xtcp'][-1][0:3] + delta_prim[0:3])
-    data['Xprim'][-1] = mat(list(data['Xprim'][-1]) + [1])
+Rk = []
+dprim = mat([rand(), rand(), rand()])
+dprim = 100*rand()*dprim / norm(dprim)
+xprimk = []
+Xtcpk = []
+dtk = []
+Tk = []
 
+N = num_points
+for k in xrange(0,N):
+    #flange orientation, relative paper surface
+    Rk.append( rotation_matrix(rand()*360-180, rand()*180-90, rand()*360-180) )
+
+    #anoto coord on paper surface, z coordinate = 0 on surface
+    xprimk.append( mat([rand()*1000, rand()*1000, 0, 1]) )
+
+    #Xtcp = x' + R*d'
+    Xtcp = (xprimk[-1][0:3] + Rk[-1].dot(dprim)).tolist() + [1]
+    Xtcpk.append( Xtcp )
+
+    dtk.append( xprimk[-1] )
+
+    T = zeros((4,4))
+    T[0:3,0:3] = Rk[-1]
+    T[:,  3] = dtk[-1]
+    T[3, :] = [0, 0, 0, 1]
+    Tk.append( T )    
+Rk = mat(Rk)
+xprimk = mat(xprimk)
+Xtcpk = mat(Xtcpk)
+dtk = mat(dtk)
+Tk = mat(Tk)
+###
+dRk = Rk[xrange(1, N)] - Rk[xrange(0, N-1)]
+
+dxprimk = xprimk[xrange(1, N)] - xprimk[xrange(0, N-1)]
+##dxprimk[:,3] = 1
+
+dXtcpk = Xtcpk[xrange(1, N)] - Xtcpk[xrange(0, N-1)]
+##dXtcpk[:,3] = 1
+
+ddtk = dtk[xrange(1, N)] - dtk[xrange(0, N-1)]
+
+dTk = Tk[xrange(1, N)] - Tk[xrange(0, N-1)]
+##dTk[:,3,3] = 1
+
+tmp = dTk.reshape(((N-1)*4,4))
+A = tmp
+A = tmp.T.dot(A)
+#A /= A[3,3]
+
+B = dXtcpk - dxprimk
+#B[:,3] = 1
+B = B.reshape((N-1)*4)
+B = tmp.T.dot(B)
+#B /= B[3]
+
+s = numpy.linalg.solve(A,B)
+#s /= s[-1]
+
+print "\n=== Result ==="
+print '\tdelta-prim = ' + str(dprim)
+print '\tnorm       = ' + str(norm(dprim))
+print '\n\ts        = ' + str(s)
+print '\tnorm       = ' + str(norm(s))
+print '\n\terror    = ' + str(numpy.abs(s[0:3]-dprim))
+
+
+#####========================================#
+##ax.scatter(transformed_point[:,0], transformed_point[:,1], transformed_point[:,2])
+##ax.scatter(untransformed_point[:,0], untransformed_point[:,1], untransformed_point[:,2])
+##plot_plane(ax, transformed_paper)
+##plot_plane(ax, untransformed_paper)
+##show()
