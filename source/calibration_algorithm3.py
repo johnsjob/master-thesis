@@ -5,7 +5,7 @@ import numpy
 
 from numpy import arccos
 #----------------------------------------#
-num_points = 12 #num_points = 12 absolute minimum
+num_points = 24 #num_points = 12 absolute minimum
 #========================================#
 #print; print "Init plots..."
 #ax,_ = init_plot()
@@ -20,7 +20,7 @@ mat = numpy.array
 L = 100
 
 N = num_points
-o = mat([rand(), rand(), rand()])
+o = mat([1000*rand(), 1000*rand(), 1000*rand()])
 R = rotation_matrix_rot_tilt_skew( rand()*360-180, rand()*90-45, rand()*360-180 )
 dirx = R[:,0]
 diry = R[:,1]
@@ -58,7 +58,7 @@ for k in xrange(0,N):
     py = 300*rand()
     l_xprim.append([px, py])
 
-    Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
+    Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt-180, skew)
     l_R.append(Rrel)
     
     d = matmul_series(Rrel, do)
@@ -77,6 +77,7 @@ dxprim = diff(l_xprim, axis=0)
 lhs = []
 rhs = []
 l_cond = []
+l_err = []
 from numpy.linalg import solve, det, inv, cond
 for i in xrange(0,N-1):
     A = sys(dxprim[i,0], dxprim[i,1], dR[i])
@@ -87,6 +88,14 @@ for i in xrange(0,N-1):
         a = mat(lhs[0:-1]); a = a.T.dot(a)
         l_cond.append(cond(a))
         #length of condition numbers is N-3
+        L = mat(lhs).T.dot(lhs)
+        R = mat(lhs).T.dot(rhs)
+
+        r = solve(L, R)
+        comp = mat([dirx, diry,do, do, do])
+        res = mat([r[0,:], r[1,:], r[2:5,0], r[5:8,1], r[8:11,2]])
+        err = norm(comp-res)
+        l_err.append(err)
     
 lhs = mat(lhs)
 rhs = mat(rhs)
@@ -95,6 +104,9 @@ L = lhs.T.dot(lhs)
 R = lhs.T.dot(rhs)
 
 r = solve(L,R)
+comp = mat([dirx, diry,do, do, do])
+res = mat([r[0,:], r[1,:], r[2:5,0], r[5:8,1], r[8:11,2]])
+err = abs(comp-res)
 print r[2:5,0] - do
 print vec_diff(r[2:5,0],do)
 print
@@ -107,4 +119,24 @@ print r[8:11,2] - do
 print vec_diff(r[8:11,2],do)
 print
 print
-plot(numpy.log10(l_cond)); show()
+t = range(3,N+1)
+logcond = numpy.log10(l_cond)
+logerr = numpy.log10(l_err)
+plot(t, logcond, label='Condition number',linewidth=2);
+plot(t, logerr, label='Error (frobenious norm)',linewidth=2);
+hlines(-1, t[0], t[-1], label='Tolerance = 10^-1')
+xlim(t[0], t[-1])
+xlabel('Number of points collected', fontsize=14)
+ylabel('log10', fontsize=14)
+
+index = 12-3
+plt.annotate("number of points = 12",
+            xy=(t[index]+0.1, logerr[index]+0.2), xycoords='data',
+            xytext=(t[index]+0.5, logerr[index]+5), textcoords='data',
+            arrowprops=dict(arrowstyle="->",
+                            connectionstyle="arc3"),
+            )
+grid()
+title('Calibration algorithm verification')
+legend()
+show()
