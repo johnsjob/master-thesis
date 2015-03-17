@@ -5,7 +5,7 @@ import numpy
 
 from numpy import arccos
 #----------------------------------------#
-num_points = 23
+num_points = 12 #num_points = 12 absolute minimum
 #========================================#
 #print; print "Init plots..."
 #ax,_ = init_plot()
@@ -69,15 +69,16 @@ l_xtcp = mat(l_xtcp)
 l_R = mat(l_R)
 l_xprim = mat(l_xprim)
 
-dxtcp = diff(l_xtcp,0)
-dR = diff(l_R,0)
-dxprim = diff(l_xprim,0)
+#diffs
+dxtcp = diff(l_xtcp, axis=0)
+dR = diff(l_R, axis=0)
+dxprim = diff(l_xprim, axis=0)
 
 lhs = []
 rhs = []
 l_cond = []
 from numpy.linalg import solve, det, inv, cond
-for i in xrange(0,N):
+for i in xrange(0,N-1):
     A = sys(dxprim[i,0], dxprim[i,1], dR[i])
     b = dxtcp[i]
     lhs.append(A)
@@ -85,6 +86,7 @@ for i in xrange(0,N):
     if i > 0:
         a = mat(lhs[0:-1]); a = a.T.dot(a)
         l_cond.append(cond(a))
+        #length of condition numbers is N-3
     
 lhs = mat(lhs)
 rhs = mat(rhs)
@@ -105,7 +107,4 @@ print r[8:11,2] - do
 print vec_diff(r[8:11,2],do)
 print
 print
-m = (r[2:5,0]+r[2:5,0]+r[2:5,0])/3
-print m - do
-print vec_diff(m,do)
-plot(numpy.log(l_cond)); show()
+plot(numpy.log10(l_cond)); show()
