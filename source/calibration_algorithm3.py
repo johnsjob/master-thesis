@@ -5,7 +5,7 @@ import numpy
 
 from numpy import arccos
 #----------------------------------------#
-num_points = 30
+num_points = 23
 #========================================#
 #print; print "Init plots..."
 #ax,_ = init_plot()
@@ -21,8 +21,9 @@ L = 100
 
 N = num_points
 o = mat([rand(), rand(), rand()])
-dirx = [1,0,0]
-diry = [0,1,0]
+R = rotation_matrix_rot_tilt_skew( rand()*360-180, rand()*90-45, rand()*360-180 )
+dirx = R[:,0]
+diry = R[:,1]
 do = mat([1,2,3])
 do = (do / norm(do))*L
 plane = plane_tools.define_plane(o, dirx, diry)
@@ -51,10 +52,10 @@ def vec_diff(v1, v2):
 
 for k in xrange(0,N):
     rot = rand()*360 - 180
-    tilt = rand()*360 - 180
-    skew = rand()*90 - 45
-    px = 1000*rand()
-    py = 1000*rand()
+    tilt = rand()*90 - 45
+    skew = rand()*360 - 180
+    px = 300*rand()
+    py = 300*rand()
     l_xprim.append([px, py])
 
     Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
@@ -92,4 +93,14 @@ L = lhs.T.dot(lhs)
 R = lhs.T.dot(rhs)
 
 r = solve(L,R)
+print r[2:5,0] - do
+print vec_diff(r[2:5,0],do)
+print
+print
+print r[5:8,1] - do
+print vec_diff(r[5:8,1],do)
+print
+print
+print r[8:11,2] - do
+print vec_diff(r[8:11,2],do)
 plot(numpy.log(l_cond)); show()
