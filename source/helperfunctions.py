@@ -6,6 +6,7 @@ from pylab import *
 from numpy.linalg import *
 from numpy.random import rand
 from numpy import array as mat
+import sympy as S
 #----------------------------------------#
 def matmul_series(*matrix_factors):
     '''
@@ -21,6 +22,21 @@ def matmul_series(*matrix_factors):
         with either a vector or a matrix of type numpy.ndarray.
     '''
     return reduce(dot, matrix_factors, 1)
+#----------------------------------------#
+def matmul_series_symbolic(*matrix_factors):
+    '''
+        Takes a list of matrices as arguments and perform
+        a series of matrix multiplications from left to right
+        in the order given.
+
+        The parameters may contain vectors and scalars as well as long as
+        the matrix-vector dimensions are the same.
+
+        Note:
+        The sequence can not start with a scalar, it must start
+        with either a vector or a matrix of type numpy.ndarray.
+    '''
+    return reduce(S.multiply, matrix_factors, 1)
 #----------------------------------------#
 def deg_to_rad(x):
     return x * pi / 180
@@ -60,7 +76,7 @@ def rotation_matrix_rot_tilt_skew(rot, tilt, skew):
         creates a rotation ZXZ-mapping from subspace to worldspace
         using euler angles in degrees
     '''
-    return matmul_series(rotation_matrix_x(rot), rotation_matrix_z(tilt), rotation_matrix_x(skew))
+    return matmul_series(rotation_matrix_z(-rot), rotation_matrix_x(tilt), rotation_matrix_z(skew))
 #----------------------------------------#
 def orthogonal_projection_vectors(a, b):
     '''
