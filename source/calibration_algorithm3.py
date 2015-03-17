@@ -103,4 +103,9 @@ print
 print
 print r[8:11,2] - do
 print vec_diff(r[8:11,2],do)
+print
+print
+m = (r[2:5,0]+r[2:5,0]+r[2:5,0])/3
+print m - do
+print vec_diff(m,do)
 plot(numpy.log(l_cond)); show()
