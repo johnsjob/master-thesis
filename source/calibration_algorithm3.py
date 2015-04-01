@@ -55,12 +55,6 @@ def calibrate_tool0():
     pass
 
 #----------------------------------------
-def mat_flip(M):
-    transf_flip = mat([[1, 0, 0],
-                       [0, -1, 0],
-                       [0, 0, -1]])
-    return transf_flip.dot(M)
-#----------------------------------------
 for k in xrange(0,N):
     rot = rand()*360-180
     tilt = rand()*90-80

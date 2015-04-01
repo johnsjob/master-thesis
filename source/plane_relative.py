@@ -16,11 +16,24 @@ def get_plane_relative_point(plane, px, py, rot, tilt, skew, L):
     M = get_plane_relative_R(plane, rot, tilt, skew)
     return get_plane_point(plane, px, py) + L*M.dot(mat([0,0,1]))
 #--------------------------#
-def get_plane_relative_R(plane, rot, tilt, skew):
+def get_plane_relative_R(plane, rot, tilt, skew, flipped = True):
     orig, basis_x, basis_y, normal = plane
     transf_plane = mat([basis_x, basis_y, normal]).T
-    M = matmul_series(transf_plane,rotation_matrix_rot_tilt_skew(-rot, tilt, skew),transf_plane.T)
+
+    rot_mat = lambda: rotation_matrix_rot_tilt_skew(rot, -tilt, skew)
+    if not flipped:
+        R = rot_mat()
+    else:
+        
+        R = rot_mat().dot(mat_flip(1))
+    M = matmul_series(transf_plane,R,transf_plane.T)
     return M
+#--------------------------#
+def mat_flip(M):
+    transf_flip = mat([[1, 0, 0],
+                       [0, -1, 0],
+                       [0, 0, -1]])
+    return transf_flip.dot(M)
 #--------------------------#
 if __name__ == '__main__':
     print; print "Init plots..."
@@ -31,13 +44,14 @@ if __name__ == '__main__':
     untransformed_paper = define_plane([0,0,0],[1,0,0],[0,1,0])
     (origin_paper, basis_x_paper, basis_y_paper, normal_paper) = untransformed_paper
 
-    R = get_plane_relative_R(untransformed_paper,0,45,0)
+    R = get_plane_relative_R(untransformed_paper,0,0,0,flipped=False)
     untransformed_paper = define_plane([0,0,0],R.dot([1,0,0]),R.dot([0,1,0]))
     (origin_paper, basis_x_paper, basis_y_paper, normal_paper) = untransformed_paper
+    tmp = R
 
     #transformed_paper = define_plane([0,0,1],R.dot(basis_x_paper), R.dot(basis_y_paper))
-    R = get_plane_relative_R(untransformed_paper,45,45,0)
-    transformed_paper = define_plane(R.dot([0,0,1]),R.dot(basis_x_paper), R.dot(basis_y_paper))
+    R = get_plane_relative_R(untransformed_paper,45,45,45)
+    transformed_paper = define_plane(R.dot([0,0,-1]),R.dot(basis_x_paper), R.dot(basis_y_paper))
     (origin_transformed_paper, basis_x_transformed_paper,
      basis_y_transformed_paper, normal_transformed_paper) = transformed_paper
     #----------------------------------------#
