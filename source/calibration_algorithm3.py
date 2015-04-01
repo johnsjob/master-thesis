@@ -22,6 +22,7 @@ L = 100
 N = num_points
 o = mat([1000*rand(), 1000*rand(), 1000*rand()])
 R = rotation_matrix_rot_tilt_skew( rand()*360-180, rand()*90-45, rand()*360-180 )
+#R = rotation_matrix_rot_tilt_skew( 0, 45, 0)
 dirx = R[:,0]
 diry = R[:,1]
 do = mat([1,2,3])
@@ -53,15 +54,22 @@ def vec_diff(v1, v2):
 def calibrate_tool0():
     pass
 
+#----------------------------------------
+def mat_flip(M):
+    transf_flip = mat([[1, 0, 0],
+                       [0, -1, 0],
+                       [0, 0, -1]])
+    return transf_flip.dot(M)
+#----------------------------------------
 for k in xrange(0,N):
-    rot = rand()*360 - 180
-    tilt = rand()*90 - 80
-    skew = rand()*360 - 180
+    rot = rand()*360-180
+    tilt = rand()*90-80
+    skew = rand()*360-180
     px = 300*rand()
     py = 300*rand()
     l_xprim.append([px, py])
 
-    Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt-180, skew)
+    Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
     l_R.append(Rrel)
     
     d = matmul_series(Rrel, do)

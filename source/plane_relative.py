@@ -14,12 +14,12 @@ num_points = 3
 def get_plane_relative_point(plane, px, py, rot, tilt, skew, L):
     orig, basis_x, basis_y, normal = plane
     M = get_plane_relative_R(plane, rot, tilt, skew)
-    return get_plane_point(plane, px, py) + M.dot((L*mat([0,0,1])))
+    return get_plane_point(plane, px, py) + L*M.dot(mat([0,0,1]))
 #--------------------------#
 def get_plane_relative_R(plane, rot, tilt, skew):
     orig, basis_x, basis_y, normal = plane
-    transf_plane = mat([basis_x, basis_y, normal])
-    M = matmul_series(transf_plane.T, rotation_matrix_rot_tilt_skew(rot, tilt, skew))
+    transf_plane = mat([basis_x, basis_y, normal]).T
+    M = matmul_series(transf_plane,rotation_matrix_rot_tilt_skew(-rot, tilt, skew),transf_plane.T)
     return M
 #--------------------------#
 if __name__ == '__main__':
@@ -27,12 +27,19 @@ if __name__ == '__main__':
     ax,_ = init_plot()
     #----------------------------------------#
     print; print "Define planes..."
-    transformed_paper = define_plane([1,1,1],[2,-2,-1],[1,3,0])
-    (origin_transformed_paper, basis_x_transformed_paper,
-     basis_y_transformed_paper, normal_transformed_paper) = transformed_paper
-
+    #untransformed_paper = define_plane([0,0,0],[1,0,0],[0,0,1])
     untransformed_paper = define_plane([0,0,0],[1,0,0],[0,1,0])
     (origin_paper, basis_x_paper, basis_y_paper, normal_paper) = untransformed_paper
+
+    R = get_plane_relative_R(untransformed_paper,0,45,0)
+    untransformed_paper = define_plane([0,0,0],R.dot([1,0,0]),R.dot([0,1,0]))
+    (origin_paper, basis_x_paper, basis_y_paper, normal_paper) = untransformed_paper
+
+    #transformed_paper = define_plane([0,0,1],R.dot(basis_x_paper), R.dot(basis_y_paper))
+    R = get_plane_relative_R(untransformed_paper,45,45,0)
+    transformed_paper = define_plane(R.dot([0,0,1]),R.dot(basis_x_paper), R.dot(basis_y_paper))
+    (origin_transformed_paper, basis_x_transformed_paper,
+     basis_y_transformed_paper, normal_transformed_paper) = transformed_paper
     #----------------------------------------#
     print; print "Placing points in coordinate systems ("+str(num_points)+")..."
     transformed_point = []

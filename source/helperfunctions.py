@@ -74,9 +74,16 @@ def rotation_matrix_y(angle):
 def rotation_matrix_rot_tilt_skew(rot, tilt, skew):
     '''
         creates a rotation ZXZ-mapping from subspace to worldspace
-        using euler angles in degrees
+        using euler angles in degrees (extrinsic mapping)
     '''
     return matmul_series(rotation_matrix_z(-rot), rotation_matrix_x(tilt), rotation_matrix_z(skew))
+#----------------------------------------#
+def rotation_matrix_skew_tilt_rot(rot, tilt, skew):
+    '''
+        creates a rotation ZXZ-mapping from subspace to worldspace
+        using euler angles in degrees (intrinsic mapping)
+    '''
+    return matmul_series(rotation_matrix_z(skew), rotation_matrix_x(tilt), rotation_matrix_z(-rot))
 #----------------------------------------#
 def orthogonal_projection_vectors(a, b):
     '''
@@ -141,6 +148,8 @@ def get_plane_point(plane,x,y):
     origin, dx, dy, n = plane
     pos = origin + x*dx + y*dy
     return pos
+#----------------------------------------#    
+    
 #----------------------------------------#
 def init_plot():
     from mpl_toolkits.mplot3d import Axes3D
