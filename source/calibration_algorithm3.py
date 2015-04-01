@@ -5,7 +5,7 @@ import numpy
 
 from numpy import arccos
 #----------------------------------------#
-num_points = 24 #num_points = 12 absolute minimum
+num_points = 26 #num_points = 12 absolute minimum, actually 12+1
 #========================================#
 #print; print "Init plots..."
 #ax,_ = init_plot()
@@ -50,9 +50,12 @@ def vec_diff(v1, v2):
     angle_err = rad_to_ang(arccos( (v1/norm(v1)).dot((v2/norm(v2))) ))
     return err, norm_err, angle_err
 
+def calibrate_tool0():
+    pass
+
 for k in xrange(0,N):
     rot = rand()*360 - 180
-    tilt = rand()*90 - 45
+    tilt = rand()*90 - 80
     skew = rand()*360 - 180
     px = 300*rand()
     py = 300*rand()
