@@ -5,7 +5,7 @@ import numpy
 
 from numpy import arccos
 #----------------------------------------#
-num_points = 26 #num_points = 12 absolute minimum, actually 12+1
+num_points = 12 #num_points = 12 absolute minimum, actually 12+1
 #========================================#
 #print; print "Init plots..."
 #ax,_ = init_plot()
@@ -21,8 +21,7 @@ L = 100
 
 N = num_points
 o = mat([1000*rand(), 1000*rand(), 1000*rand()])
-R = rotation_matrix_rot_tilt_skew( rand()*360-180, rand()*90-45, rand()*360-180 )
-#R = rotation_matrix_rot_tilt_skew( 0, 45, 0)
+R = rotation_matrix_rot_tilt_skew( -(rand()*360-180), rand()*90-60, rand()*360-180 )
 dirx = R[:,0]
 diry = R[:,1]
 do = mat([1,2,3])
@@ -30,7 +29,7 @@ do = (do / norm(do))*L
 plane = plane_tools.define_plane(o, dirx, diry)
 
 l_xtcp = []
-l_xprim = []
+l_anoto2D = []
 l_R = []
 
 def rad_to_ang(v):
@@ -53,31 +52,49 @@ def vec_diff(v1, v2):
 
 def calibrate_tool0():
     pass
-
+#----------------------------------------
+def generate_random_Anoto_Point(L):
+    px = L*rand()
+    py = L*rand()
+    return px, py
+#----------------------------------------
+def append_to_points2D(x):
+    l_anoto2D.append(x)
+def append_to_relative_plane_orientation(x):
+    l_R.append(x)
+def append_to_Xtcp_o(x):
+    l_xtcp.append(x)
+#----------------------------------------
+def convert_to_matrix(x):
+    return mat(x)
 #----------------------------------------
 for k in xrange(0,N):
     rot = rand()*360-180
-    tilt = rand()*90-80
+    tilt = rand()*90-60
     skew = rand()*360-180
-    px = 300*rand()
-    py = 300*rand()
-    l_xprim.append([px, py])
+    px,py = generate_random_Anoto_Point(1)
+    append_to_points2D([px, py])
 
     Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
-    l_R.append(Rrel)
+
+    append_to_relative_plane_orientation(Rrel)
     
+    #this is technically correct but sloppy
+    #compared to the derivation
     d = matmul_series(Rrel, do)
     Xtcp0 = get_plane_point(plane, px, py) - d
-    l_xtcp.append(Xtcp0)
 
-l_xtcp = mat(l_xtcp)
-l_R = mat(l_R)
-l_xprim = mat(l_xprim)
+    append_to_Xtcp_o(Xtcp0)
+
+#convert the lists to ndarrays
+l_xtcp = convert_to_matrix(l_xtcp)
+l_R = convert_to_matrix(l_R)
+l_anoto2D = convert_to_matrix(l_anoto2D)
 
 #diffs
 dxtcp = diff(l_xtcp, axis=0)
 dR = diff(l_R, axis=0)
-dxprim = diff(l_xprim, axis=0)
+danoto2D = diff(l_anoto2D, axis=0)
 
 lhs = []
 rhs = []
@@ -85,7 +102,7 @@ l_cond = []
 l_err = []
 from numpy.linalg import solve, det, inv, cond
 for i in xrange(0,N-1):
-    A = sys(dxprim[i,0], dxprim[i,1], dR[i])
+    A = sys(danoto2D[i,0], danoto2D[i,1], dR[i])
     b = dxtcp[i]
     lhs.append(A)
     rhs.append(b)
@@ -97,7 +114,7 @@ for i in xrange(0,N-1):
         R = mat(lhs).T.dot(rhs)
 
         r = solve(L, R)
-        comp = mat([dirx, diry,do, do, do])
+        comp = mat([dirx, diry, do, do, do])
         res = mat([r[0,:], r[1,:], r[2:5,0], r[5:8,1], r[8:11,2]])
         err = norm(comp-res)
         l_err.append(err)
