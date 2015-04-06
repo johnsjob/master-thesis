@@ -5,7 +5,7 @@ import numpy
 
 from numpy import arccos
 #----------------------------------------#
-num_points = 12 #num_points = 12 absolute minimum, actually 12+1
+num_points = 120 #num_points = 12 absolute minimum, actually 12+1
 #========================================#
 #print; print "Init plots..."
 #ax,_ = init_plot()
@@ -96,6 +96,8 @@ dxtcp = diff(l_xtcp, axis=0)
 dR = diff(l_R, axis=0)
 danoto2D = diff(l_anoto2D, axis=0)
 
+import time
+start_time = time.time()
 lhs = []
 rhs = []
 l_cond = []
@@ -126,6 +128,8 @@ L = lhs.T.dot(lhs)
 R = lhs.T.dot(rhs)
 
 r = solve(L,R)
+stop_time = time.time()
+time_spent = stop_time - start_time
 comp = mat([dirx, diry,do, do, do])
 res = mat([r[0,:], r[1,:], r[2:5,0], r[5:8,1], r[8:11,2]])
 err = abs(comp-res)
@@ -140,7 +144,7 @@ print
 print r[8:11,2] - do
 print vec_diff(r[8:11,2],do)
 print
-print
+print 'Time spent: ' + str(time_spent)
 t = range(3,N+1)
 logcond = numpy.log10(l_cond)
 logerr = numpy.log10(l_err)
@@ -153,7 +157,7 @@ ylabel('log10', fontsize=14)
 
 index = 12-3
 plt.annotate("number of points = 12",
-            xy=(t[index]+0.1, logerr[index]+0.2), xycoords='data',
+            xy=(t[index]+0.01, logerr[index]+0.2), xycoords='data',
             xytext=(t[index]+0.5, logerr[index]+5), textcoords='data',
             arrowprops=dict(arrowstyle="->",
                             connectionstyle="arc3"),

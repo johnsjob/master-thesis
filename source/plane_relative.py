@@ -49,7 +49,7 @@ if __name__ == '__main__':
     tmp = R
 
     #transformed_paper = define_plane([0,0,1],R.dot(basis_x_paper), R.dot(basis_y_paper))
-    R = get_plane_relative_R(untransformed_paper,45, 45, 30)
+    R = get_plane_relative_R(untransformed_paper,30, 40, 90)
     transformed_paper = define_plane(R.dot(tmp.dot([0,0,-1])),R.dot(basis_x_paper), R.dot(basis_y_paper))
     (origin_transformed_paper, basis_x_transformed_paper,
      basis_y_transformed_paper, normal_transformed_paper) = transformed_paper
