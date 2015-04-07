@@ -68,101 +68,127 @@ def append_to_Xtcp_o(x):
 def convert_to_matrix(x):
     return mat(x)
 #----------------------------------------
-for k in xrange(0,N):
-    rot = rand()*360-180
-    tilt = rand()*90-60
-    skew = rand()*360-180
-    px,py = generate_random_Anoto_Point(1)
-    append_to_points2D([px, py])
-
-    Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
-
-    append_to_relative_plane_orientation(Rrel)
-    
-    #this is technically correct but sloppy
-    #compared to the derivation
-    d = matmul_series(Rrel, do)
-    Xtcp0 = get_plane_point(plane, px, py) - d
-
-    append_to_Xtcp_o(Xtcp0)
-
-#convert the lists to ndarrays
-l_xtcp = convert_to_matrix(l_xtcp)
-l_R = convert_to_matrix(l_R)
-l_anoto2D = convert_to_matrix(l_anoto2D)
-
-#diffs
-dxtcp = diff(l_xtcp, axis=0)
-dR = diff(l_R, axis=0)
-danoto2D = diff(l_anoto2D, axis=0)
-
-import time
-start_time = time.time()
-lhs = []
-rhs = []
-l_cond = []
-l_err = []
 from numpy.linalg import solve, det, inv, cond
-for i in xrange(0,N-1):
-    A = sys(danoto2D[i,0], danoto2D[i,1], dR[i])
-    b = dxtcp[i]
-    lhs.append(A)
-    rhs.append(b)
-    if i > 0:
-        a = mat(lhs[0:-1]); a = a.T.dot(a)
-        l_cond.append(cond(a))
-        #length of condition numbers is N-3
-        L = mat(lhs).T.dot(lhs)
-        R = mat(lhs).T.dot(rhs)
+def solve_tool0_tip(array_forward_kinematics_T44, array_anoto2D):
+    try:
+        N,m,n = array_forward_kinematics_T44.shape
+    except Exception as e:
+        print 'solve_tool0_tip:\n\tWrong shape or type for input parameter: array_forward_kinematics_T44'
+    try:
+        m,n = array_anoto2D.shape
+    except Exception as e:
+        print 'solve_tool0_tip:\n\tWrong shape or type for input parameter: array_anoto2D'
 
-        r = solve(L, R)
-        comp = mat([dirx, diry, do, do, do])
+    l_xtcp = array_forward_kinematics_T44[:,0:3,3]
+    l_R = array_forward_kinematics_T44[:,0:3,0:3]
+
+    dxtcp = diff(l_xtcp, axis=0)
+    dR = diff(l_R, axis=0)
+    danoto2D = diff(array_anoto2D, axis=0)
+
+    lhs = []
+    rhs = []
+    l_cond = []
+    l_err = []
+
+    for i in xrange(0,N-1): #one less after forward-differences....
+        A = sys(danoto2D[i,0], danoto2D[i,1], dR[i])
+        b = dxtcp[i]
+        lhs.append(A)
+        rhs.append(b)
+
+    lhs = mat(lhs)
+    rhs = mat(rhs)
+
+    L = lhs.T.dot(lhs)
+    R = lhs.T.dot(rhs)
+
+    r = solve(L,R)
+    return r, cond(L)
+#----------------------------------------
+if __name__ == '__main__':
+    #generating points and "forward-kinematics"
+    for k in xrange(0,N):
+        rot = rand()*360-180
+        tilt = rand()*90-60
+        skew = rand()*360-180
+        px,py = generate_random_Anoto_Point(1)
+        append_to_points2D([px, py])
+
+        Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
+
+        append_to_relative_plane_orientation(Rrel)
+        
+        #this is technically correct but sloppy
+        #compared to the derivation
+        d = matmul_series(Rrel, do)
+        Xtcp0 = get_plane_point(plane, px, py) - d
+
+        append_to_Xtcp_o(Xtcp0)
+
+    #convert the lists to ndarrays
+    l_xtcp = convert_to_matrix(l_xtcp)
+    l_R = convert_to_matrix(l_R)
+    l_anoto2D = convert_to_matrix(l_anoto2D)
+
+    #turn geometry into forward-kinematics
+    T44 = zeros((num_points,4,4))
+    T44[:,0:3,0:3] = l_R
+    T44[:,0:3,3] = l_xtcp
+    T44[:,3,:] = [0,0,0,1]
+
+    import time
+    start_time = time.time()
+
+    r, cond_num = solve_tool0_tip(T44, l_anoto2D)
+
+    stop_time = time.time()
+    time_spent = stop_time - start_time
+    print
+    print 'Time spent: ' + str(time_spent)
+
+    print
+    print 'Preparing plots...'
+    comp = mat([dirx, diry,do, do, do])
+    l_cond = []
+    l_err = []
+    for k in xrange(3,N):
+        r,cond_num = solve_tool0_tip(T44[0:k,:,:], l_anoto2D[0:k])
+        l_cond.append(cond_num)
+
         res = mat([r[0,:], r[1,:], r[2:5,0], r[5:8,1], r[8:11,2]])
-        err = norm(comp-res)
-        l_err.append(err)
-    
-lhs = mat(lhs)
-rhs = mat(rhs)
+        err = abs(comp-res)
+        l_err.append(norm(err))
+    print r[2:5,0] - do
+    print vec_diff(r[2:5,0],do)
+    print
+    print
+    print r[5:8,1] - do
+    print vec_diff(r[5:8,1],do)
+    print
+    print
+    print r[8:11,2] - do
+    print vec_diff(r[8:11,2],do)
 
-L = lhs.T.dot(lhs)
-R = lhs.T.dot(rhs)
 
-r = solve(L,R)
-stop_time = time.time()
-time_spent = stop_time - start_time
-comp = mat([dirx, diry,do, do, do])
-res = mat([r[0,:], r[1,:], r[2:5,0], r[5:8,1], r[8:11,2]])
-err = abs(comp-res)
-print r[2:5,0] - do
-print vec_diff(r[2:5,0],do)
-print
-print
-print r[5:8,1] - do
-print vec_diff(r[5:8,1],do)
-print
-print
-print r[8:11,2] - do
-print vec_diff(r[8:11,2],do)
-print
-print 'Time spent: ' + str(time_spent)
-t = range(3,N+1)
-logcond = numpy.log10(l_cond)
-logerr = numpy.log10(l_err)
-plot(t, logcond, label='Condition number',linewidth=2);
-plot(t, logerr, label='Error (frobenious norm)',linewidth=2);
-hlines(-1, t[0], t[-1], label='Tolerance = 10^-1')
-xlim(t[0], t[-1])
-xlabel('Number of points collected', fontsize=14)
-ylabel('log10', fontsize=14)
+    t = range(3,N)
+    logcond = numpy.log10(l_cond)
+    logerr = numpy.log10(l_err)
+    plot(t, logcond, label='Condition number',linewidth=2);
+    plot(t, logerr, label='Error (frobenious norm)',linewidth=2);
+    hlines(-1, t[0], t[-1], label='Tolerance = 10^-1')
+    xlim(t[0], t[-1])
+    xlabel('Number of points collected', fontsize=14)
+    ylabel('log10', fontsize=14)
 
-index = 12-3
-plt.annotate("number of points = 12",
-            xy=(t[index]+0.01, logerr[index]+0.2), xycoords='data',
-            xytext=(t[index]+0.5, logerr[index]+5), textcoords='data',
-            arrowprops=dict(arrowstyle="->",
-                            connectionstyle="arc3"),
-            )
-grid()
-title('Calibration algorithm verification')
-legend()
-show()
+    index = 12-3
+    plt.annotate("number of points = 12",
+                xy=(t[index]+0.01, logerr[index]+0.2), xycoords='data',
+                xytext=(t[index]+0.5, logerr[index]+5), textcoords='data',
+                arrowprops=dict(arrowstyle="->",
+                                connectionstyle="arc3"),
+                )
+    grid()
+    title('Calibration algorithm verification')
+    legend()
+    show()
