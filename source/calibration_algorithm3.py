@@ -101,26 +101,35 @@ def solve_tool0_tip(array_forward_kinematics_T44, array_anoto2D):
 
     c = cond(L)
     r = solve(L,R)
-    return r,c 
+    return r,c
+
+def extract_solutions(sol):
+    dirx = sol[0,:]
+    diry = sol[1,:]
+    do1 = sol[2:5,0]
+    do2 = sol[5:8,1]
+    do3 = sol[8:11,2]
+    return mat([dirx, diry, do1, do2, do3])
 #----------------------------------------
 if __name__ == '__main__':
     #generating points and "forward-kinematics"
     for k in xrange(0,N):
-        rot = rand()*360-180
-        tilt = rand()*90-60
-        skew = rand()*360-180
-        px,py = generate_random_Anoto_Point(1)
+        rot = rand_range(-180,180)
+        tilt = rand_range(-60,60)
+        skew = rand_range(-180,180)
+
+        px,py = generate_random_Anoto_Point(0.000001)
         append_to_points2D([px, py])
 
         Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
-
         append_to_relative_plane_orientation(Rrel)
         
         #this is technically correct but sloppy
         #compared to the derivation
         d = matmul_series(Rrel, do)
-        Xtcp0 = get_plane_point(plane, px, py) - d
 
+        Xtcp0 = get_plane_point(plane, px, py) - d
+        #Xtcp0 = plane_tools.get_plane_relative_point(plane, px, py, rot, tilt, skew, -L)
         append_to_Xtcp_o(Xtcp0)
 
     #convert the lists to ndarrays
@@ -157,15 +166,15 @@ if __name__ == '__main__':
         err = abs(comp-res)
         l_err.append(norm(err))
     print r[2:5,0] - do
-    print vec_diff(r[2:5,0],do)
+    print 'err, norm_err, angle_err = ' + str(vec_diff(r[2:5,0],do))
     print
     print
     print r[5:8,1] - do
-    print vec_diff(r[5:8,1],do)
+    print 'err, norm_err, angle_err = ' + str(vec_diff(r[5:8,1],do))
     print
     print
     print r[8:11,2] - do
-    print vec_diff(r[8:11,2],do)
+    print 'err, norm_err, angle_err = ' + str(vec_diff(r[8:11,2],do))
 
 
     t = range(3,N)

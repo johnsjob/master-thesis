@@ -96,7 +96,8 @@ from RfromT import rot_tilt_skew
 sys.path.append(os.path.normpath(os.path.join(filePath, 'C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\python\\source\\')))
 import helperfunctions as help_funcs
 import plane_relative as pl_rel_funcs
-from calibration_algorithm3 import solve_tool0_tip
+from calibration_algorithm3 import solve_tool0_tip as solve_tip
+from calibration_algorithm3 import extract_solutions
 #--------------------------------------------------------------------------#
 def get_T44(plane, anoto2D, rot, tilt, skew, L):
         T44 = numpy.zeros((4,4))
@@ -116,10 +117,12 @@ do = mat([1,2,3])
 do = (do / norm(do))*L
 plane = help_funcs.define_plane(o, dirx, diry)
 #defining T44 orientation
-rot, tilt, skew = (45, 45, 30)
+rot, tilt, skew = (45, 40, 30)
+#comparing values
+comp = mat([dirx, diry, do, do, do])
 #--------------------------------------------------------------------------#
 pen_values = []
-l_T = []
+forward_kinematics = []
 if __name__ == '__main__':
         print "Arguments(python): " + str(sys.argv)
         if len(sys.argv) < 2: 
@@ -137,11 +140,12 @@ if __name__ == '__main__':
                         if first_it is True:
                                 origin = ret
                                 first_it = False
-                        if ret is not None:
-                                pen_values.append(ret - origin)
-                                l_T.append( get_T44(plane, pen_values[-1], rot, tilt, skew, L) )
-                                print "PENVALUES = " + str(pen_values[-1])
-                                R, debug = get_orientation(T)
-                                rot, tilt, skew = rot_tilt_skew(R)
+
+                        pen_values.append(ret - origin)
+                        forward_kinematics.append( get_T44(plane, pen_values[-1], rot, tilt, skew, L) )
+                        print "PENVALUES = " + str(pen_values[-1])
+                        #The pen orientation is emulating the orientation of the flange
+                        R, debug = get_orientation(T)
+                        rot, tilt, skew = rot_tilt_skew(R)
 #--------------------------------------------------------------------------#
         log('Exiting...')
