@@ -25,8 +25,8 @@ def get_plane_relative_R(plane, rot, tilt, skew, flipped = True):
 #--------------------------#
 def get_plane_relative_point(plane, px, py, rot, tilt, skew, L):
     orig, basis_x, basis_y, normal = plane
-    M = get_plane_relative_R(plane, rot, tilt, skew, flipped = False)
-    return get_plane_point(plane, px, py) + L*M.dot(normal)
+    M = get_plane_relative_R(plane, rot, tilt, skew)
+    return get_plane_point(plane, px, py) - L*M.dot(normal)
 #--------------------------#
 def mat_flip(M):
     transf_flip = mat([[1, 0, 0],
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     tmp = R
 
     #transformed_paper = define_plane([0,0,1],R.dot(basis_x_paper), R.dot(basis_y_paper))
-    R = get_plane_relative_R(untransformed_paper,30, 40, 90)
+    R = get_plane_relative_R(untransformed_paper,30, 40, 45)
     transformed_paper = define_plane(R.dot(tmp.dot([0,0,-1])),R.dot(basis_x_paper), R.dot(basis_y_paper))
     (origin_transformed_paper, basis_x_transformed_paper,
      basis_y_transformed_paper, normal_transformed_paper) = transformed_paper
@@ -72,6 +72,13 @@ if __name__ == '__main__':
         rot, tilt, skew = (rand_range(-180,180), rand_range(-45,45), rand_range(-180,180))
         rel_point.append( get_plane_relative_point(untransformed_paper, px, py, rot, tilt, skew, L) )
         rel_point.append( get_plane_relative_point(transformed_paper, px, py, rot, tilt, skew, L) )
+
+    for i in xrange(0, num_points*2):
+        px = 0
+        py = 0
+        L = 1
+        rot, tilt, skew = (30, 40, 45)
+        rel_point.append( get_plane_relative_point(untransformed_paper, px, py, rot, tilt, skew, L) )
     rel_point = mat(rel_point)
     
 

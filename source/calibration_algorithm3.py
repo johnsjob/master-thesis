@@ -10,10 +10,6 @@ num_points = 120 #num_points = 12 absolute minimum, actually 12+1
 #print; print "Init plots..."
 #ax,_ = init_plot()
 ###========================================#
-##This part tests the theory of the algorithm
-##in the case of a flat surface where it works even when varying orientation
-##(I did not expect this, but the power of LS-methods are stronger than I thought?
-print "\nSecond stage of algorithm - find delta-prim"
 import numpy
 mat = numpy.array
 
@@ -103,8 +99,9 @@ def solve_tool0_tip(array_forward_kinematics_T44, array_anoto2D):
     L = lhs.T.dot(lhs)
     R = lhs.T.dot(rhs)
 
+    c = cond(L)
     r = solve(L,R)
-    return r, cond(L)
+    return r,c 
 #----------------------------------------
 if __name__ == '__main__':
     #generating points and "forward-kinematics"
