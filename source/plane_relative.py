@@ -19,7 +19,7 @@ def get_plane_relative_R(plane, rot, tilt, skew, flipped = True):
         R = rotation_matrix_rot_tilt_skew(-rot, tilt, skew)
     else:
         #rotates plane with tilt+180 degrees
-        R = rotation_matrix_rot_tilt_skew(rot, -tilt, -skew).dot(mat_flip(1))
+        R = rotation_matrix_rot_tilt_skew(-rot, -tilt, skew).dot(mat_flip(1))
     M = matmul_series(transf_plane,R,transf_plane.T)
     return M
 #--------------------------#
@@ -27,6 +27,11 @@ def get_plane_relative_point(plane, px, py, rot, tilt, skew, L):
     orig, basis_x, basis_y, normal = plane
     M = get_plane_relative_R(plane, rot, tilt, skew)
     return get_plane_point(plane, px, py) - L*M.dot(normal)
+#--------------------------#
+def get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, skew_vector):
+    orig, basis_x, basis_y, normal = plane
+    M = get_plane_relative_R(plane, rot, tilt, skew)
+    return get_plane_point(plane, px, py) - M.dot(skew_vector)
 #--------------------------#
 def mat_flip(M):
     transf_flip = mat([[1, 0, 0],
@@ -39,17 +44,16 @@ if __name__ == '__main__':
     ax,_ = init_plot()
     #----------------------------------------#
     print; print "Define planes..."
-    #untransformed_paper = define_plane([0,0,0],[1,0,0],[0,0,1])
     untransformed_paper = define_plane([0,0,0],[1,0,0],[0,1,0])
     (origin_paper, basis_x_paper, basis_y_paper, normal_paper) = untransformed_paper
 
-    R = get_plane_relative_R(untransformed_paper,0,45,0, flipped=False)
+    R = get_plane_relative_R(untransformed_paper,10,20,30, flipped=False)
     untransformed_paper = define_plane([0,0,0],R.dot([1,0,0]),R.dot([0,1,0]))
     (origin_paper, basis_x_paper, basis_y_paper, normal_paper) = untransformed_paper
     tmp = R
 
-    #transformed_paper = define_plane([0,0,1],R.dot(basis_x_paper), R.dot(basis_y_paper))
-    R = get_plane_relative_R(untransformed_paper,30, 40, 45)
+    r, t, s = 45,40,30
+    R = get_plane_relative_R(untransformed_paper,r, t, s)
     transformed_paper = define_plane(R.dot(tmp.dot([0,0,-1])),R.dot(basis_x_paper), R.dot(basis_y_paper))
     (origin_transformed_paper, basis_x_transformed_paper,
      basis_y_transformed_paper, normal_transformed_paper) = transformed_paper
@@ -77,7 +81,7 @@ if __name__ == '__main__':
         px = 0
         py = 0
         L = 1
-        rot, tilt, skew = (30, 40, 45)
+        rot, tilt, skew = (r, t, s)
         rel_point.append( get_plane_relative_point(untransformed_paper, px, py, rot, tilt, skew, L) )
     rel_point = mat(rel_point)
     

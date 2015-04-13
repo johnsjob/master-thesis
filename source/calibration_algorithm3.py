@@ -5,7 +5,8 @@ import numpy
 
 from numpy import arccos
 #----------------------------------------#
-num_points = 120 #num_points = 12 absolute minimum, actually 12+1
+#num_points = 12 absolute minimum, actually 12+1
+num_points = 120
 #========================================#
 #print; print "Init plots..."
 #ax,_ = init_plot()
@@ -13,15 +14,19 @@ num_points = 120 #num_points = 12 absolute minimum, actually 12+1
 import numpy
 mat = numpy.array
 
-L = 100
-
+#num points we want to sample
 N = num_points
+#placing paper origin
 o = mat([1000*rand(), 1000*rand(), 1000*rand()])
+#defining paper orientation
 R = rotation_matrix_rot_tilt_skew( -(rand()*360-180), rand()*90-60, rand()*360-180 )
+#extracting basis vectors
 dirx = R[:,0]
 diry = R[:,1]
+#delta vector which we want to find in tool-space
+L = 100
 do = mat([1,2,3])
-do = (do / norm(do))*L
+do = (do / norm(do))*L #length L
 plane = plane_tools.define_plane(o, dirx, diry)
 
 l_xtcp = []
@@ -45,9 +50,6 @@ def vec_diff(v1, v2):
     norm_err = abs(norm(v1) - norm(v2))
     angle_err = rad_to_ang(arccos( (v1/norm(v1)).dot((v2/norm(v2))) ))
     return err, norm_err, angle_err
-
-def calibrate_tool0():
-    pass
 #----------------------------------------
 def generate_random_Anoto_Point(L):
     px = L*rand()
@@ -102,7 +104,7 @@ def solve_tool0_tip(array_forward_kinematics_T44, array_anoto2D):
     c = cond(L)
     r = solve(L,R)
     return r,c
-
+#----------------------------------------
 def extract_solutions(sol):
     dirx = sol[0,:]
     diry = sol[1,:]
@@ -112,13 +114,14 @@ def extract_solutions(sol):
     return mat([dirx, diry, do1, do2, do3])
 #----------------------------------------
 if __name__ == '__main__':
+    print "Sampling points..."
     #generating points and "forward-kinematics"
     for k in xrange(0,N):
-        rot = rand_range(-180,180)
-        tilt = rand_range(-60,60)
-        skew = rand_range(-180,180)
+        rot = 30 + rand()*0.001 - 0.0005
+        tilt = 40 + rand()*0.001 - 0.0005
+        skew = 50 + rand()*0.001 - 0.0005
 
-        px,py = generate_random_Anoto_Point(0.000001)
+        px,py = generate_random_Anoto_Point(0.001)
         append_to_points2D([px, py])
 
         Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
@@ -126,10 +129,10 @@ if __name__ == '__main__':
         
         #this is technically correct but sloppy
         #compared to the derivation
-        d = matmul_series(Rrel, do)
+        #d = matmul_series(Rrel, do)
+        #Xtcp0 = get_plane_point(plane, px, py) - d
 
-        Xtcp0 = get_plane_point(plane, px, py) - d
-        #Xtcp0 = plane_tools.get_plane_relative_point(plane, px, py, rot, tilt, skew, -L)
+        Xtcp0 = plane_tools.get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, do)
         append_to_Xtcp_o(Xtcp0)
 
     #convert the lists to ndarrays
@@ -143,15 +146,16 @@ if __name__ == '__main__':
     T44[:,0:3,3] = l_xtcp
     T44[:,3,:] = [0,0,0,1]
 
+    print "Solving ..."
     import time
-    start_time = time.time()
+    start_time = time.clock()
 
     r, cond_num = solve_tool0_tip(T44, l_anoto2D)
 
-    stop_time = time.time()
+    stop_time = time.clock()
     time_spent = stop_time - start_time
     print
-    print 'Time spent: ' + str(time_spent)
+    print 'Time spent solving '+str(N)+' points: ' + str(time_spent) +' seconds.'
 
     print
     print 'Preparing plots...'
@@ -195,6 +199,6 @@ if __name__ == '__main__':
                                 connectionstyle="arc3"),
                 )
     grid()
-    title('Calibration algorithm verification')
+    title('Calibration algorithm verification using simulated geometry')
     legend()
     show()

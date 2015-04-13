@@ -99,11 +99,11 @@ import plane_relative as pl_rel_funcs
 from calibration_algorithm3 import solve_tool0_tip as solve_tip
 from calibration_algorithm3 import extract_solutions
 #--------------------------------------------------------------------------#
-def get_T44(plane, anoto2D, rot, tilt, skew, L):
+def get_T44(plane, anoto2D, rot, tilt, skew, skew_vector):
         T44 = numpy.zeros((4,4))
         T44[0:3,0:3] = pl_rel_funcs.get_plane_relative_R(plane, rot, tilt, skew)
-        T44[0:3, 3] = pl_rel_funcs.get_plane_relative_point(plane, anoto2D[0], anoto2D[1],
-                                                            rot, tilt, skew, L)
+        T44[0:3, 3] = pl_rel_funcs.get_plane_relative_skew_point(plane, anoto2D[0], anoto2D[1],
+                                                            rot, tilt, skew, skew_vector)
         T44[3, 0:4] = [0, 0, 0, 1]
         return T44
 #--------------------------------------------------------------------------#
@@ -113,7 +113,7 @@ o = [rand()*3600,rand()*3600,rand()*3600]
 R = help_funcs.rotation_matrix_rot_tilt_skew( (rand()*360-180), rand()*90-60, rand()*360-180 )
 dirx = R[:,0]
 diry = R[:,1]
-do = mat([1,2,3])
+do = mat([rand(),rand(),rand()])
 do = (do / norm(do))*L
 plane = help_funcs.define_plane(o, dirx, diry)
 #defining T44 orientation
@@ -142,7 +142,7 @@ if __name__ == '__main__':
                                 first_it = False
 
                         pen_values.append(ret - origin)
-                        forward_kinematics.append( get_T44(plane, pen_values[-1], rot, tilt, skew, L) )
+                        forward_kinematics.append( get_T44(plane, pen_values[-1], rot, tilt, skew, do) )
                         print "PENVALUES = " + str(pen_values[-1])
                         #The pen orientation is emulating the orientation of the flange
                         R, debug = get_orientation(T)
