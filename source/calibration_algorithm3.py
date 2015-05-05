@@ -39,7 +39,9 @@ def rad_to_ang(v):
 
 def sys(dx, dy, dR):
     S = [dx, dy] + (-dR).reshape(9).tolist()
-    return mat(S)
+    row_value = 1
+    col_value = 11
+    return mat(S),  row_value, col_value
 
 #doesn't work eventhough theoretically the same
 def sys2(dx, dy, dR):
@@ -47,7 +49,9 @@ def sys2(dx, dy, dR):
     S1 = [dx, dy, r11, 0,   0, r12, 0, 0,   r13]
     S2 = [0,   0, r21, dx, dy, r22, 0, 0,   r23]
     S3 = [0,   0, r31, 0,   0, r32, dx, dy, r33]
-    return mat([S1, S2, S3])
+    row_value = 3
+    col_value = 9
+    return mat([S1, S2, S3]),  row_value, col_value
 #----------------------------------------
 def vec_diff(v1, v2):
     err = norm(v1 - v2)
@@ -56,8 +60,8 @@ def vec_diff(v1, v2):
     return err, norm_err, angle_err
 #----------------------------------------
 def generate_random_Anoto_Point(L):
-    px = L*rand()
-    py = L*rand()
+    px = L*rand()-L/2.0
+    py = L*rand()-L/2.0
     return px, py
 #----------------------------------------
 def append_to_points2D(x):
@@ -71,44 +75,8 @@ def convert_to_matrix(x):
     return mat(x)
 #----------------------------------------
 from numpy.linalg import solve, det, inv, cond
-def solve_tool0_tip(array_forward_kinematics_T44, array_anoto2D):
-    try:
-        N,m,n = array_forward_kinematics_T44.shape
-    except Exception as e:
-        print 'solve_tool0_tip:\n\tWrong shape or type for input parameter: array_forward_kinematics_T44'
-    try:
-        m,n = array_anoto2D.shape
-    except Exception as e:
-        print 'solve_tool0_tip:\n\tWrong shape or type for input parameter: array_anoto2D'
-
-    l_xtcp = array_forward_kinematics_T44[:,0:3,3]
-    l_R = array_forward_kinematics_T44[:,0:3,0:3]
-
-    dxtcp = diff(l_xtcp, axis=0)
-    dR = diff(l_R, axis=0)
-    danoto2D = diff(array_anoto2D, axis=0)
-
-    lhs = []
-    rhs = []
-    l_cond = []
-    l_err = []
-    for i in xrange(0,N-1): #one less after forward-differences....
-        A = sys(danoto2D[i,0], danoto2D[i,1], dR[i])
-        b = dxtcp[i]
-        lhs.append(A)
-        rhs.append(b)
-
-    lhs = mat(lhs)
-    rhs = mat(rhs)
-
-    L = lhs.T.dot(lhs)
-    R = lhs.T.dot(rhs)
-
-    c = cond(L)
-    r = solve(L,R)
-    return r,c
 #----------------------------------------
-def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D):
+def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_sys_eq = None):
     try:
         N,m,n = array_forward_kinematics_T44.shape
     except Exception as e:
@@ -131,14 +99,18 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D):
     l_err = []
 
     for i in xrange(0,N-1): #one less after forward-differences....
-        A = sys2(danoto2D[i,0], danoto2D[i,1], dR[i])
+        A, row_value, col_value = array_lhs_sys_eq(danoto2D[i,0], danoto2D[i,1], dR[i])
         b = dxtcp[i]
         lhs.append(A)
         rhs.append(b)
+    lhs = mat(lhs).reshape(((N-1) * row_value, col_value))
 
-    lhs = mat(lhs).reshape(((N-1)*3, 9))
-    rhs = mat(rhs).reshape((N-1)*3)
-
+    #shape the rhs depending on shape-info from lhs
+    if row_value != 1:
+        rhs = mat(rhs).reshape((N-1) *  row_value)
+    else:
+        rhs = mat(rhs)
+        
     L = lhs.T.dot(lhs)
     R = lhs.T.dot(rhs)
 
@@ -157,28 +129,20 @@ def extract_solutions(sol):
 if __name__ == '__main__':
 
     print "Sampling points..."
-    point_spread = 0.001
+    point_spread = 300
     
     #generating points and "forward-kinematics"
     for k in xrange(0,N):
-        rot  = 30 + rand() * 0.0000000001 - 0.00000000005
-        tilt = 40 + rand() * 0.0000000001 - 0.00000000005
-        skew = 50 + rand() * 0.0000000001 - 0.00000000005
 
-##        rot  = rand_range(-180,180) #30 + rand() * 0.001 - 0.0005
-##        tilt = rand_range(-60, 60) #40 + rand() * 0.001 - 0.0005
-##        skew = rand_range(-180,180) #50 + rand() * 0.001 - 0.0005
-
-        px,py = generate_random_Anoto_Point(point_spread)
-        append_to_points2D([px, py])
+        rot  = rand_range(-180,180) #30 + rand() * 0.001 - 0.0005
+        tilt = rand_range(-60, 60) #40 + rand() * 0.001 - 0.0005
+        skew = rand_range(-180,180) #50 + rand() * 0.001 - 0.0005
 
         Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
         append_to_relative_plane_orientation(Rrel)
         
-        #this is technically correct but sloppy
-        #compared to the derivation
-        #d = matmul_series(Rrel, do)
-        #Xtcp0 = get_plane_point(plane, px, py) - d
+        px,py = generate_random_Anoto_Point(point_spread)
+        append_to_points2D([px, py])
 
         Xtcp0 = plane_tools.get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, do)
         append_to_Xtcp_o(Xtcp0)
@@ -195,61 +159,17 @@ if __name__ == '__main__':
     T44[:,3,:] = [0,0,0,1]
 
     print "Solving ..."
+    sys_of_eq = sys2
     import time
     start_time = time.clock()
 
-    r, cond_num = solve_tool0_tip_alt(T44, l_anoto2D)
+    r, cond_num = solve_tool0_tip_alt(T44, l_anoto2D, sys_of_eq)
 
     stop_time = time.clock()
     time_spent = stop_time - start_time
     print
     print 'Time spent solving '+str(N)+' points: ' + str(time_spent) +' seconds.'
 
-##    print
-##    print 'Preparing plots...'
-##    comp = mat([dirx, diry,do, do, do])
-##    l_cond = []
-##    l_err = []
-##    for k in xrange(3,N):
-##        r,cond_num = solve_tool0_tip_alt(T44[0:k,:,:], l_anoto2D[0:k])
-##        l_cond.append(cond_num)
-##
-##        res = mat([r[0,:], r[1,:], r[2:5,0], r[5:8,1], r[8:11,2]])
-##        err = abs(comp-res)
-##        l_err.append(norm(err))
-##    print r[2:5,0] - do
-##    print 'err, norm_err, angle_err = ' + str(vec_diff(r[2:5,0],do))
-##    print
-##    print
-##    print r[5:8,1] - do
-##    print 'err, norm_err, angle_err = ' + str(vec_diff(r[5:8,1],do))
-##    print
-##    print
-##    print r[8:11,2] - do
-##    print 'err, norm_err, angle_err = ' + str(vec_diff(r[8:11,2],do))
-##
-##
-##    t = range(3,N)
-##    logcond = numpy.log10(l_cond)
-##    logerr = numpy.log10(l_err)
-##    plot(t, logcond, label='Condition number',linewidth=2);
-##    plot(t, logerr, label='Error (frobenious norm)',linewidth=2);
-##    hlines(-1, t[0], t[-1], label='Tolerance = 10^-1')
-##    xlim(t[0], t[-1])
-##    xlabel('Number of points collected', fontsize=14)
-##    ylabel('log10', fontsize=14)
-##
-##    index = 12-3
-##    plt.annotate("number of points = 12",
-##                xy=(t[index]+0.01, logerr[index]+0.2), xycoords='data',
-##                xytext=(t[index]+0.5, logerr[index]+5), textcoords='data',
-##                arrowprops=dict(arrowstyle="->",
-##                                connectionstyle="arc3"),
-##                )
-##    grid()
-##    title('Calibration algorithm verification using simulated geometry')
-##    legend()
-##    show()
 
     print
     print 'Preparing plots...'
@@ -257,13 +177,13 @@ if __name__ == '__main__':
     l_cond = []
     l_err = []
     for k in xrange(3,N):
-        r,cond_num = solve_tool0_tip_alt(T44[0:k,:,:], l_anoto2D[0:k])
+        r,cond_num = solve_tool0_tip_alt(T44[0:k,:,:], l_anoto2D[0:k], sys_of_eq)
         l_cond.append(cond_num)
 
         res = mat(r)
         err = abs(comp-res)
         l_err.append(norm(err))
-    print r.reshape((3,3))[:,2] - do
+    print 'solution error = ' + str(r.reshape((3,3))[:,2] - do)
     print 'err, norm_err, angle_err = ' + str(vec_diff(r.reshape((3,3))[:,2],do))
 
     t = range(3,N)
