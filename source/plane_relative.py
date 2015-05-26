@@ -11,26 +11,57 @@ from helperfunctions import *
 #--------------------------#
 num_points = 3
 #--------------------------#
-def get_plane_relative_R(plane, rot, tilt, skew, flipped = True):
+def get_relative_R(R0, R01):
+    M = matmul_series(R0, R01)
+    return M
+#--------------------------#
+def get_plane_transform(plane):
+    """
+    A plane is a homogenous mapping from local-frame to a general euclidean coordinate-frame,
+    that the destination-frame is the world-coordinate system is not uncommon.
+
+    Geometrical/Euclidean planes in R^3 are general rotation matrices.
+    """
+    _, basis_x, basis_y, normal = plane
+    transf_plane = mat([basis_x, basis_y, normal]).T
+
+    return transf_plane
+#--------------------------#
+def __apply_plane_relative_transform(plane, R):
+    """
+    Generates a from-left-applicable rotation matrix which will skew a given plane by
+    rot, tilt, skew relative to its current configuration.
+
+    Local function used in get_plane_relative_R
+    """
     orig, basis_x, basis_y, normal = plane
     transf_plane = mat([basis_x, basis_y, normal]).T
 
-    if not flipped:
+    M = matmul_series(transf_plane,R.dot(mat_flip(1)),transf_plane.T)
+    return M
+#--------------------------#
+def get_plane_relative_R(plane, rot, tilt, skew, flipped_orientation_relative_to_plane = True):
+    """
+        Generates a from-left-applicable rotation matrix which will skew a given plane by
+        rot, tilt, skew relative to its current configuration.
+    """
+
+    if not flipped_orientation_relative_to_plane:
         R = rotation_matrix_rot_tilt_skew(-rot, tilt, skew)
     else:
         #rotates plane with tilt+180 degrees
         R = rotation_matrix_rot_tilt_skew(-rot, -tilt, skew).dot(mat_flip(1))
-    M = matmul_series(transf_plane,R,transf_plane.T)
+    M = __apply_plane_relative_transform(plane, R)
     return M
 #--------------------------#
-def get_plane_relative_point(plane, px, py, rot, tilt, skew, L):
+def get_plane_relative_point(plane, px, py, rot, tilt, skew, L, flipped_orientation_relative_to_plane = True):
     orig, basis_x, basis_y, normal = plane
-    M = get_plane_relative_R(plane, rot, tilt, skew)
+    M = get_plane_relative_R(plane, rot, tilt, skew, flipped_orientation_relative_to_plane)
     return get_plane_point(plane, px, py) - L*M.dot(normal)
 #--------------------------#
-def get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, skew_vector):
+def get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, skew_vector, flipped_orientation_relative_to_plane = True):
     orig, basis_x, basis_y, normal = plane
-    M = get_plane_relative_R(plane, rot, tilt, skew)
+    M = get_plane_relative_R(plane, rot, tilt, skew, flipped_orientation_relative_to_plane)
     return get_plane_point(plane, px, py) - M.dot(skew_vector)
 #--------------------------#
 def mat_flip(M):
@@ -47,13 +78,16 @@ if __name__ == '__main__':
     untransformed_paper = define_plane([0,0,0],[1,0,0],[0,1,0])
     (origin_paper, basis_x_paper, basis_y_paper, normal_paper) = untransformed_paper
 
-    R = get_plane_relative_R(untransformed_paper,10,20,30, flipped=False)
+    flipped = False
+    r, t, s = 0,0,0
+    R = get_plane_relative_R(untransformed_paper,r,t,s, flipped_orientation_relative_to_plane = flipped)
     untransformed_paper = define_plane([0,0,0],R.dot([1,0,0]),R.dot([0,1,0]))
     (origin_paper, basis_x_paper, basis_y_paper, normal_paper) = untransformed_paper
     tmp = R
 
-    r, t, s = 45,40,30
-    R = get_plane_relative_R(untransformed_paper,r, t, s)
+    flipped_rel = True
+    r, t, s = 0,45,0
+    R = get_plane_relative_R(untransformed_paper,r, t, s, flipped_orientation_relative_to_plane = flipped_rel)
     transformed_paper = define_plane(R.dot(tmp.dot([0,0,-1])),R.dot(basis_x_paper), R.dot(basis_y_paper))
     (origin_transformed_paper, basis_x_transformed_paper,
      basis_y_transformed_paper, normal_transformed_paper) = transformed_paper
@@ -74,15 +108,15 @@ if __name__ == '__main__':
         py = y
         L = 0.1
         rot, tilt, skew = (rand_range(-180,180), rand_range(-45,45), rand_range(-180,180))
-        rel_point.append( get_plane_relative_point(untransformed_paper, px, py, rot, tilt, skew, L) )
-        rel_point.append( get_plane_relative_point(transformed_paper, px, py, rot, tilt, skew, L) )
+        rel_point.append( get_plane_relative_point(untransformed_paper, px, py, rot, tilt, skew, L, not flipped) )
+        rel_point.append( get_plane_relative_point(transformed_paper, px, py, rot, tilt, skew, L, not flipped_rel) )
 
-    for i in xrange(0, num_points*2):
+    for i in xrange(0, 1):
         px = 0
         py = 0
         L = 1
         rot, tilt, skew = (r, t, s)
-        rel_point.append( get_plane_relative_point(untransformed_paper, px, py, rot, tilt, skew, L) )
+        rel_point.append( get_plane_relative_point(untransformed_paper, px, py, rot, tilt, skew, L, flipped_rel) )
     rel_point = mat(rel_point)
     
 
@@ -94,4 +128,3 @@ if __name__ == '__main__':
     plot_plane(ax, untransformed_paper)
     #plot_equal_perspective(ax, [-1,1], [-1,1], [-1,1])
     show()
-

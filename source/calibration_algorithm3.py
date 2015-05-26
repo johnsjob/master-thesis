@@ -1,6 +1,8 @@
 from __future__ import division
 #----------------------------------------#
 from helperfunctions import *
+from helperfunctions import matmul_series as matmul
+from helperfunctions import rotation_matrix_rot_tilt_skew
 import plane_relative as plane_tools
 import numpy
 
@@ -24,26 +26,29 @@ R = rotation_matrix_rot_tilt_skew( -(rand()*360-180), rand()*90-60, rand()*360-1
 #extracting basis vectors
 dirx = R[:,0]
 diry = R[:,1]
+#################################################
 #delta vector which we want to find in tool-space
 L = 100
 do = mat([1,2,3])
 do = (do / norm(do))*L #length L
 plane = plane_tools.define_plane(o, dirx, diry)
 
+Rd = rotation_matrix_rot_tilt_skew(-45, 45, 0)
+#----------------------------------------
 l_xtcp = []
 l_anoto2D = []
 l_R = []
-
+l_Rd_rel = []
+#----------------------------------------
 def rad_to_ang(v):
     return v*180/pi
-
+#----------------------------------------
 def sys(dx, dy, dR):
     S = [dx, dy] + (-dR).reshape(9).tolist()
     row_value = 1
     col_value = 11
     return mat(S),  row_value, col_value
-
-#doesn't work eventhough theoretically the same
+#----------------------------------------
 def sys2(dx, dy, dR):
     r11,r12,r13,r21,r22,r23,r31,r32,r33 = (-dR).reshape(9)
     S1 = [dx, dy, r11, 0,   0, r12, 0, 0,   r13]
@@ -138,19 +143,29 @@ if __name__ == '__main__':
         tilt = rand_range(-60, 60) #40 + rand() * 0.001 - 0.0005
         skew = rand_range(-180,180) #50 + rand() * 0.001 - 0.0005
 
-        Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)
+        #generate Xtcp orientation in world coordinates
+        Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)  #Rplane*Rtcp_tool0
         append_to_relative_plane_orientation(Rrel)
         
+        #generate pen-tip position in Anoto2d in mm
         px,py = generate_random_Anoto_Point(point_spread)
         append_to_points2D([px, py])
 
+        #generate Xtcp position in mm
         Xtcp0 = plane_tools.get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, do)
         append_to_Xtcp_o(Xtcp0)
+
+        #generate relative-tool-orientation in world coordinates
+        R_plane = plane_tools.get_plane_transform(plane)
+        RdRel = matmul(Rrel, Rd) #Rplane.T*Rplane*Rtcp_tool0*Rd
+        l_Rd_rel.append(RdRel)
+
 
     #convert the lists to ndarrays
     l_xtcp = convert_to_matrix(l_xtcp)
     l_R = convert_to_matrix(l_R)
     l_anoto2D = convert_to_matrix(l_anoto2D)
+    l_Rd_rel = convert_to_matrix(l_Rd_rel)
 
     #turn geometry into forward-kinematics
     T44 = zeros((num_points,4,4))
@@ -158,7 +173,7 @@ if __name__ == '__main__':
     T44[:,0:3,3] = l_xtcp
     T44[:,3,:] = [0,0,0,1]
 
-    print "Solving ..."
+    print "Solving for dirx, diry, do..."
     sys_of_eq = sys2
     import time
     start_time = time.clock()
@@ -167,6 +182,11 @@ if __name__ == '__main__':
 
     stop_time = time.clock()
     time_spent = stop_time - start_time
+
+    #solve for orientation s which should be same as Rd
+    s = linalg.solve(l_R.reshape(360,3).T.dot(l_R.reshape(360,3)), l_R.reshape(360,3).T.dot(l_Rd_rel.reshape(360,3)))
+
+    
     print
     print 'Time spent solving '+str(N)+' points: ' + str(time_spent) +' seconds.'
 
