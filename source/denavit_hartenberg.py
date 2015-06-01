@@ -5,6 +5,11 @@ import sys
 import numpy as n
 from numpy import cos, sin, pi
 from numpy import array as mat
+
+from sympy import init_printing, pprint
+#from Ipython.display import display
+
+init_printing(use_latex='mathjax')
 #=====================================================#
 from helperfunctions import matmul_series
 sys.path.append("../int/misc-tools/")
@@ -73,7 +78,7 @@ def calc_tool_IRB120(a,b,c,d,e,f):
                     )
     return flange
 #----------------------------------------------------------------------------------------------------------#
-def custom_round(v, prec = 1e-4):
+def custom_round(v, prec = 1e-8):
     coef = 1 / prec
     return n.round(v * coef) / coef
 #----------------------------------------------------------------------------------------------------------#
@@ -81,14 +86,17 @@ def clear():
     for i in xrange(0,100):
         print ''
 #----------------------------------------------------------------------------------------------------------#
+from numpy.linalg import norm
+from numpy import arctan2 as atan2, arccos as acos, arcsin as asin, sqrt, arctan as atan
+#----------------------------------------------------------------------------------------------------------#
 rad = lambda x: x * pi / 180.0
 deg = lambda x: x * 180.0 / pi
-up_to = lambda i: matmul_series(*[debug[x] for x in range(i)])
+up_to = lambda i: custom_round(matmul_series(*[debug[x] for x in range(i)]))
 cos_sats = lambda a,b,th: a**2 + b**2 - 2*a*b*cos(rad(th)); #ok
 ang_sats = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(-2*a*b))); #ok
-#----------------------------------------------------------------------------------------------------------#
-from numpy.linalg import norm
-from numpy import arctan2 as atan2, arccos as acos, sqrt, arctan as atan
+round = lambda x: custom_round(x)
+atan = lambda x: deg(n.arctan(x))
+#norm = lambda x: round(n.linalg.norm(x))
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
     """
@@ -99,28 +107,29 @@ if __name__ == '__main__':
         'debug' contains i:th matrices of python implementation of DH-algorithm
 
         lambda function up_to(i) performs cumulative multiplication up to i:th joint
+
+        wcp = data['Joint_6_T'][index] = up_to(5)
     """
-    index = 0
+    clear()
+    index = -1
 
     data = parse.parse_file("C:\\robot-studio-output.txt")
     num_joint_conf = len(data['Joint_1_T'])
-
-    for key in data:
-        if 'T' in key:
-            data[key] = custom_round(mat(data[key]).reshape(num_joint_conf,4,4))
             
             
     params = zip(data['A'], data['alpha'], data['D'], data['theta'])
     T44 = mat(data['T44'][index]).reshape((4,4))
 
+    for key in data:
+        if 'T' in key:
+            data[key] = custom_round(mat(data[key]).reshape(num_joint_conf,4,4))
+
     print "\nNumber of configurations: " + str(len(data['Joint_1'])) + "\n"
     a,b,c,d,e,f = data['Joint_1'][index], data['Joint_2'][index], data['Joint_3'][index], data['Joint_4'][index], data['Joint_5'][index], data['Joint_6'][index],
 
     A, debug = calc_tool_IRB120(a,b,c,d,e,f)
-    debug = custom_round(debug)
 
-    print "T44 error compared to robot-studio: \n" + str(n.abs(T44 - A))
-    print "Error norm: " + str(n.linalg.norm( n.abs(T44 - A) ))
+    print "T44 sanity check-norm: " + str(norm(T44 - A))
 
     #INVERSE KINEMATICS STARTS HERE
     wcp = (A[:,3]-A[:,2]*0.072)[0:3]
@@ -130,29 +139,60 @@ if __name__ == '__main__':
     h1 = norm(mat([0,0,290e-3]))
     x0p = norm(mat([0,0,h1]) - mat([wcp[0],wcp[1],0]))
     h2 = wcp[2]
+    s = h2 - h1
     x1 = norm(mat([0,0,h1]) - wcp[0:3])
 
-    gamma0 = (atan2(wcp[1],wcp[0])*180/pi)
-    print 'a-norm: ' + str( a - gamma0 )
+    #First angle - j1
+    gamma0 = deg(atan2(wcp[1],wcp[0]))
+    print 'a-norm: ' + str( norm(a - gamma0 ))
 
-    beta = sqrt(70e-3**2 + 302e-3**2)
+    beta = sqrt(0.070**2 + 0.302**2)
     alpha = 270e-3
     th1 = ang_sats(x0, h1, x0p)
     
     th2 = ang_sats(h2, x0p, x1)
-    
+   
     th3 = ang_sats(beta, alpha, x1)
     
+    #second angle - j2
     gamma1 = 180-(th1+th2+th3)
-    print 'b-norm: ' + str( b - gamma1 )
+    print 'b-norm: ' + str(norm( b - gamma1 ))
 
-    th41 = deg(atan(0.070 / 0.302))
-    s = h2 - h1
-    th4 = acos((x1**2 - alpha**2 - beta**2)/(-2*alpha*beta)) * 180/pi
-    th4 = th4 - th41
-    #th4 = acos((x1**2 - (270e-3 + 70e-3)**2 - 302e-3**2)/(-2*(270e-3+70e-3)*302e-3)) * 180/pi
-    print 'c-norm: ' + str( th4-c )
+    #Third angle - j3
+    th41 = atan(0.070 / 0.302)
+    th42 = ang_sats(x1, alpha, beta)
+    th4 = th42 - th41
+
+    gamma2 = 180 - (th4 + 90)
+    print 'c-norm: ' + str(norm( gamma2-c ))
+
+    # We have the three first angles, and since we know the length of the joints
+    # we can perform the denivit-hartenberg from frame 0 to frame 3, and find
+    # R^3_6 = [R^0_3]R, where R = T44[0:3,0:3] (end-effector orientation in world frame)
+    R = T44[0:3,0:3]
     
+    R3 = matmul(debug[0],debug[1],debug[2])[0:3,0:3]
+
+    R36 = R3.T.dot(R)
+    X = R36[:,0]
+    Y = R36[:,1]
+    Z = R36[:,2]
+    # for order of parameters check numpy.info(numpy.arctan2)
+    gamma3 = deg(atan2(Z[1],Z[0]))
+    print 'd-norm: ' + str(norm( gamma3-d ))
+
+    # for order of parameters check numpy.info(numpy.arctan2)
+    gamma4 = deg(-asin(X[2]/norm(X)))
+    gamma4 = deg(atan2(norm(Z[0:2]), Z[2]))
+    print 'e-norm: ' + str(norm( gamma4-e ))
+
+    gamma5 = deg(atan2(X[2], Y[2])) + 90
+    print 'f-norm: ' + str(norm( gamma5-f ))
+
+    A,_ = calc_tool_IRB120(gamma0,gamma1,gamma2,gamma3,gamma4,gamma5)
+
+    print "FK-norm: " + str(norm(A - T44))
+
 
 ###############################################################
 ##
