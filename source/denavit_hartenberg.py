@@ -94,6 +94,7 @@ deg = lambda x: x * 180.0 / pi
 up_to = lambda i: custom_round(matmul_series(*[debug[x] for x in range(i)]))
 cos_sats = lambda a,b,th: a**2 + b**2 - 2*a*b*cos(rad(th)); #ok
 ang_sats = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(-2*a*b))); #ok
+ang_sats2 = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(2*a*b))); #ok
 round = lambda x: custom_round(x)
 atan = lambda x: deg(n.arctan(x))
 #norm = lambda x: round(n.linalg.norm(x))
@@ -159,11 +160,10 @@ if __name__ == '__main__':
     print 'b-norm: ' + str(norm( b - gamma1 ))
 
     #Third angle - j3
-    th41 = atan(0.070 / 0.302)
-    th42 = ang_sats(x1, alpha, beta)
-    th4 = th42 - th41
+    m = atan(0.070 / 0.302)
+    k = ang_sats(x1, alpha, beta)
 
-    gamma2 = 180 - (th4 + 90)
+    gamma2 = 90 + m - k
     print 'c-norm: ' + str(norm( gamma2-c ))
 
     # We have the three first angles, and since we know the length of the joints
