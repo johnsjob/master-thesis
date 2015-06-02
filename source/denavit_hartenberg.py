@@ -97,6 +97,9 @@ ang_sats = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(-2*a*b))); #ok
 ang_sats2 = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(2*a*b))); #ok
 round = lambda x: custom_round(x)
 atan = lambda x: deg(n.arctan(x))
+atan2 = lambda y,x: deg(n.arctan2(y,x))
+#cos = lambda x: n.cos(rad(x))
+#sin = lambda x: n.sin(rad(x))
 #norm = lambda x: round(n.linalg.norm(x))
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
@@ -134,6 +137,8 @@ if __name__ == '__main__':
 
     #INVERSE KINEMATICS STARTS HERE
     wcp = (A[:,3]-A[:,2]*0.072)[0:3]
+    wcp_ang = atan2(wcp[2], wcp[1])
+        
     print "wcp-norm: "+str(norm(data['Joint_6_T'][index][0:3,3] - wcp))
     x0 = norm((wcp[0],wcp[1]))
     
@@ -144,19 +149,24 @@ if __name__ == '__main__':
     x1 = norm(mat([0,0,h1]) - wcp[0:3])
 
     #First angle - j1
-    gamma0 = deg(atan2(wcp[1],wcp[0]))
+    gamma0 = atan2(wcp[1],wcp[0])
     print 'a-norm: ' + str( norm(a - gamma0 ))
 
     beta = sqrt(0.070**2 + 0.302**2)
     alpha = 270e-3
-    th1 = ang_sats(x0, h1, x0p)
-    
-    th2 = ang_sats(h2, x0p, x1)
-   
-    th3 = ang_sats(beta, alpha, x1)
     
     #second angle - j2
-    gamma1 = 180-(th1+th2+th3)
+    th2 = ang_sats(beta, x1, alpha)
+    if wcp_ang <= 90:
+        th1 = atan(s / x0)
+        gamma1 = 90 - (th1 + th2)
+    else:
+        th1 = atan(x0 / s)
+        gamma1 = -(th1 + th2)
+        
+    #this expression from the 'book' gives same result - nothing to be gained
+    #gamma1 = 90 - (atan2(s, x0) + atan2(beta*sin(rad(c + 90 - m)), alpha + beta*cos(rad(c + 90 - m))))
+        
     print 'b-norm: ' + str(norm( b - gamma1 ))
 
     #Third angle - j3
@@ -178,15 +188,15 @@ if __name__ == '__main__':
     Y = R36[:,1]
     Z = R36[:,2]
     # for order of parameters check numpy.info(numpy.arctan2)
-    gamma3 = deg(atan2(Z[1],Z[0]))
+    gamma3 = atan2(Z[1],Z[0])
     print 'd-norm: ' + str(norm( gamma3-d ))
 
     # for order of parameters check numpy.info(numpy.arctan2)
     gamma4 = deg(-asin(X[2]/norm(X)))
-    gamma4 = deg(atan2(norm(Z[0:2]), Z[2]))
+    gamma4 = atan2(norm(Z[0:2]), Z[2])
     print 'e-norm: ' + str(norm( gamma4-e ))
 
-    gamma5 = deg(atan2(X[2], Y[2])) + 90
+    gamma5 = atan2(X[2], Y[2]) + 90
     print 'f-norm: ' + str(norm( gamma5-f ))
 
     A,_ = calc_tool_IRB120(gamma0,gamma1,gamma2,gamma3,gamma4,gamma5)
