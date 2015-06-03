@@ -137,7 +137,10 @@ if __name__ == '__main__':
 
     #INVERSE KINEMATICS STARTS HERE
     wcp = (A[:,3]-A[:,2]*0.072)[0:3]
-    wcp_ang = atan2(wcp[2], wcp[1])
+    if abs(wcp[0]) >= abs(wcp[1]):
+        wcp_ang = atan2(wcp[2], wcp[0])
+    else:
+        wcp_ang = atan2(wcp[2], wcp[1])
         
     print "wcp-norm: "+str(norm(data['Joint_6_T'][index][0:3,3] - wcp))
     x0 = norm((wcp[0],wcp[1]))
@@ -163,11 +166,8 @@ if __name__ == '__main__':
     else:
         th1 = atan(x0 / s)
         gamma1 = -(th1 + th2)
-        
-    #this expression from the 'book' gives same result - nothing to be gained
-    #gamma1 = 90 - (atan2(s, x0) + atan2(beta*sin(rad(c + 90 - m)), alpha + beta*cos(rad(c + 90 - m))))
-        
     print 'b-norm: ' + str(norm( b - gamma1 ))
+        
 
     #Third angle - j3
     m = atan(0.070 / 0.302)
@@ -176,10 +176,14 @@ if __name__ == '__main__':
     gamma2 = 90 + m - k
     print 'c-norm: ' + str(norm( gamma2-c ))
 
+##    This expression from the 'book' gives same result - nothing to be gained
+##    gamma1 = 90 - (atan2(s, x0) + atan2(beta*sin(rad(gamma2 + 90 - m)), alpha + beta*cos(rad(gamma2 + 90 - m))))
+##    print 'b-norm: ' + str(norm( b - gamma1 ))
+
     # We have the three first angles, and since we know the length of the joints
     # we can perform the denivit-hartenberg from frame 0 to frame 3, and find
     # R^3_6 = [R^0_3]R, where R = T44[0:3,0:3] (end-effector orientation in world frame)
-    R = T44[0:3,0:3]
+    R = A[0:3,0:3]
     
     R3 = matmul(debug[0],debug[1],debug[2])[0:3,0:3]
 
