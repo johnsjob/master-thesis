@@ -148,11 +148,12 @@ if __name__ == '__main__':
     h1 = norm(mat([0,0,290e-3]))
     x0p = norm(mat([0,0,h1]) - mat([wcp[0],wcp[1],0]))
     h2 = wcp[2]
-    s = h2 - h1
+    s = abs(h2 - h1)
     x1 = norm(mat([0,0,h1]) - wcp[0:3])
 
     #First angle - j1
     gamma0 = atan2(wcp[1],wcp[0])
+    gamma0 = a
     print 'a-norm: ' + str( norm(a - gamma0 ))
 
     beta = sqrt(0.070**2 + 0.302**2)
@@ -171,16 +172,28 @@ if __name__ == '__main__':
 
     #Third angle - j3
     m = atan(0.070 / 0.302)
-    k = ang_sats(x1, alpha, beta)
+    k1 = ang_sats2(x1, alpha, beta)
+    k2 = -ang_sats2(x1, alpha, beta)
 
-    gamma2 = 90 + m - k
+    k = k1
+    gamma2 = k + m - 90
     print 'c-norm: ' + str(norm( gamma2-c ))
 
+##FROM THE BOOK
+    #Third angle - from the book
+##    th31 = ang_sats2(x1,alpha,beta)
+##    th32 = -ang_sats2(x1,alpha,beta)
+##    th3 = th31
+##    gamma2 = th3 + m - 90
+##        
+##    print 'c-norm: ' + str(norm( gamma2-c ))
+##
+    #second angle - from the book
 ##    This expression from the 'book' gives same result - nothing to be gained
-##    gamma1 = 90 - (atan2(s, x0) + atan2(beta*sin(rad(gamma2 + 90 - m)), alpha + beta*cos(rad(gamma2 + 90 - m))))
+##    gamma1 = 90 - ((atan2(s, x0) + atan2(beta*sin(rad(th3)), alpha + beta*cos(rad(th3)))))        
 ##    print 'b-norm: ' + str(norm( b - gamma1 ))
 
-    # We have the three first angles, and since we know the length of the joints
+    # We bhave the three first angles, and since we know the length of the joints
     # we can perform the denivit-hartenberg from frame 0 to frame 3, and find
     # R^3_6 = [R^0_3]R, where R = T44[0:3,0:3] (end-effector orientation in world frame)
     R = A[0:3,0:3]
@@ -196,17 +209,30 @@ if __name__ == '__main__':
     print 'd-norm: ' + str(norm( gamma3-d ))
 
     # for order of parameters check numpy.info(numpy.arctan2)
-    gamma4 = deg(-asin(X[2]/norm(X)))
+    #gamma4 = deg(-asin(X[2]/norm(X)))
     gamma4 = atan2(norm(Z[0:2]), Z[2])
     print 'e-norm: ' + str(norm( gamma4-e ))
 
     gamma5 = atan2(X[2], Y[2]) + 90
     print 'f-norm: ' + str(norm( gamma5-f ))
 
-    A,_ = calc_tool_IRB120(gamma0,gamma1,gamma2,gamma3,gamma4,gamma5)
+    A, debug = calc_tool_IRB120(gamma0,gamma1,gamma2,gamma3,gamma4,gamma5)
+    p0 = debug[0][:,3]
+    p1 = matmul(debug[0],debug[1])[:,3]
+    p2 = matmul(debug[0],debug[1],debug[2])[:,3]
+    p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
+    p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
+    p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
 
     print "FK-norm: " + str(norm(A - T44))
 
+    #Plotting
+    from pylab import plot, show
+    M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
+    plot(wcp[0], wcp[2], 'ro')
+    plot(M[:,0],M[:,2])
+    plot([-1,-1,1,1],[0,1,1,0],'w')
+    show()
 
 ###############################################################
 ##
