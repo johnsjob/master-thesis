@@ -175,7 +175,12 @@ if __name__ == '__main__':
     k1 = ang_sats2(x1, alpha, beta)
     k2 = -ang_sats2(x1, alpha, beta)
 
+    #elbow-up
     k = k1
+    gamma2 = k + m - 90
+
+    #elbow-down
+    k = k2
     gamma2 = k + m - 90
     print 'c-norm: ' + str(norm( gamma2-c ))
 
