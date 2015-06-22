@@ -177,21 +177,22 @@ if __name__ == '__main__':
     gamma2 = th3 + m - 90
     print 'c-norm: ' + str(norm( gamma2-c ))
     th21 = atan2(s, x0)
-    th22 = atan2(beta*sin2(-th3), alpha + beta*cos2(-th3))
-    th2 = th21 - th22
+    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
+    th2 = th21 + th22
     
     gamma1 = 90 - th2
     print 'b-norm: ' + str(norm( b - gamma1 ))
 
 ##    #elbow-down
-##    th3 = -ang_sats2(x1, alpha, beta)
-##    gamma2 = th3 + m - 90
+##    th3 = ang_sats2(x1, alpha, beta)
+##    gamma2 = -(th3 - m + 90)
 ##    print 'c-norm: ' + str(norm( gamma2-c ))
+##    th21 = atan2(s, x0)
+##    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
+##    th2 =  th21 - th22
 ##
-##    th2 = atan2(s, x0) - atan2(beta*sin2(-th3), alpha + beta*cos2(-th3))
 ##    gamma1 = 90 - th2
 ##    print 'b-norm: ' + str(norm( b - gamma1 ))
-##
 
     R = A[0:3,0:3]    
     R3 = matmul(debug[0],debug[1],debug[2])[0:3,0:3]
