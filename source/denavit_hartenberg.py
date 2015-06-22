@@ -78,6 +78,14 @@ def calc_tool_IRB120(a,b,c,d,e,f):
                     )
     return flange
 #----------------------------------------------------------------------------------------------------------#
+def calc_tool_IRB120_sub(a,b,c):
+    flange = DH_params(
+                    0,      90, 0.290,  180+a,
+                    0.270,   0, 0,      90+b,
+                   -0.070,  90, 0,      180+c
+                    )
+    return flange
+#----------------------------------------------------------------------------------------------------------#
 def custom_round(v, prec = 1e-8):
     coef = 1 / prec
     return n.round(v * coef) / coef
@@ -91,16 +99,17 @@ from numpy import arctan2 as atan2, arccos as acos, arcsin as asin, sqrt, arctan
 #----------------------------------------------------------------------------------------------------------#
 rad = lambda x: x * pi / 180.0
 deg = lambda x: x * 180.0 / pi
-up_to = lambda i: custom_round(matmul_series(*[debug[x] for x in range(i)]))
+cos2 = lambda x: n.cos(rad(x))
+sin2 = lambda x: n.sin(rad(x))
+
 cos_sats = lambda a,b,th: a**2 + b**2 - 2*a*b*cos(rad(th)); #ok
 ang_sats = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(-2*a*b))); #ok
 ang_sats2 = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(2*a*b))); #ok
 round = lambda x: custom_round(x)
 atan = lambda x: deg(n.arctan(x))
 atan2 = lambda y,x: deg(n.arctan2(y,x))
-#cos = lambda x: n.cos(rad(x))
-#sin = lambda x: n.sin(rad(x))
-#norm = lambda x: round(n.linalg.norm(x))
+
+up_to = lambda i: custom_round(matmul_series(*[debug[x] for x in range(i)]))
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
     """
@@ -136,6 +145,7 @@ if __name__ == '__main__':
     print "T44 sanity check-norm: " + str(norm(T44 - A))
 
     #INVERSE KINEMATICS STARTS HERE
+    p_end = T44[0:3,3]
     wcp = (A[:,3]-A[:,2]*0.072)[0:3]
     if abs(wcp[0]) >= abs(wcp[1]):
         wcp_ang = atan2(wcp[2], wcp[0])
@@ -158,53 +168,35 @@ if __name__ == '__main__':
 
     beta = sqrt(0.070**2 + 0.302**2)
     alpha = 270e-3
-    
-    #second angle - j2
-    th2 = ang_sats(beta, x1, alpha)
-    if wcp_ang <= 90:
-        th1 = atan(s / x0)
-        gamma1 = 90 - (th1 + th2)
-    else:
-        th1 = atan(x0 / s)
-        gamma1 = -(th1 + th2)
-    print 'b-norm: ' + str(norm( b - gamma1 ))
-        
-
-    #Third angle - j3
     m = atan(0.070 / 0.302)
-    k1 = ang_sats2(x1, alpha, beta)
-    k2 = -ang_sats2(x1, alpha, beta)
+
+    ###Third angle - j3
 
     #elbow-up
-    k = k1
-    gamma2 = k + m - 90
-
-    #elbow-down
-    k = k2
-    gamma2 = k + m - 90
+    th3 = ang_sats2(x1, alpha, beta)
+    gamma2 = th3 + m - 90
     print 'c-norm: ' + str(norm( gamma2-c ))
+    th21 = atan2(s, x0)
+    th22 = atan2(beta*sin2(-th3), alpha + beta*cos2(-th3))
+    th2 = th21 - th22
+    
+    gamma1 = 90 - th2
+    print 'b-norm: ' + str(norm( b - gamma1 ))
 
-##FROM THE BOOK
-    #Third angle - from the book
-##    th31 = ang_sats2(x1,alpha,beta)
-##    th32 = -ang_sats2(x1,alpha,beta)
-##    th3 = th31
+##    #elbow-down
+##    th3 = -ang_sats2(x1, alpha, beta)
 ##    gamma2 = th3 + m - 90
-##        
 ##    print 'c-norm: ' + str(norm( gamma2-c ))
 ##
-    #second angle - from the book
-##    This expression from the 'book' gives same result - nothing to be gained
-##    gamma1 = 90 - ((atan2(s, x0) + atan2(beta*sin(rad(th3)), alpha + beta*cos(rad(th3)))))        
+##    th2 = atan2(s, x0) - atan2(beta*sin2(-th3), alpha + beta*cos2(-th3))
+##    gamma1 = 90 - th2
 ##    print 'b-norm: ' + str(norm( b - gamma1 ))
+##
 
-    # We bhave the three first angles, and since we know the length of the joints
-    # we can perform the denivit-hartenberg from frame 0 to frame 3, and find
-    # R^3_6 = [R^0_3]R, where R = T44[0:3,0:3] (end-effector orientation in world frame)
-    R = A[0:3,0:3]
-    
+    R = A[0:3,0:3]    
     R3 = matmul(debug[0],debug[1],debug[2])[0:3,0:3]
-
+    H3,_ = calc_tool_IRB120_sub(gamma0, gamma1, gamma2)
+    R3 = H3[0:3, 0:3]
     R36 = R3.T.dot(R)
     X = R36[:,0]
     Y = R36[:,1]
@@ -235,6 +227,7 @@ if __name__ == '__main__':
     from pylab import plot, show
     M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
     plot(wcp[0], wcp[2], 'ro')
+    plot(p_end[0], p_end[2], 'ko')
     plot(M[:,0],M[:,2])
     plot([-1,-1,1,1],[0,1,1,0],'w')
     show()
