@@ -86,6 +86,17 @@ def calc_tool_IRB120_sub(a,b,c):
                     )
     return flange
 #----------------------------------------------------------------------------------------------------------#
+def calc_inv_kin_IRB120(T44):
+    if type(T44) is list:
+        T44 = mat(T44)
+    dim = T44.shape
+    if len(dim) != 2:
+        raise ArithmeticError('Forward-kinematics must be a 4x4 matrix!')
+    if dim[0] != dim[1]:
+        raise ArithmeticError('Forward-kinematics must be square!')
+    if dim[0] != 4:
+        raise ArithmeticError('Forward-kinematics must have dimension of 4!')
+#----------------------------------------------------------------------------------------------------------#
 def custom_round(v, prec = 1e-8):
     coef = 1 / prec
     return n.round(v * coef) / coef
@@ -146,11 +157,7 @@ if __name__ == '__main__':
 
     #INVERSE KINEMATICS STARTS HERE
     p_end = T44[0:3,3]
-    wcp = (A[:,3]-A[:,2]*0.072)[0:3]
-    if abs(wcp[0]) >= abs(wcp[1]):
-        wcp_ang = atan2(wcp[2], wcp[0])
-    else:
-        wcp_ang = atan2(wcp[2], wcp[1])
+    wcp = (T44[:,3] - T44[:,2]*0.072)[0:3]
         
     print "wcp-norm: "+str(norm(data['Joint_6_T'][index][0:3,3] - wcp))
     x0 = norm((wcp[0],wcp[1]))
@@ -163,39 +170,72 @@ if __name__ == '__main__':
 
     #First angle - j1
     gamma0 = atan2(wcp[1],wcp[0])
-    gamma0 = a
     print 'a-norm: ' + str( norm(a - gamma0 ))
 
     beta = sqrt(0.070**2 + 0.302**2)
     alpha = 270e-3
     m = atan(0.070 / 0.302)
 
-    ###Third angle - j3
 
-    #elbow-up
-    th3 = ang_sats2(x1, alpha, beta)
-    gamma2 = th3 + m - 90
-    print 'c-norm: ' + str(norm( gamma2-c ))
-    th21 = atan2(s, x0)
-    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-    th2 = th21 + th22
-    
-    gamma1 = 90 - th2
-    print 'b-norm: ' + str(norm( b - gamma1 ))
-
-##    #elbow-down
+##    ### elbow-up ###
+##    # Third angle - j3
 ##    th3 = ang_sats2(x1, alpha, beta)
-##    gamma2 = -(th3 - m + 90)
+##    gamma2 = th3 + m - 90
 ##    print 'c-norm: ' + str(norm( gamma2-c ))
+##    # Second angle - j2
 ##    th21 = atan2(s, x0)
 ##    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-##    th2 =  th21 - th22
-##
+##    th2 = th21 + th22
 ##    gamma1 = 90 - th2
 ##    print 'b-norm: ' + str(norm( b - gamma1 ))
 
-    R = A[0:3,0:3]    
-    R3 = matmul(debug[0],debug[1],debug[2])[0:3,0:3]
+
+##    ### elbow-up (actually inverse, upside-down) ###
+##    # Third angle - j3
+##    if gamma0 > 0:
+##        gamma0 = gamma0 - 180
+##    elif gamma0 < 0:
+##        gamma0 = gamma0 + 180
+##    th3 = ang_sats2(x1, alpha, beta)
+##    gamma2 = -(90 - th3 - m)
+##    print 'c-norm: ' + str(norm( gamma2-c ))
+##    # Second angle - j2
+##    th21 = atan2(s, x0)
+##    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
+##    th2 = th21 - th22
+##    gamma1 = -(90-th2)
+##    print 'b-norm: ' + str(norm( b - gamma1 ))
+
+##    ### elbow-down ###
+##    # Third angle - j3
+##    th3 = ang_sats2(x1, alpha, beta)
+##    gamma2 = -(th3 - m + 90)
+##    print 'c-norm: ' + str(norm( gamma2-c ))
+##    # Second angle - j2
+##    th21 = atan2(s, x0)
+##    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
+##    th2 =  th21 - th22
+##    gamma1 = 90 - th2
+##    print 'b-norm: ' + str(norm( b - gamma1 ))
+
+##    ### elbow-down (actually inverse, upside-down) ###
+##    # Third angle - j3
+##    if gamma0 > 0:
+##        gamma0 = gamma0 - 180
+##    elif gamma0 < 0:
+##        gamma0 = gamma0 + 180
+##    th3 = ang_sats2(x1, alpha, beta)
+##    gamma2 = -(th3 - m + 90)
+##    # Second angle - j2
+##    print 'c-norm: ' + str(norm( gamma2-c ))
+##    th21 = atan2(s, x0)
+##    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
+##    th2 =  th21 + th22
+##    gamma1 = -(90 - th2)
+##    print 'b-norm: ' + str(norm( b - gamma1 ))
+
+    #Calculate last angles
+    R = T44[0:3,0:3]    
     H3,_ = calc_tool_IRB120_sub(gamma0, gamma1, gamma2)
     R3 = H3[0:3, 0:3]
     R36 = R3.T.dot(R)
@@ -207,7 +247,6 @@ if __name__ == '__main__':
     print 'd-norm: ' + str(norm( gamma3-d ))
 
     # for order of parameters check numpy.info(numpy.arctan2)
-    #gamma4 = deg(-asin(X[2]/norm(X)))
     gamma4 = atan2(norm(Z[0:2]), Z[2])
     print 'e-norm: ' + str(norm( gamma4-e ))
 
