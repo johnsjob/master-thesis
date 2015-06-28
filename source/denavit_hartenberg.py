@@ -300,20 +300,21 @@ if __name__ == '__main__':
         #Plotting
         from pylab import plot, show, legend
         M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
-        if i == 0:
+        if (i % 4) == 0:
             col = 'b-'
             lw = 3
-        if i == 1:
+        if (i % 4) == 1:
             col = 'r-'
             lw = 3
-        if i == 2:
+        if (i % 4) == 2:
             col = 'b-.'
             lw = 2
-        if i == 3:
+        if (i % 4) == 3:
             col = 'r-.'
             lw = 2
-        plot(M[:,0], M[:,2], col, linewidth= lw)
-        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped'])
+        plot(M[:,0], M[:,2], col, linewidth = lw)
+        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
+                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
     plot([-1,-1,1,1],[0,1,1,0],'w')
     plot(wcp[0], wcp[2], 'ro')
     plot(p_end[0], p_end[2], 'ko')
