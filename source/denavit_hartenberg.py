@@ -100,9 +100,14 @@ def __IK_irb120__orientation(j1, j2, j3, T44):
     j5 = atan2(norm(Z[0:2]), Z[2])
     j6 = atan2(X[2], Y[2]) + 90
 
-    j41 = 0
-    j51 = 0
-    j61 = 0
+    R36 = R36.T
+    X = R36[:,0]
+    Y = R36[:,1]
+    Z = R36[:,2]
+    # for order of parameters check numpy.info(numpy.arctan2)
+    j41 = -(atan2(X[2], Y[2]) + 90)
+    j51 = -atan2(norm(Z[0:2]), Z[2])
+    j61 = -(atan2(Z[1],Z[0]))
     return j4, j5, j6, j41, j51, j61
 
 def __IK_irb120_position_elbow_up(T44, flipped=False):
