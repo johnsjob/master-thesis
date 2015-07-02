@@ -48,13 +48,30 @@ def mat_rot_z( ang ):
                      [0,     0,     0,     1]])
 #----------------------------------------------------------------------------------------------------------#
 def transform_to_next(A, alpha, D, theta):
+    """
+    Calculats transform from frame J = I-1 to I
+    in order AI = Rzj( theta )Tzj( D )Txi( A )Rxi( alpha )
+    and parameters are given in order A, alpha, D, theta.
+    """
     Rz_J = mat_rot_z(theta)
     Tz_J = mat_trans_z(D)
     Tx_I = mat_trans_x(A)
     Rx_I = mat_rot_x(alpha)
     return matmul_series(Rz_J, Tz_J, Tx_I, Rx_I)
 #----------------------------------------------------------------------------------------------------------#
-def DH_params( *params ):
+def DH_params(*params, **kwargs):
+    """
+    Performs the denavit-hartenberg algorithm
+    and calculates T44 = A0 * A1 * A2 * ... * An multiplication.
+
+    The parameters are entered in the order A, alpha, D, theta repeatedly.
+    """
+
+    # handle which unit is being used
+    if not kwargs.has_key('unit'):
+        kwargs['unit'] = 'm'
+    unit = kwargs['unit']
+
     nbr_of_sections = int(len(params) / 4)
     if len(params) == 1 and type(params[0]) in [list, tuple]:
         raise ArithmeticError("Function does not use lists or tuples, please unpack using *.")
@@ -64,26 +81,45 @@ def DH_params( *params ):
     matrices = []
     for k in xrange(0, nbr_of_sections):
         A, alpha, D, theta = params[4*k:4*k+4]
+        if unit == 'mm':
+            A = A * 1e-3
+            D = D * 1e-3
+        elif unit == 'm':
+            pass
+        else:
+            raise ArithmeticError("Unknown unit of length, only meters(\'m\') or millimeters meters(\'mm\') allowed.")
+            
         matrices.append( transform_to_next(A, alpha, D, theta) )
     return matmul_series(*matrices), mat(matrices)
 #----------------------------------------------------------------------------------------------------------#
+def calc_tool_IRB140(a,b,c,d,e,f):
+    tool0, Ai = DH_params(
+                            -70, 90, 352, 180 + a,
+                            360, 0, 0, 90 + b,
+                            0, 90, 0, 180+c,
+                            0, 90, 380, 180+d,
+                            0, 90, 0, 180+e,
+                            0,0,65,f,
+                            unit='mm')
+    return tool0, Ai
+#----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB120(a,b,c,d,e,f):
-    flange = DH_params(
+    tool0, Ai = DH_params(
                     0,      90, 0.290,  180+a,
                     0.270,   0, 0,      90+b,
                    -0.070,  90, 0,      180+c,
                     0,      90, 0.302,  180+d,
                     0,      90, 0,      180+e,
-                    0,      0, 0.072,   0+f
-                    )
-    return flange
+                    0,      0, 0.072,   0+f,
+                    unit = 'm')
+    return tool0, Ai
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB120_sub(a,b,c):
     flange = DH_params(
                     0,      90, 0.290,  180+a,
                     0.270,   0, 0,      90+b,
-                   -0.070,  90, 0,      180+c
-                    )
+                   -0.070,  90, 0,      180+c,
+                    unit = 'm')
     return flange
 #----------------------------------------------------------------------------------------------------------#
 def __IK_irb120__orientation(j1, j2, j3, T44):
@@ -273,52 +309,52 @@ if __name__ == '__main__':
     print "\nNumber of configurations: " + str(len(data['Joint_1'])) + "\n"
     a,b,c,d,e,f = data['Joint_1'][index], data['Joint_2'][index], data['Joint_3'][index], data['Joint_4'][index], data['Joint_5'][index], data['Joint_6'][index],
 
-    A, debug = calc_tool_IRB120(a,b,c,d,e,f)
+    A, debug = calc_tool_IRB140(a,b,c,d,e,f)
 
     print "T44 sanity check-norm: " + str(norm(T44 - A))
 
-    #INVERSE KINEMATICS STARTS HERE
-    p_end = T44[0:3,3]
-    wcp = calc_wcp(T44)
-    
-    sol = mat( calc_inv_kin_IRB120(T44) )
-    s0 = mat([a,b,c,d,e,f])
-    for i in xrange(0, 8):
-        s = sol[:,i]
-        gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-        A, debug = calc_tool_IRB120(gamma0,gamma1,gamma2,gamma3,gamma4,gamma5)
-        p0 = debug[0][:,3]
-        p1 = matmul(debug[0],debug[1])[:,3]
-        p2 = matmul(debug[0],debug[1],debug[2])[:,3]
-        p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
-        p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
-        p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
-        print "\n[ Solution %s ]" % str(i)
-        print "FK-norm: " + str( norm(A - T44) )
-        print "angle-norm: %0.2f" % norm(s - s0)
-
-        #Plotting
-        from pylab import plot, show, legend
-        M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
-        if (i % 4) == 0:
-            col = 'b-'
-            lw = 3
-        if (i % 4) == 1:
-            col = 'r-'
-            lw = 3
-        if (i % 4) == 2:
-            col = 'b-.'
-            lw = 2
-        if (i % 4) == 3:
-            col = 'r-.'
-            lw = 2
-        plot(M[:,0], M[:,2], col, linewidth = lw)
-        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
-                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
-    plot([-1,-1,1,1],[0,1,1,0],'w')
-    plot(wcp[0], wcp[2], 'ro')
-    plot(p_end[0], p_end[2], 'ko')
-    show()
+##    #INVERSE KINEMATICS STARTS HERE
+##    p_end = T44[0:3,3]
+##    wcp = calc_wcp(T44)
+##    
+##    sol = mat( calc_inv_kin_IRB120(T44) )
+##    s0 = mat([a,b,c,d,e,f])
+##    for i in xrange(0, 8):
+##        s = sol[:,i]
+##        gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
+##        A, debug = calc_tool_IRB120(gamma0,gamma1,gamma2,gamma3,gamma4,gamma5)
+##        p0 = debug[0][:,3]
+##        p1 = matmul(debug[0],debug[1])[:,3]
+##        p2 = matmul(debug[0],debug[1],debug[2])[:,3]
+##        p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
+##        p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
+##        p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
+##        print "\n[ Solution %s ]" % str(i)
+##        print "FK-norm: " + str( norm(A - T44) )
+##        print "angle-norm: %0.2f" % norm(s - s0)
+##
+##        #Plotting
+##        from pylab import plot, show, legend
+##        M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
+##        if (i % 4) == 0:
+##            col = 'b-'
+##            lw = 3
+##        if (i % 4) == 1:
+##            col = 'r-'
+##            lw = 3
+##        if (i % 4) == 2:
+##            col = 'b-.'
+##            lw = 2
+##        if (i % 4) == 3:
+##            col = 'r-.'
+##            lw = 2
+##        plot(M[:,0], M[:,2], col, linewidth = lw)
+##        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
+##                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
+##    plot([-1,-1,1,1],[0,1,1,0],'w')
+##    plot(wcp[0], wcp[2], 'ro')
+##    plot(p_end[0], p_end[2], 'ko')
+##    show()
 
 ###############################################################
 ##
