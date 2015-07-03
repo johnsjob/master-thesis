@@ -146,25 +146,29 @@ def __IK_irb120__orientation(j1, j2, j3, T44):
     j61 = -(atan2(Z[1],Z[0]))
     return j4, j5, j6, j41, j51, j61
 
-def __IK_irb120_position_elbow_up(T44, flipped=False):
+def __IK_irb140_position_elbow_up(T44, flipped=False):
     #Geometrical paramaters
     wcp = calc_wcp(T44)
-    x0 = norm((wcp[0],wcp[1]))
-    h1 = norm(mat([0,0,290e-3]))
-    x0p = norm(mat([0,0,h1]) - mat([wcp[0],wcp[1],0]))
+
+    #First angle - j1, used to adjust a point-position
+    j1 = atan2(wcp[1],wcp[0])
+    p0 = mat([70e-3, 0, 352e-3])
+    p0 = mat_rot_z(j1)[0:3,0:3].dot(p0)
+
+    x0 = norm(wcp[0:2] - p0[0:2])
+    h1 = 0.352
     h2 = wcp[2]
     s = abs(h2 - h1)
-    x1 = norm(mat([0,0,h1]) - wcp[0:3])
-    beta = sqrt(0.070**2 + 0.302**2)
-    alpha = 270e-3
-    m = atan(0.070 / 0.302)
-    #First angle - j1
-    j1 = atan2(wcp[1],wcp[0])
+    x1 = norm(p0 - wcp)
+    beta = 380e-3
+    alpha = 360e-3
+    m = atan(70e-3/352e-3)
+
     if not flipped:
         ### elbow-up ###
         # Third angle - j3
         th3 = ang_sats2(x1, alpha, beta)
-        j3 = th3 + m - 90
+        j3 = th3 - 90
 
         # Second angle - j2
         th21 = atan2(s, x0)
@@ -179,7 +183,7 @@ def __IK_irb120_position_elbow_up(T44, flipped=False):
             j1 = j1 + 180
         # Third angle - j3
         th3 = ang_sats2(x1, alpha, beta)
-        j3 = -(90 - (th3 + m))
+        j3 = -(90 - th3)
         # Second angle - j2
         th21 = atan2(s, x0)
         th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
@@ -314,6 +318,8 @@ if __name__ == '__main__':
     print "T44 sanity check-norm: " + str(norm(T44 - A))
 
     #INVERSE KINEMATICS STARTS HERE
+
+    #elbow-up
     p_end = T44[0:3,3]
     wcp = calc_wcp(T44)
 
@@ -323,7 +329,10 @@ if __name__ == '__main__':
     h1 = 0.352
     h2 = wcp[2]
     s = abs(h2 - h1)
+    j1 = atan2(wcp[1], wcp[0])
+
     p0 = mat([70e-3, 0, 352e-3])
+    p0 = mat_rot_z(j1)[0:3,0:3].dot(p0)
     x0 = norm(wcp[0:2] - p0[0:2])
     x1 = norm(p0 - wcp)
 
@@ -332,9 +341,14 @@ if __name__ == '__main__':
     th3 = ang_sats2(x1, alpha, beta)
     th1 = atan2(s, x0)
     th2 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-    j2 =  th1 + th2
 
-    j1 = atan2(wcp[1], wcp[0])
+    j3 = th3 - 90
+    j2 =  90 - (th1 + th2)
+
+    s0,s1 = __IK_irb140_position_elbow_up(T44)
+    A0, debug = calc_tool_IRB140(*s0)
+    A1, debug = calc_tool_IRB140(*s1)
+
 ##    
 ##    sol = mat( calc_inv_kin_IRB120(T44) )
 ##    s0 = mat([a,b,c,d,e,f])
