@@ -237,6 +237,23 @@ def __IK_irb140_position_elbow_down(T44, flipped=False):
 def calc_wcp(T44):
     return (T44[:,3] - T44[:,2]*0.065)[0:3]
 
+def check_range(x, _min, _max, inclusive=True):
+    if _max < _min:
+        _max, _min = _min, _max
+    if inclusive == True:
+        return _min <= x <= _max
+    else:
+        return _min < x < _max
+
+def check_solution(j1,j2,j3,j4,j5,j6, inclusive=True):
+    sol  = check_range(j1, -180, 180, inclusive)
+    sol &= check_range(j2, -90,  110, inclusive)
+    sol &= check_range(j3, -230, 50,  inclusive)
+    sol &= check_range(j4, -200, 200, inclusive)
+    sol &= check_range(j5, -115, 115, inclusive)
+    sol &= check_range(j6, -400, 400, inclusive)
+    return sol
+
 def calc_inv_kin_IRB140(T44):
     if type(T44) is list:
         T44 = mat(T44)
@@ -254,7 +271,17 @@ def calc_inv_kin_IRB140(T44):
     sol4, sol41 = __IK_irb140_position_elbow_down(T44, flipped = True)
 
     #first columnt is first solution and so forth
-    return zip(sol1, sol2, sol3, sol4, sol11, sol21, sol31, sol41)
+    return mat(zip(sol1, sol2, sol3, sol4, sol11, sol21, sol31, sol41))
+
+def filter_solutions(solutions, filter_function = check_solution):
+    result = []
+    for s in solutions.T:
+        if filter_function(*s) == True:
+            result.append( s )
+    return mat(zip(*result))
+
+def calc_valid_inv_kin_IRB140(T44):
+    return filter_solutions( calc_inv_kin_IRB140(T44) )
 #----------------------------------------------------------------------------------------------------------#
 def custom_round(v, prec = 1e-8):
     coef = 1 / prec
@@ -381,7 +408,8 @@ if __name__ == '__main__':
     for i in xrange(0, 8):
         s = sol[:,i]
         gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-        A, debug = calc_tool_IRB140(gamma0,gamma1,gamma2,gamma3,gamma4,gamma5)
+        A, debug = calc_tool_IRB140(gamma0, gamma1, gamma2,
+                                    gamma3, gamma4, gamma5)
         p0 = debug[0][:,3]
         p1 = matmul(debug[0],debug[1])[:,3]
         p2 = matmul(debug[0],debug[1],debug[2])[:,3]
