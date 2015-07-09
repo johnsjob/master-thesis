@@ -282,6 +282,13 @@ def filter_solutions(solutions, filter_function = check_solution):
 
 def calc_valid_inv_kin_IRB140(T44):
     return filter_solutions( calc_inv_kin_IRB140(T44) )
+
+def create_T44(pos, orientation):
+    T44 = n.zeros((4,4))
+    T44[0:3,0:3] = orientation
+    T44[0:3,3] = pos
+    T44[3, :] = [0,0,0,1]
+    return T44
 #----------------------------------------------------------------------------------------------------------#
 def custom_round(v, prec = 1e-8):
     coef = 1 / prec
@@ -341,65 +348,6 @@ if __name__ == '__main__':
 
     print "T44 sanity check-norm: " + str(norm(T44 - A))
 
-##    #INVERSE KINEMATICS STARTS HERE
-##
-##    #elbow-up
-##    wcp = calc_wcp(T44)
-##
-##    m = atan(70e-3/352e-3)
-##    alpha = 360e-3
-##    beta = 380e-3
-##    h1 = 0.352
-##    h2 = wcp[2]
-##    s = abs(h2 - h1)
-##    j1 = atan2(wcp[1], wcp[0])
-##    if True:
-##        if j1 > 0:
-##            j1 = j1 - 180
-##        elif j1 < 0:
-##            j1 = j1 + 180
-##
-##    p0 = mat([70e-3, 0, 352e-3])
-##    p0 = mat_rot_z(j1)[0:3,0:3].dot(p0)
-##    x0 = norm(wcp[0:2] - p0[0:2])
-##    x1 = norm(p0 - wcp)
-##
-##    
-##    ### elbow-up (actually inverse, upside-down) ###
-##    # Third angle - j3
-##    th3 = ang_sats2(x1, alpha, beta)
-##    j3 = -(90 - th3)
-##    # Second angle - j2
-##    th21 = atan2(s, x0)
-##    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-##    th2 = th21 - th22
-##    j2 = -(90-th2)
-
-##    s0,s1 = __IK_irb140_position_elbow_up(T44)
-##    A0, debug = calc_tool_IRB140(*s0)
-##    A1, debug = calc_tool_IRB140(*s1)
-##    print norm(T44 - A0)
-##    print norm(T44 - A1)
-##
-##    s0,s1 = __IK_irb140_position_elbow_down(T44)
-##    A0, debug = calc_tool_IRB140(*s0)
-##    A1, debug = calc_tool_IRB140(*s1)
-##    print norm(T44 - A0)
-##    print norm(T44 - A1)
-##
-##    s0,s1 = __IK_irb140_position_elbow_up(T44, flipped = True)
-##    A0, debug = calc_tool_IRB140(*s0)
-##    A1, debug = calc_tool_IRB140(*s1)
-##    print norm(T44 - A0)
-##    print norm(T44 - A1)
-##
-##    s0,s1 = __IK_irb140_position_elbow_down(T44, flipped = True)
-##    A0, debug = calc_tool_IRB140(*s0)
-##    A1, debug = calc_tool_IRB140(*s1)
-##    print norm(T44 - A0)
-##    print norm(T44 - A1)
-
-
     p_end = T44[0:3,3]
     wcp = calc_wcp(T44)
     sol = mat( calc_inv_kin_IRB140(T44) )
@@ -445,27 +393,3 @@ if __name__ == '__main__':
     plot(wcp[0], wcp[2], 'ro')
     plot(p_end[0], p_end[2], 'ko')
     show()
-
-###############################################################
-##
-##    Robot Studio notes for IRB120:
-##    DH-parameters (NOT modified Denavit-Hartenbergaccording to the SDK):
-##---------------------------------------------------------------------------------------
-##    a1 = transform_to_next(0,0,0,0) #ok
-##    a2 = transform_to_next(0,90,0,90) #ok
-##    a3 = transform_to_next(0.270, 0, 0, 0) #ok
-##    a4 = transform_to_next(0.070, -90, 0.302, 0) #ok
-##    a5 = transform_to_next(0, 90, 0, -180) #ok
-##    a6 = transform_to_next(0, 90, 0, 0) #ok
-##    a = a1.dot(a2).dot(a3).dot(a4).dot(a5).dot(a6) #ok
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
