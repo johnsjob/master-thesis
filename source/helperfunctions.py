@@ -41,6 +41,13 @@ def matmul_series_symbolic(*matrix_factors):
 def deg_to_rad(x):
     return x * pi / 180
 #----------------------------------------#
+def expand_matrix(matrix, k=1,l=1):
+    if k < 0 or l < 0:
+        raise ArithmeticError('Only positive values allowed for changing the dimension of the matrix.')
+    m,n = matrix.shape
+    res = numpy.eye((m+k,n+l))
+    res[0:m,0:n] = matrix
+#----------------------------------------#    
 def rotation_matrix_z(angle):
     '''
         creates a rotation Z-mapping from subspace to worldspace
