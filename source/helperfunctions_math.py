@@ -1,1 +1,175 @@
+#numpy imports
+from numpy import linalg
+from numpy import zeros, diff
+from numpy import pi, cos as _cos, sin as _sin, arccos as _acos, arcsin as _asin
+from numpy import array as mat, dot, cross
+from numpy.linalg import norm
 
+#random import
+from random import random as rand
+#----------------------------------------------------------------------------------------------------------#
+def deg_to_rad(x):
+    return x * pi / 180.0
+#----------------------------------------#
+def rad_to_deg(x):
+    return x / pi * 180.0
+#----------------------------------------#
+def cos(x, unit='rad'):
+    if unit == 'rad':
+        return _cos(x)
+    elif unit == 'deg':
+        return _cos( deg_to_rad(x))
+#----------------------------------------------------------------------------------------------------------#
+def sin(x, unit='rad'):
+    if unit == 'rad':
+        return _sin(x)
+    elif unit == 'deg':
+        return _sin( deg_to_rad(x))
+#----------------------------------------#
+def acos(x, unit='rad'):
+    if unit == 'rad':
+        return _acos(x)
+    elif unit == 'deg':
+        return rad_to_deg( _acos(x) )
+#----------------------------------------------------------------------------------------------------------#
+def asin(x, unit='rad'):
+    if unit == 'rad':
+        return _asin(x)
+    elif unit == 'deg':
+        return rad_to_deg( _asin(x) )
+#----------------------------------------#
+def matmul(*matrix_factors):
+    '''
+        Takes a list of matrices as arguments and perform
+        a series of matrix multiplications from left to right
+        in the order given.
+
+        The parameters may contain vectors and scalars as well as long as
+        the matrix-vector dimensions are the same.
+
+        Note:
+        The sequence can not start with a scalar, it must start
+        with either a vector or a matrix of type numpy.ndarray.
+    '''
+    return reduce(dot, matrix_factors, 1)
+#----------------------------------------------------------------------------------------------------------#
+def homogenous_translation_x( tx ):
+    return mat([[1,        0,      0,     tx],
+                [0,        1,      0,      0],
+                [0,        0,      1,      0],
+                [0,        0,      0,      1]])
+#----------------------------------------------------------------------------------------------------------#
+def homogenous_translation_z( tz ):
+    return mat([[1,     0,     0,      0],
+                [0,     1,     0,      0],
+                [0,     0,     1,      tz],
+                [0,     0,     0,      1]])
+#----------------------------------------------------------------------------------------------------------#
+def homogenous_rotation_x( ang ):
+    #convert to radians
+    c = cos(ang * pi / 180)
+    s = sin(ang * pi / 180)
+    return mat([[1,     0,      0,      0],
+                [0,     c,     -s,     0],
+                [0,     s,     c,      0],
+                [0,     0,     0,      1]])
+#----------------------------------------------------------------------------------------------------------#
+def homogenous_rotation_z( ang ):
+    #convert to radians
+    c = cos(ang * pi / 180)
+    s = sin(ang * pi / 180)
+    return mat([[c,     -s,    0,     0],
+                [s,     c,     0,     0],
+                [0,     0,     1,     0],
+                [0,     0,     0,     1]])
+#----------------------------------------#
+def expand_matrix(matrix, k=1,l=1):
+    if k < 0 or l < 0:
+        raise ArithmeticError('Only positive values allowed for changing the dimension of the matrix.')
+    m,n = matrix.shape
+    res = numpy.eye((m+k,n+l))
+    res[0:m,0:n] = matrix
+#----------------------------------------#    
+def rotation_matrix_z(angle):
+    '''
+        creates a rotation Z-mapping from subspace to worldspace
+        using euler angles in degrees
+    '''
+    angle = deg_to_rad(angle)
+    return mat([[ cos(angle), -sin(angle), 0 ],
+                  [ sin(angle),  cos(angle), 0 ],
+                  [  0   ,    0  , 1 ]])
+#----------------------------------------#
+def rotation_matrix_x(angle):
+    '''
+        creates a rotation X-mapping from subspace to worldspace
+        using euler angles in degrees
+    '''
+    angle = deg_to_rad(angle)
+    return mat([[ 1,     0     ,           0 ],
+                  [ 0, cos(angle), -sin(angle) ],
+                  [ 0, sin(angle),  cos(angle)]])
+#----------------------------------------#
+def rotation_matrix_y(angle):
+    '''
+        creates a rotation Y-mapping from subspace to worldspace
+        using euler angles in degrees
+    '''
+    angle = deg_to_rad(angle)
+    return mat([[ cos(angle),     0     ,   sin(angle) ],
+                  [ 0,              1     ,   0 ],
+                  [ -sin(angle),    0     ,   cos(angle)]])
+#----------------------------------------#
+def rotation_matrix_rot_tilt_skew(rot, tilt, skew):
+    '''
+        creates a rotation ZXZ-mapping from subspace to worldspace
+        using euler angles in degrees (extrinsic mapping)
+    '''
+    return matmul(rotation_matrix_z(-rot), rotation_matrix_x(tilt), rotation_matrix_z(skew))
+#----------------------------------------#
+def rotation_matrix_skew_tilt_rot(rot, tilt, skew):
+    '''
+        creates a rotation ZXZ-mapping from subspace to worldspace
+        using euler angles in degrees (intrinsic mapping)
+    '''
+    return matmul(rotation_matrix_z(skew), rotation_matrix_x(tilt), rotation_matrix_z(-rot))
+#----------------------------------------#
+def coordinate_system_from_two_directions(dirz, diry):
+    '''
+        Generates an orthogonal coordinate system from two vectors in world space,
+        the vectors themselves need not be orthogonal.
+
+        Alternative interpretation:
+        creates a (general) rotation mapping from subspace to worldspace
+        using vector directions in world-space
+    '''
+    dirz = dirz / norm(dirz)
+    diry = diry / norm(diry)
+    diry = gram_schmith_step(diry, dirz)
+    dirx = cross(diry, dirz)
+    return mat([dirx, diry, dirz]).T
+#----------------------------------------#
+def get_normalized_vector(*components):
+    return mat(components) / norm(components)
+#----------------------------------------#
+def orthogonal_projection_vectors(a, b):
+    '''
+        Orthogonal projection of vector a onto vector b
+    '''
+    c = b / norm(b)
+    return a.dot(c) * c
+#----------------------------------------#
+def gram_schmith_step(a, b):
+    '''
+        Calculates with the help of vector A the orthogonal component relative to the
+        parallell direction vector B
+    '''
+    return a - orthogonal_projection_vectors(a, b)
+#----------------------------------------#
+##########################################
+#----------------------------------------#
+def rand_range(low, high):
+        if low > high:
+                low, high = high, low
+        return low + rand()*(high-low)
+#----------------------------------------#

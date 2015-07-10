@@ -1,20 +1,9 @@
 from __future__ import division
 #----------------------------------------#
-#random import
-from random import random as rand
-
-#numpy imports
-from numpy.linalg import norm
-from numpy import zeros, diff, linalg
-from numpy import pi, arccos
-
-#plot imports
-from matplotlib.pylab import plot, hlines, xlim,\
-xlabel, ylabel, plt, grid, title, legend, show
 
 #custom imports
-from helperfunctions import matmul_series as matmul, rand_range
-from helperfunctions import rotation_matrix_rot_tilt_skew
+from helperfunctions_math import *
+from helperfunctions_plot import *
 import plane_relative as plane_tools
 #----------------------------------------#
 def convert_to_matrix(x):
@@ -73,7 +62,7 @@ def sys2(dx, dy, dR):
 def vec_diff(v1, v2):
     err = norm(v1 - v2)
     norm_err = abs(norm(v1) - norm(v2))
-    angle_err = rad_to_ang(arccos( (v1/norm(v1)).dot((v2/norm(v2))) ))
+    angle_err = rad_to_ang(acos( (v1/norm(v1)).dot((v2/norm(v2))) ))
     return err, norm_err, angle_err
 #----------------------------------------
 def generate_random_Anoto_Point(L):

@@ -4,17 +4,41 @@ import sys
 #--------------------------#
 import numpy as n
 from numpy import cos, sin, pi
-from numpy import array as mat
+from helperfunctions_math import *
+from helperfunctions import convert_to_mat
+from helperfunctions_plot import init_plot
 #=====================================================#
-from helperfunctions import *
 #sys.path.append("../int/misc-tools/")
 #--------------------------#
 num_points = 3
 #--------------------------#
 def get_relative_R(R0, R01):
-    M = matmul_series(R0, R01)
+    M = matmul(R0, R01)
     return M
 #--------------------------#
+def define_plane(origin, dirx, diry):
+    """
+        This function returns a coordinate system,
+        defined as a set containing a point of origin
+        and a set of basis vectors all of dimension N.
+        {O,{basis_x, basis_y, ...}}
+    """
+    origin, dirx, diry = convert_to_mat(origin, dirx, diry)
+    diry = gram_schmith_step(diry, dirx)
+    diry = diry / norm(diry)
+    dirx = dirx / norm(dirx)
+    normal = cross(dirx, diry)
+    return origin, dirx, diry, normal
+#----------------------------------------#
+def get_plane_point(plane,x,y):
+    """
+        From a subspace plane coordinate system with local coordinates (x,y)
+        return the coordinates in corresponding world-space.
+    """
+    origin, dx, dy, n = plane
+    pos = origin + x*dx + y*dy
+    return pos
+#----------------------------------------#
 def get_plane_transform(plane):
     """
     A plane is a homogenous mapping from local-frame to a general euclidean coordinate-frame,
@@ -37,7 +61,7 @@ def __apply_plane_relative_transform(plane, R):
     orig, basis_x, basis_y, normal = plane
     transf_plane = mat([basis_x, basis_y, normal]).T
 
-    M = matmul_series(transf_plane,R.dot(mat_flip(1)),transf_plane.T)
+    M = matmul(transf_plane,R.dot(mat_flip(1)),transf_plane.T)
     return M
 #--------------------------#
 def get_plane_relative_R(plane, rot, tilt, skew, flipped_orientation_relative_to_plane = True):
