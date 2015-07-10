@@ -176,6 +176,7 @@ def plot_equal_perspective(ax, xList, yList, zList):
 ##       ax.plot([xb], [yb], [zb], 'w')    
 #----------------------------------------#
 def _swap(a,b):
+        #TODO: REWRITE THIS FUNCTION b
         tmp = b
         b = a
         a = tmp

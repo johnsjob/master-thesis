@@ -1,12 +1,24 @@
 from __future__ import division
 #----------------------------------------#
-from helperfunctions import *
-from helperfunctions import matmul_series as matmul
+#random import
+from random import random as rand
+
+#numpy imports
+from numpy.linalg import norm
+from numpy import zeros, diff, linalg
+from numpy import pi, arccos
+
+#plot imports
+from matplotlib.pylab import plot, hlines, xlim,\
+xlabel, ylabel, plt, grid, title, legend, show
+
+#custom imports
+from helperfunctions import matmul_series as matmul, rand_range
 from helperfunctions import rotation_matrix_rot_tilt_skew
 import plane_relative as plane_tools
-import numpy
-
-from numpy import arccos
+#----------------------------------------#
+def convert_to_matrix(x):
+    return mat(x)
 #----------------------------------------#
 #num_points = 12 absolute minimum, actually 12+1
 num_points = 120
@@ -76,9 +88,6 @@ def append_to_relative_plane_orientation(x):
 def append_to_Xtcp_o(x):
     l_xtcp.append(x)
 #----------------------------------------
-def convert_to_matrix(x):
-    return mat(x)
-#----------------------------------------
 from numpy.linalg import solve, det, inv, cond
 #----------------------------------------
 def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_sys_eq = None):
@@ -132,7 +141,7 @@ def extract_solutions(sol):
     return mat([dirx, diry, do1, do2, do3])
 #----------------------------------------
 if __name__ == '__main__':
-
+    
     print "Sampling points..."
     point_spread = 300
     
