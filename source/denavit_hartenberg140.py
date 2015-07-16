@@ -153,8 +153,11 @@ def __IK_irb140_position_elbow_down(T44, flipped=False):
     return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
     
 def check_range(x, _min, _max, inclusive=True):
+
+    #swap if needed
     if _max < _min:
         _max, _min = _min, _max
+
     if inclusive == True:
         return _min <= x <= _max
     else:
