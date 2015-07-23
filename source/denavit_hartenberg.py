@@ -1,16 +1,37 @@
 from helperfunctions_math import *
 #----------------------------------------------------------------------------------------------------------#
-def transform_to_next(A, alpha, D, theta):
+def transform_to_next(A, alpha, D, theta, convention='standard'):
     """
     Calculats transform from frame J = I-1 to I
     in order AI = Rzj( theta )Tzj( D )Txi( A )Rxi( alpha )
-    and parameters are given in order A, alpha, D, theta.
+    and parameters are given in order A, alpha, D, theta, 
+    according to  the standard convention:
+
+            matrix =   mat([[ct,    -st*ca,  st*sa, A*ct],
+                            [st,     ct*ca, -ct*sa, A*st],
+                            [ 0,        sa,     ca,   D ],
+                            [ 0,         0,      0,   1 ]]);
+
+    If convention is changed to modified then the transformation
+    is remapped according to the equivalent modified Denivit-hartenberg,
+    and performs the mapping from I to I+1.
     """
     Rz_J = homogenous_rotation_z(theta)
     Tz_J = homogenous_translation_z(D)
     Tx_I = homogenous_translation_x(A)
     Rx_I = homogenous_rotation_x(alpha)
-    return matmul(Rz_J, Tz_J, Tx_I, Rx_I)
+    matrix = matmul(Rz_J, Tz_J, Tx_I, Rx_I)
+    
+    if convention.lower() == 'standard':
+        return matrix
+    elif confenction.lower() == 'modified':
+        modified = mat([ matrix[0,0],  -matrix[1,0],   matrix[2,0],  A,
+                        -matrix[0,1],   matrix[1,1],  -matrix[2,1], -matrix[2,1]*D,
+                         matrix[0,2],  -matrix[1,2],   matrix[2,2],  matrix[2,2]*D,
+                               0    ,         0    ,         0    ,  1,]).reshape((4,4))
+        return modified
+    else:
+        raise ArithmeticError("As of writing this function only two conventions are allowed: 'standard' or 'modified'.")
 #----------------------------------------------------------------------------------------------------------#
 def DH_params(*DH_table, **kwargs):
     """
@@ -21,13 +42,20 @@ def DH_params(*DH_table, **kwargs):
     if no order is specified. However, is another order specified then
     the values must be entered in that order.
     """
+
+    input_param_diff = set(kwargs) - set(['order','convention','unit'])
+    if len(input_param_diff) > 0:
+        raise Exception('Unsupported parameters: '+str(*input_param_diff))
     # handle which unit is being used
     if not kwargs.has_key('unit'):
         kwargs['unit'] = 'm'
     unit = kwargs['unit']
-    
+
     if not kwargs.has_key('order'):
         kwargs['order'] = ['A','alpha','D','theta']
+
+    if not kwargs.has_key('convention'):
+        kwargs['convention'] = 'standard'
         
 
     nbr_of_sections = int(len(DH_table) / 4)
