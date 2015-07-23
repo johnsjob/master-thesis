@@ -1,9 +1,13 @@
 #numpy imports
 from numpy import linalg
 from numpy import zeros, diff
-from numpy import pi, cos as _cos, sin as _sin, arccos as _acos, arcsin as _asin
-from numpy import array as mat, dot, cross
+from numpy import pi, cos as _cos, sin as _sin,\
+                  arccos as _acos, arcsin as _asin,\
+                  arctan2 as _atan2, arctan as _atan
+
+from numpy import array as mat, dot, cross, inf
 from numpy.linalg import norm
+import numpy
 
 #random import
 from random import random as rand
@@ -13,6 +17,18 @@ def deg_to_rad(x):
 #----------------------------------------#
 def rad_to_deg(x):
     return x / pi * 180.0
+#----------------------------------------#
+def atan(x, unit='rad'):
+    if unit == 'rad':
+        return _atan(x)
+    elif unit == 'deg':
+        return rad_to_deg(_atan(x))
+#----------------------------------------#
+def atan2(y, x, unit='rad'):
+    if unit == 'rad':
+        return _atan2(y,x)
+    elif unit == 'deg':
+        return rad_to_deg(_atan2(y,x))
 #----------------------------------------#
 def cos(x, unit='rad'):
     if unit == 'rad':
@@ -172,4 +188,3 @@ def rand_range(low, high):
         if low > high:
                 low, high = high, low
         return low + rand()*(high-low)
-#----------------------------------------#
