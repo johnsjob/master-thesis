@@ -24,7 +24,7 @@ def transform_to_next(A, alpha, D, theta, convention='standard'):
     
     if convention.lower() == 'standard':
         return matrix
-    elif confenction.lower() == 'modified':
+    elif convention.lower() == 'modified':
         modified = mat([ matrix[0,0],  -matrix[1,0],   matrix[2,0],  A,
                         -matrix[0,1],   matrix[1,1],  -matrix[2,1], -matrix[2,1]*D,
                          matrix[0,2],  -matrix[1,2],   matrix[2,2],  matrix[2,2]*D,
@@ -33,7 +33,7 @@ def transform_to_next(A, alpha, D, theta, convention='standard'):
     else:
         raise ArithmeticError("As of writing this function only two conventions are allowed: 'standard' or 'modified'.")
 #----------------------------------------------------------------------------------------------------------#
-def DH_params(*DH_table, **kwargs):
+def DH_params(**kwargs):
     """
     Performs the denavit-hartenberg algorithm
     and calculates T44 = A0 * A1 * A2 * ... * An multiplication.
@@ -46,7 +46,7 @@ def DH_params(*DH_table, **kwargs):
     # check so that only supported parameters
     # exist in kwargs and abort if any other parameter
     # had been created by mistake due to typos or similar
-    input_param_diff = set(kwargs) - set(['order','convention','unit'])
+    input_param_diff = set(kwargs) - set(['order','convention','unit','table'])
     if len(input_param_diff) > 0:
         raise Exception('Unsupported parameters: ' + str(*input_param_diff))
     # handle which unit is being used
@@ -65,10 +65,10 @@ def DH_params(*DH_table, **kwargs):
         kwargs['convention'] = 'standard'
 
     row_length = 5
-    nbr_of_sections = int(len(DH_table) / row_length)
-    if len(DH_table) == 1 and type(DH_table[0]) in [list, tuple]:
+    nbr_of_sections = int(len(kwargs['table']) / row_length)
+    if len(kwargs['table']) == 1 and type(kwargs['table'][0]) in [list, tuple]:
         raise ArithmeticError("Function does not use lists or tuples, please unpack using * operator.")
-    elif not (len(DH_table) % row_length == 0):
+    elif not (len(kwargs['table']) % row_length == 0):
         raise ArithmeticError("Invalid number of Denavit-Hartenberg parameters - you also need to supply type of joint")
 
     matrices = []
@@ -76,7 +76,7 @@ def DH_params(*DH_table, **kwargs):
         # Performing the operation
         # A, alpha, D, theta = params['A'], params['alpha'], params['D'], params['theta']
         # in a very general way
-        var_names, var_values = kwargs['order'],DH_table[row_length*k : row_length*k + row_length]
+        var_names, var_values = kwargs['order'],kwargs['table'][row_length*k : row_length*k + row_length]
         for i in xrange(row_length-1):
             exec('%s = %0.16f' % (var_names[i], var_values[i]))
             
@@ -92,7 +92,7 @@ def DH_params(*DH_table, **kwargs):
 
     # collect information about the Denivit-Hartenberg table
     DH = {
-    'table' : DH_table,
+    'table' : kwargs['table'],
     'unit': kwargs['unit'],
     'convention':kwargs['convention'],
     'order': kwargs['order'],
@@ -100,6 +100,23 @@ def DH_params(*DH_table, **kwargs):
     }    
     # perform matrix chain-multiplication / serial-multiplication with matrix product
     return matmul(*matrices), matrices, DH
+#----------------------------------------------------------------------------------------------------------#
+def calc_tool(DH, *joint_values):
+    joint_types = DH['table'][4 :: 5]
+    print str(joint_types)
+    revolute_index = DH['order'].index('theta')
+    prismatic_index = DH['order'].index('D')
+    DH['table'] = list( DH['table'] )
+    
+    for i,k in enumerate(joint_types):
+        if k == 'R':
+            DH['table'][i*5+revolute_index] += joint_values[i]
+        elif k == 'P':
+            DH['table'][i*5+prismatic_index] += joint_values[i]
+
+    tool0, Ai, DH = DH_params(**DH)
+    DH['table'] = tuple( DH['table'] )
+    return tool0, Ai, DH
 #----------------------------------------------------------------------------------------------------------#
 def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]

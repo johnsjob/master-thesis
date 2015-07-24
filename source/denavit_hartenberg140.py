@@ -20,38 +20,29 @@ def calc_tool_IRB140(a,b,c,d,e,f):
 #                            0,0,65,0 + f,'R',
 #                            unit='mm')
 
-    tool0, Ai, DH = DH_params(
-                            -70, 90, 352, 180,'R',
-                            360, 0, 0, 90,'R',
-                            0, 90, 0, 180,'R',
-                            0, 90, 380, 180,'R',
-                            0, 90, 0, 180,'R',
-                            0,0,65,0,'R',
-                            unit='mm')
+    DH = {  'table':[-70, 90, 352, 180,'R',
+                     360, 0, 0, 90,'R',
+                       0, 90, 0, 180,'R',
+                       0, 90, 380, 180,'R',
+                       0, 90, 0, 180,'R',
+                       0,  0,65,  0,'R'],
+             'unit': 'mm',
+             'order': ['A','alpha','D','theta'],
+             'convention': 'standard'
+                 }
     tool0, Ai, DH = calc_tool(DH, a,b,c,d,e,f)
     return tool0, Ai, DH
 #----------------------------------------------------------------------------------------------------------#
-def calc_tool(DH, *joint_values):
-    joint_types = DH['table'][4 :: 5]
-    print str(joint_types)
-    revolute_index = DH['order'].index('theta')
-    prismatic_index = DH['order'].index('D')
-    table = list( DH['table'] )
-
-    for i,k in enumerate(joint_types):
-        if k == 'R':
-            table[i*5+3] += joint_values[i]
-
-    tool0, Ai, DH_table = DH_params(*table, unit='mm')
-    return tool0, Ai, DH_table
-#----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB140_sub(a,b,c):
-    tool0, Ai, DH_table = DH_params(
-                            -70, 90, 352, 180 + a, 'R',
-                            360, 0, 0, 90 + b, 'R',
-                            0, 90, 0, 180 + c, 'R',
-                            unit='mm')
-    return tool0, Ai, DH_table
+    DH = {  'table':[-70, 90, 352, 180,'R',
+                     360, 0, 0, 90,'R',
+                       0, 90, 0, 180,'R'],
+             'unit': 'mm',
+             'order': ['A','alpha','D','theta'],
+             'convention': 'standard'
+                 }
+    tool0, Ai, DH = calc_tool(DH, a,b,c)
+    return tool0, Ai, DH
 #----------------------------------------------------------------------------------------------------------#
 def __IK_irb140__orientation(j1, j2, j3, T44):
     #Calculate last angles
