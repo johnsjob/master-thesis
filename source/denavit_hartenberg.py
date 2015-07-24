@@ -84,7 +84,7 @@ def DH_params(*DH_table, **kwargs):
             raise ArithmeticError("Unknown unit of length, only meters(\'m\') or millimeters meters(\'mm\') allowed.")
         matrices.append( transform_to_next(A, alpha, D, theta) )
     #perform matrix chain-multiplication / serial-multiplication with matrix product
-    return matmul(*matrices), matrices
+    return matmul(*matrices), matrices, DH_table
 #----------------------------------------------------------------------------------------------------------#
 def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]

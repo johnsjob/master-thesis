@@ -11,29 +11,30 @@ sys.path.append("../int/misc-tools/")
 import parsingtools as  parse
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB140(a,b,c,d,e,f):
-    tool0, Ai = DH_params(
+    tool0, Ai, DH_table = DH_params(
                             -70, 90, 352, 180 + a,
                             360, 0, 0, 90 + b,
-                            0, 90, 0, 180+c,
-                            0, 90, 380, 180+d,
-                            0, 90, 0, 180+e,
-                            0,0,65,f,
+                            0, 90, 0, 180 + c,
+                            0, 90, 380, 180 + d,
+                            0, 90, 0, 180 + e,
+                            0,0,65,0 + f,
                             unit='mm')
-    return tool0, Ai
+    return tool0, Ai, DH_table
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB140_sub(a,b,c):
-    tool0, Ai = DH_params(
+    tool0, Ai, DH_table = DH_params(
                             -70, 90, 352, 180 + a,
                             360, 0, 0, 90 + b,
-                            0, 90, 0, 180+c,
+                            0, 90, 0, 180 + c,
                             unit='mm')
-    return tool0, Ai
+    return tool0, Ai, DH_table
 #----------------------------------------------------------------------------------------------------------#
 def __IK_irb140__orientation(j1, j2, j3, T44):
     #Calculate last angles
     R = T44[0:3,0:3]    
-    H3,_ = calc_tool_IRB140_sub(j1, j2, j3)
+    H3, _, _ = calc_tool_IRB140_sub(j1, j2, j3)
     R3 = H3[0:3, 0:3]
+
     R36 = R3.T.dot(R)
     X = R36[:,0]
     Y = R36[:,1]
@@ -42,7 +43,6 @@ def __IK_irb140__orientation(j1, j2, j3, T44):
     j4 = atan2(Z[1],Z[0])
     j5 = atan2(norm(Z[0:2]), Z[2])
     j6 = atan2(X[2], Y[2]) + 90
-
     R36 = R36.T
     X = R36[:,0]
     Y = R36[:,1]
@@ -262,7 +262,7 @@ if __name__ == '__main__':
     print "\nNumber of configurations: " + str(len(data['Joint_1'])) + "\n"
     a,b,c,d,e,f = data['Joint_1'][index], data['Joint_2'][index], data['Joint_3'][index], data['Joint_4'][index], data['Joint_5'][index], data['Joint_6'][index],
 
-    A, debug = calc_tool_IRB140(a,b,c,d,e,f)
+    A, debug, DH_table = calc_tool_IRB140(a,b,c,d,e,f)
 
     print "T44 sanity check-norm: " + str(norm(T44 - A))
 
@@ -274,8 +274,8 @@ if __name__ == '__main__':
     for i in xrange(0, 8):
         s = sol[:,i]
         gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-        A, debug = calc_tool_IRB140(gamma0, gamma1, gamma2,
-                                    gamma3, gamma4, gamma5)
+        A, debug, DH_table = calc_tool_IRB140(gamma0, gamma1, gamma2,
+                                              gamma3, gamma4, gamma5)
         p0 = debug[0][:,3]
         p1 = matmul(debug[0],debug[1])[:,3]
         p2 = matmul(debug[0],debug[1],debug[2])[:,3]
