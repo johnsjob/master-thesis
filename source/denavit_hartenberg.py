@@ -101,22 +101,21 @@ def DH_params(**kwargs):
     # perform matrix chain-multiplication / serial-multiplication with matrix product
     return matmul(*matrices), matrices, DH
 #----------------------------------------------------------------------------------------------------------#
-def calc_tool(DH, *joint_values):
+def calc_tool(_DH, *joint_values):
+    DH = _DH.copy()
     joint_types = DH['table'][4 :: 5]
-    print str(joint_types)
     revolute_index = DH['order'].index('theta')
     prismatic_index = DH['order'].index('D')
     DH['table'] = list( DH['table'] )
     
-    for i,k in enumerate(joint_types):
-        if k == 'R':
-            DH['table'][i*5+revolute_index] += joint_values[i]
+    for i,k in enumerate(joint_values):
+        if joint_types[i] == 'R':
+            DH['table'][i*5+revolute_index] += k
         elif k == 'P':
-            DH['table'][i*5+prismatic_index] += joint_values[i]
+            DH['table'][i*5+prismatic_index] += k
 
-    tool0, Ai, DH = DH_params(**DH)
-    DH['table'] = tuple( DH['table'] )
-    return tool0, Ai, DH
+    tool0, Ai, _ = DH_params(**DH)
+    return tool0, Ai
 #----------------------------------------------------------------------------------------------------------#
 def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]

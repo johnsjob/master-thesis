@@ -10,16 +10,17 @@ from denavit_hartenberg import *
 sys.path.append("../int/misc-tools/")
 import parsingtools as  parse
 #----------------------------------------------------------------------------------------------------------#
+DH_TABLE = {  'table':[-70, 90, 352, 180,'R',
+                     360, 0, 0, 90,'R',
+                       0, 90, 0, 180,'R',
+                       0, 90, 380, 180,'R',
+                       0, 90, 0, 180,'R',
+                       0,  0,65,  0,'R'],
+             'unit': 'mm',
+             'order': ['A','alpha','D','theta'],
+             'convention': 'standard'
+    }
 def calc_tool_IRB140(a,b,c,d,e,f):
-#    tool0, Ai, DH = DH_params(
-#                            -70, 90, 352, 180 + a,'R',
-#                            360, 0, 0, 90 + b,'R',
-#                            0, 90, 0, 180 + c,'R',
-#                            0, 90, 380, 180 + d,'R',
-#                            0, 90, 0, 180 + e,'R',
-#                            0,0,65,0 + f,'R',
-#                            unit='mm')
-
     DH = {  'table':[-70, 90, 352, 180,'R',
                      360, 0, 0, 90,'R',
                        0, 90, 0, 180,'R',
@@ -29,9 +30,9 @@ def calc_tool_IRB140(a,b,c,d,e,f):
              'unit': 'mm',
              'order': ['A','alpha','D','theta'],
              'convention': 'standard'
-                 }
-    tool0, Ai, DH = calc_tool(DH, a,b,c,d,e,f)
-    return tool0, Ai, DH
+    }
+    tool0, Ai = calc_tool(DH, a,b,c,d,e,f)
+    return tool0, Ai
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB140_sub(a,b,c):
     DH = {  'table':[-70, 90, 352, 180,'R',
@@ -40,14 +41,14 @@ def calc_tool_IRB140_sub(a,b,c):
              'unit': 'mm',
              'order': ['A','alpha','D','theta'],
              'convention': 'standard'
-                 }
-    tool0, Ai, DH = calc_tool(DH, a,b,c)
-    return tool0, Ai, DH
+    }
+    tool0, Ai = calc_tool(DH, a,b,c)
+    return tool0, Ai
 #----------------------------------------------------------------------------------------------------------#
 def __IK_irb140__orientation(j1, j2, j3, T44):
     #Calculate last angles
     R = T44[0:3,0:3]    
-    H3, _, _ = calc_tool_IRB140_sub(j1, j2, j3)
+    H3, _ = calc_tool_IRB140_sub(j1, j2, j3)
     R3 = H3[0:3, 0:3]
 
     R36 = R3.T.dot(R)
@@ -277,8 +278,8 @@ if __name__ == '__main__':
     print "\nNumber of configurations: " + str(len(data['Joint_1'])) + "\n"
     a,b,c,d,e,f = data['Joint_1'][index], data['Joint_2'][index], data['Joint_3'][index], data['Joint_4'][index], data['Joint_5'][index], data['Joint_6'][index],
 
-    A, debug, DH = calc_tool_IRB140(a,b,c,d,e,f)
-    calc_tool(DH, a,b,c,d,e,f)
+    A, debug  = calc_tool_IRB140(a,b,c,d,e,f)
+    #calc_tool(DH, a,b,c,d,e,f)
 
     print "T44 sanity check-norm: " + str(norm(T44 - A))
 
@@ -290,8 +291,8 @@ if __name__ == '__main__':
     for i in xrange(0, 8):
         s = sol[:,i]
         gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-        A, debug, DH_table = calc_tool_IRB140(gamma0, gamma1, gamma2,
-                                              gamma3, gamma4, gamma5)
+        A, debug = calc_tool_IRB140(gamma0, gamma1, gamma2,
+                                    gamma3, gamma4, gamma5)
         p0 = debug[0][:,3]
         p1 = matmul(debug[0],debug[1])[:,3]
         p2 = matmul(debug[0],debug[1],debug[2])[:,3]
