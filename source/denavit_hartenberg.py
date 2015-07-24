@@ -43,6 +43,9 @@ def DH_params(*DH_table, **kwargs):
     the values must be entered in that order.
     """
 
+    # check so that only supported parameters
+    # exist in kwargs and abort if any other parameter
+    # had been created by mistake due to typos or similar
     input_param_diff = set(kwargs) - set(['order','convention','unit'])
     if len(input_param_diff) > 0:
         raise Exception('Unsupported parameters: '+str(*input_param_diff))
@@ -50,14 +53,13 @@ def DH_params(*DH_table, **kwargs):
     if not kwargs.has_key('unit'):
         kwargs['unit'] = 'm'
     unit = kwargs['unit']
-
+    # supply a standard order
     if not kwargs.has_key('order'):
         kwargs['order'] = ['A','alpha','D','theta']
-
+    # supply the standard denivit-hartenberg if no convention given
     if not kwargs.has_key('convention'):
         kwargs['convention'] = 'standard'
         
-
     nbr_of_sections = int(len(DH_table) / 4)
     if len(DH_table) == 1 and type(DH_table[0]) in [list, tuple]:
         raise ArithmeticError("Function does not use lists or tuples, please unpack using * operator.")
