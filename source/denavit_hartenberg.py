@@ -1,5 +1,20 @@
 from helperfunctions_math import *
 #----------------------------------------------------------------------------------------------------------#
+rad = lambda x: x * pi / 180.0
+deg = lambda x: x * 180.0 / pi
+cos2 = lambda x: n.cos(rad(x))
+sin2 = lambda x: n.sin(rad(x))
+
+cos_sats = lambda a,b,th: a**2 + b**2 - 2*a*b*cos(rad(th)); #ok
+ang_sats = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(-2*a*b))); #ok
+ang_sats2 = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(2*a*b))); #ok
+round = lambda x: custom_round(x)
+atan = lambda x: deg(n.arctan(x))
+atan2 = lambda y,x: deg(n.arctan2(y,x))
+
+up_to = lambda i: custom_round(matmul(*[debug[x] for x in range(i)]))
+#----------------------------------------------------------------------------------------------------------#
+
 def transform_to_next(A, alpha, D, theta, convention='standard'):
     """
     Calculats transform from frame J = I-1 to I
@@ -33,7 +48,7 @@ def transform_to_next(A, alpha, D, theta, convention='standard'):
     else:
         raise ArithmeticError("As of writing this function only two conventions are allowed: 'standard' or 'modified'.")
 #----------------------------------------------------------------------------------------------------------#
-def DH_params(*joint_values,**kwargs):
+def forward_kinematics(*joint_values,**kwargs):
     """
     Performs the denavit-hartenberg algorithm
     and calculates T44 = A0 * A1 * A2 * ... * An multiplication.
@@ -103,23 +118,33 @@ def DH_params(*joint_values,**kwargs):
     'order': kwargs['order'],
     }    
     # perform matrix chain-multiplication / serial-multiplication with matrix product
-    return matmul(*matrices), matrices, dh_table
-#----------------------------------------------------------------------------------------------------------#
-def calc_tool(_DH, *joint_values):
-    DH = _DH.copy()
-    joint_types = DH['table'][4 :: 5]
-    revolute_index = DH['order'].index('theta')
-    prismatic_index = DH['order'].index('D')
-    DH['table'] = list( DH['table'] )
-    
-    for i,k in enumerate(joint_values):
-        if joint_types[i] == 'R':
-            DH['table'][i*5+revolute_index] += k
-        elif k == 'P':
-            DH['table'][i*5+prismatic_index] += k
-
-    tool0, Ai, _  = DH_params(*joint_values, **DH)
-    return tool0, Ai
+    return matmul(*matrices), matrices
 #----------------------------------------------------------------------------------------------------------#
 def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]
+def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
+    print dh_table
+    #Calculate last angles
+    R = T44[0:3,0:3]    
+    H3, _ = forward_kinematics(j1, j2, j3, **dh_table)
+    R3 = H3[0:3, 0:3]
+
+    R36 = R3.T.dot(R)
+    X = R36[:,0]
+    Y = R36[:,1]
+    Z = R36[:,2]
+    # for order of parameters check numpy.info(numpy.arctan2)
+    j4 = atan2(Z[1],Z[0])
+    j5 = atan2(norm(Z[0:2]), Z[2])
+    j6 = atan2(X[2], Y[2]) + 90
+    R36 = R36.T
+    X = R36[:,0]
+    Y = R36[:,1]
+    Z = R36[:,2]
+    # for order of parameters check numpy.info(numpy.arctan2)
+    j41 = -(atan2(X[2], Y[2]) + 90)
+    j51 = -atan2(norm(Z[0:2]), Z[2])
+    j61 = -(atan2(Z[1],Z[0]))
+    return j4, j5, j6, j41, j51, j61
+#----------------------------------------------------------------------------------------------------------#
+

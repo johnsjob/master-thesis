@@ -6,6 +6,7 @@ import numpy as n
 #--------------------------#
 from helperfunctions_math import *
 from denavit_hartenberg import *
+from denavit_hartenberg import inverse_kinematics_spherical_wrist as inv_wrist
 #=====================================================#
 sys.path.append("../int/misc-tools/")
 import parsingtools as  parse
@@ -21,21 +22,11 @@ DH_TABLE = {  'table':[-70, 90, 352, 180,'R',
              'convention': 'standard'
     }
 #----------------------------------------------------------------------------------------------------------#
-def calc_tool_IRB140(a,b,c,d,e,f):
-    global DH_TABLE
-    tool0, Ai,_ = DH_params(a,b,c,d,e,f,**DH_TABLE)
-    #calc_tool(DH_TABLE, a,b,c,d,e,f)
-    return tool0, Ai
-#----------------------------------------------------------------------------------------------------------#
-def calc_tool_IRB140_sub(a,b,c):
-    global DH_TABLE
-    tool0, Ai,_ = DH_params(a,b,c,**DH_TABLE)
-    return tool0, Ai
-#----------------------------------------------------------------------------------------------------------#
-def __IK_irb140__orientation(j1, j2, j3, T44):
+def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
+    print dh_table
     #Calculate last angles
     R = T44[0:3,0:3]    
-    H3, _ = calc_tool_IRB140_sub(j1, j2, j3)
+    H3, _ = forward_kinematics(j1, j2, j3, **dh_table)
     R3 = H3[0:3, 0:3]
 
     R36 = R3.T.dot(R)
@@ -55,8 +46,9 @@ def __IK_irb140__orientation(j1, j2, j3, T44):
     j51 = -atan2(norm(Z[0:2]), Z[2])
     j61 = -(atan2(Z[1],Z[0]))
     return j4, j5, j6, j41, j51, j61
-
-def __IK_irb140_position_elbow_up(T44, flipped=False):
+inverse_kinematics_spherical_wrist = inv_wrist
+#----------------------------------------------------------------------------------------------------------#
+def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
@@ -103,10 +95,10 @@ def __IK_irb140_position_elbow_up(T44, flipped=False):
         j2 = -(90-th2)
 
     j4, j5, j6,\
-        j41,j51,j61 = __IK_irb140__orientation(j1, j2, j3, T44)
+        j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
     return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
 
-def __IK_irb140_position_elbow_down(T44, flipped=False):
+def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
@@ -152,7 +144,7 @@ def __IK_irb140_position_elbow_down(T44, flipped=False):
         j2 = -(90 - th2)
 
     j4, j5, j6,\
-        j41,j51,j61 = __IK_irb140__orientation(j1, j2, j3, T44)
+        j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
     return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
     
 def check_range(x, _min, _max, inclusive=True):
@@ -175,7 +167,7 @@ def check_solution(j1,j2,j3,j4,j5,j6, inclusive=True):
     sol &= check_range(j6, -400, 400, inclusive)
     return sol
 
-def calc_inv_kin_IRB140(T44):
+def inverse_kinematics_irb140(dh_table, T44):
     if type(T44) is list:
         T44 = mat(T44)
     dim = T44.shape
@@ -186,10 +178,10 @@ def calc_inv_kin_IRB140(T44):
     if dim[0] != 4:
         raise ArithmeticError('Forward-kinematics must have dimension of 4!')
 
-    sol1, sol11 = __IK_irb140_position_elbow_up(T44)
-    sol2, sol21 = __IK_irb140_position_elbow_down(T44)
-    sol3, sol31 = __IK_irb140_position_elbow_up(T44, flipped = True)
-    sol4, sol41 = __IK_irb140_position_elbow_down(T44, flipped = True)
+    sol1, sol11 = inverse_kinematics_elbow_up(dh_table, T44)
+    sol2, sol21 = inverse_kinematics_elbow_down(dh_table, T44)
+    sol3, sol31 = inverse_kinematics_elbow_up(dh_table, T44, flipped = True)
+    sol4, sol41 = inverse_kinematics_elbow_down(dh_table, T44, flipped = True)
 
     #first columnt is first solution and so forth
     return mat(zip(sol1, sol2, sol3, sol4, sol11, sol21, sol31, sol41))
@@ -202,7 +194,7 @@ def filter_solutions(solutions, filter_function = check_solution):
     return mat(zip(*result))
 
 def calc_valid_inv_kin_IRB140(T44):
-    return filter_solutions( calc_inv_kin_IRB140(T44) )
+    return filter_solutions( inverse_kinematics_irb140(T44) )
 
 def create_T44(pos, orientation):
     T44 = n.zeros((4,4))
@@ -265,21 +257,21 @@ if __name__ == '__main__':
     print "\nNumber of configurations: " + str(len(data['Joint_1'])) + "\n"
     a,b,c,d,e,f = data['Joint_1'][index], data['Joint_2'][index], data['Joint_3'][index], data['Joint_4'][index], data['Joint_5'][index], data['Joint_6'][index],
 
-    A, debug  = calc_tool_IRB140(a,b,c,d,e,f)
+    A, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
     #calc_tool(DH, a,b,c,d,e,f)
 
     print "T44 sanity check-norm: " + str(norm(T44 - A))
 
     p_end = T44[0:3,3]
     wcp = calc_wcp(T44, 0.065)
-    sol = mat( calc_inv_kin_IRB140(T44) )
+    sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
     s0 = mat([a,b,c,d,e,f])
     all_norms = 0
     for i in xrange(0, 8):
         s = sol[:,i]
         gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-        A, debug = calc_tool_IRB140(gamma0, gamma1, gamma2,
-                                    gamma3, gamma4, gamma5)
+        A, debug = forward_kinematics(gamma0, gamma1, gamma2,
+                                         gamma3, gamma4, gamma5, **DH_TABLE)
         p0 = debug[0][:,3]
         p1 = matmul(debug[0],debug[1])[:,3]
         p2 = matmul(debug[0],debug[1],debug[2])[:,3]

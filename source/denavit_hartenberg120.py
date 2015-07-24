@@ -11,7 +11,7 @@ sys.path.append("../int/misc-tools/")
 import parsingtools as  parse
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB120(a,b,c,d,e,f):
-    tool0, Ai = DH_params(
+    tool0, Ai = forward_kinematics(
                     0,      90, 0.290,  180+a,
                     0.270,   0, 0,      90+b,
                    -0.070,  90, 0,      180+c,
@@ -22,7 +22,7 @@ def calc_tool_IRB120(a,b,c,d,e,f):
     return tool0, Ai
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB120_sub(a,b,c):
-    flange = DH_params(
+    flange = forward_kinematics(
                     0,      90, 0.290,  180+a,
                     0.270,   0, 0,      90+b,
                    -0.070,  90, 0,      180+c,

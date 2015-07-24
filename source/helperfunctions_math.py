@@ -8,6 +8,7 @@ from numpy import pi, cos as _cos, sin as _sin,\
 from numpy import array as mat, dot, cross, inf
 from numpy.linalg import norm
 import numpy
+import numpy as n
 
 #random import
 from random import random as rand
