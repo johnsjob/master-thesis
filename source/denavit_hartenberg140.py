@@ -20,29 +20,16 @@ DH_TABLE = {  'table':[-70, 90, 352, 180,'R',
              'order': ['A','alpha','D','theta'],
              'convention': 'standard'
     }
+#----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB140(a,b,c,d,e,f):
-    DH = {  'table':[-70, 90, 352, 180,'R',
-                     360, 0, 0, 90,'R',
-                       0, 90, 0, 180,'R',
-                       0, 90, 380, 180,'R',
-                       0, 90, 0, 180,'R',
-                       0,  0,65,  0,'R'],
-             'unit': 'mm',
-             'order': ['A','alpha','D','theta'],
-             'convention': 'standard'
-    }
-    tool0, Ai = calc_tool(DH, a,b,c,d,e,f)
+    global DH_TABLE
+    tool0, Ai,_ = DH_params(a,b,c,d,e,f,**DH_TABLE)
+    #calc_tool(DH_TABLE, a,b,c,d,e,f)
     return tool0, Ai
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool_IRB140_sub(a,b,c):
-    DH = {  'table':[-70, 90, 352, 180,'R',
-                     360, 0, 0, 90,'R',
-                       0, 90, 0, 180,'R'],
-             'unit': 'mm',
-             'order': ['A','alpha','D','theta'],
-             'convention': 'standard'
-    }
-    tool0, Ai = calc_tool(DH, a,b,c)
+    global DH_TABLE
+    tool0, Ai,_ = DH_params(a,b,c,**DH_TABLE)
     return tool0, Ai
 #----------------------------------------------------------------------------------------------------------#
 def __IK_irb140__orientation(j1, j2, j3, T44):

@@ -33,7 +33,7 @@ def transform_to_next(A, alpha, D, theta, convention='standard'):
     else:
         raise ArithmeticError("As of writing this function only two conventions are allowed: 'standard' or 'modified'.")
 #----------------------------------------------------------------------------------------------------------#
-def DH_params(**kwargs):
+def DH_params(*joint_values,**kwargs):
     """
     Performs the denavit-hartenberg algorithm
     and calculates T44 = A0 * A1 * A2 * ... * An multiplication.
@@ -65,18 +65,20 @@ def DH_params(**kwargs):
         kwargs['convention'] = 'standard'
 
     row_length = 5
-    nbr_of_sections = int(len(kwargs['table']) / row_length)
+    nbr_of_joints = len(joint_values)
     if len(kwargs['table']) == 1 and type(kwargs['table'][0]) in [list, tuple]:
         raise ArithmeticError("Function does not use lists or tuples, please unpack using * operator.")
     elif not (len(kwargs['table']) % row_length == 0):
         raise ArithmeticError("Invalid number of Denavit-Hartenberg parameters - you also need to supply type of joint")
 
     matrices = []
-    for k in xrange(0, nbr_of_sections):
+    for k in xrange(0, nbr_of_joints):
         # Performing the operation
         # A, alpha, D, theta = params['A'], params['alpha'], params['D'], params['theta']
         # in a very general way
-        var_names, var_values = kwargs['order'],kwargs['table'][row_length*k : row_length*k + row_length]
+        var_names, var_values, joint_type = kwargs['order'],\
+                                            kwargs['table'][row_length*k : row_length*k + row_length-1],\
+                                            kwargs['table'][row_length*k + row_length-1]
         for i in xrange(row_length-1):
             exec('%s = %0.16f' % (var_names[i], var_values[i]))
             
@@ -88,18 +90,20 @@ def DH_params(**kwargs):
         else:
             raise ArithmeticError("Unknown unit of length, only meters('m' or 'metre')"+\
             +" or millimeters ('mm' or 'millimetre') allowed.")
-        matrices.append( transform_to_next(A, alpha, D, theta) )
+        if joint_type == 'R':
+            matrices.append( transform_to_next(A, alpha, D, theta+joint_values[k]) )
+        elif joint_type == 'P':
+            matrices.append( transform_to_next(A, alpha, D+joint_values[k], theta) )
 
     # collect information about the Denivit-Hartenberg table
-    DH = {
+    dh_table = {
     'table' : kwargs['table'],
     'unit': kwargs['unit'],
     'convention':kwargs['convention'],
     'order': kwargs['order'],
-    
     }    
     # perform matrix chain-multiplication / serial-multiplication with matrix product
-    return matmul(*matrices), matrices, DH
+    return matmul(*matrices), matrices, dh_table
 #----------------------------------------------------------------------------------------------------------#
 def calc_tool(_DH, *joint_values):
     DH = _DH.copy()
@@ -114,7 +118,7 @@ def calc_tool(_DH, *joint_values):
         elif k == 'P':
             DH['table'][i*5+prismatic_index] += k
 
-    tool0, Ai, _ = DH_params(**DH)
+    tool0, Ai, _  = DH_params(*joint_values, **DH)
     return tool0, Ai
 #----------------------------------------------------------------------------------------------------------#
 def calc_wcp(T44, L=None):
