@@ -14,7 +14,6 @@ atan2 = lambda y,x: deg(n.arctan2(y,x))
 
 up_to = lambda i: custom_round(matmul(*[debug[x] for x in range(i)]))
 #----------------------------------------------------------------------------------------------------------#
-
 def transform_to_next(A, alpha, D, theta, convention='standard'):
     """
     Calculats transform from frame J = I-1 to I
@@ -122,6 +121,7 @@ def forward_kinematics(*joint_values,**kwargs):
 #----------------------------------------------------------------------------------------------------------#
 def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]
+#----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     print dh_table
     #Calculate last angles

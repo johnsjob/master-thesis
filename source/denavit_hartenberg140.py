@@ -20,33 +20,7 @@ DH_TABLE = {  'table':[-70, 90, 352, 180,'R',
              'unit': 'mm',
              'order': ['A','alpha','D','theta'],
              'convention': 'standard'
-    }
-#----------------------------------------------------------------------------------------------------------#
-def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
-    print dh_table
-    #Calculate last angles
-    R = T44[0:3,0:3]    
-    H3, _ = forward_kinematics(j1, j2, j3, **dh_table)
-    R3 = H3[0:3, 0:3]
-
-    R36 = R3.T.dot(R)
-    X = R36[:,0]
-    Y = R36[:,1]
-    Z = R36[:,2]
-    # for order of parameters check numpy.info(numpy.arctan2)
-    j4 = atan2(Z[1],Z[0])
-    j5 = atan2(norm(Z[0:2]), Z[2])
-    j6 = atan2(X[2], Y[2]) + 90
-    R36 = R36.T
-    X = R36[:,0]
-    Y = R36[:,1]
-    Z = R36[:,2]
-    # for order of parameters check numpy.info(numpy.arctan2)
-    j41 = -(atan2(X[2], Y[2]) + 90)
-    j51 = -atan2(norm(Z[0:2]), Z[2])
-    j61 = -(atan2(Z[1],Z[0]))
-    return j4, j5, j6, j41, j51, j61
-inverse_kinematics_spherical_wrist = inv_wrist
+            }
 #----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
     #Geometrical paramaters
