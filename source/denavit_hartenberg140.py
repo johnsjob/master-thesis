@@ -4,12 +4,31 @@ import sys
 #--------------------------#
 import numpy as n
 #--------------------------#
+import unittest
+#--------------------------#
 from helperfunctions_math import *
 from denavit_hartenberg import *
 from denavit_hartenberg import inverse_kinematics_spherical_wrist as inv_wrist
 #=====================================================#
 sys.path.append("../int/misc-tools/")
 import parsingtools as  parse
+#----------------------------------------------------------------------------------------------------------#
+from numpy.linalg import norm
+from numpy import arctan2 as atan2, arccos as acos, arcsin as asin, sqrt, arctan as atan
+#----------------------------------------------------------------------------------------------------------#
+rad = lambda x: x * pi / 180.0
+deg = lambda x: x * 180.0 / pi
+cos2 = lambda x: n.cos(rad(x))
+sin2 = lambda x: n.sin(rad(x))
+
+cos_sats = lambda a,b,th: a**2 + b**2 - 2*a*b*cos(rad(th)); #ok
+ang_sats = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(-2*a*b))); #ok
+ang_sats2 = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(2*a*b))); #ok
+round = lambda x: custom_round(x)
+atan = lambda x: deg(n.arctan(x))
+atan2 = lambda y,x: deg(n.arctan2(y,x))
+
+up_to = lambda i: custom_round(matmul(*[debug[x] for x in range(i)]))
 #----------------------------------------------------------------------------------------------------------#
 DH_TABLE = {  'table':[-70, 90, 352, 180,'R',
                      360, 0, 0, 90,'R',
@@ -185,24 +204,90 @@ def clear():
     for i in xrange(0,100):
         print ''
 #----------------------------------------------------------------------------------------------------------#
-from numpy.linalg import norm
-from numpy import arctan2 as atan2, arccos as acos, arcsin as asin, sqrt, arctan as atan
-#----------------------------------------------------------------------------------------------------------#
-rad = lambda x: x * pi / 180.0
-deg = lambda x: x * 180.0 / pi
-cos2 = lambda x: n.cos(rad(x))
-sin2 = lambda x: n.sin(rad(x))
+class TestIRB140(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(TestIRB140, self).__init__(*args, **kwargs)
+        
+    def setUp(self):
+        data = parse.parse_file("C:\\robot-studio-output.txt")
+        num_joint_conf = len(data['Joint_1_T'])
 
-cos_sats = lambda a,b,th: a**2 + b**2 - 2*a*b*cos(rad(th)); #ok
-ang_sats = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(-2*a*b))); #ok
-ang_sats2 = lambda c,a,b: deg(acos((c**2 - a**2 - b**2)/(2*a*b))); #ok
-round = lambda x: custom_round(x)
-atan = lambda x: deg(n.arctan(x))
-atan2 = lambda y,x: deg(n.arctan2(y,x))
+        self.data = data
+        self.num_joint_conf = num_joint_conf
+        self.T44 = mat(data['T44'][:]).reshape((num_joint_conf,4,4))
+        print "\nNumber of configurations: " + str(self.num_joint_conf) + "\n"
 
-up_to = lambda i: custom_round(matmul(*[debug[x] for x in range(i)]))
+        a,b,c,d,e,f = data['Joint_1'][:], data['Joint_2'][:],\
+                      data['Joint_3'][:], data['Joint_4'][:],\
+                      data['Joint_5'][:], data['Joint_6'][:]
+        self.joint_values = zip(a,b,c,d,e,f)
+
+    def test_forward_kinematics(self):
+        data = self.data
+        num_joint_conf = self.num_joint_conf
+        for index in xrange(num_joint_conf):
+            #T44 = mat(data['T44'][index]).reshape((4,4))
+            T44 = self.T44[index]
+
+##            for key in data:
+##                if 'T' in key:
+##                    data[key] = mat(data[key]).reshape(num_joint_conf,4,4)
+
+            a,b,c,d,e,f = self.joint_values[index]
+            A, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
+
+            print "T44 sanity check-norm: " + str(norm(T44 - A))
+            self.assertLess(norm(T44 - A), 1e-7)
+        
+    def test_inverse_kinematics(self):
+        nans = 0
+        for index in xrange(self.num_joint_conf):
+            T44 = self.T44[index]
+            sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
+
+            a,b,c,d,e,f = self.joint_values[index]
+            s0 = mat([a,b,c,d,e,f])
+            print "\n[ IK %s ]" % str(index)
+
+            num_zeroed_angle_norms = 0
+            for i in xrange(0, 8):
+                s = sol[:,i]
+                gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
+                A, debug = forward_kinematics(gamma0, gamma1, gamma2,
+                                                 gamma3, gamma4, gamma5, **DH_TABLE)
+                p0 = debug[0][:,3]
+                p1 = matmul(debug[0],debug[1])[:,3]
+                p2 = matmul(debug[0],debug[1],debug[2])[:,3]
+                p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
+                p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
+                p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
+                fk_norm = norm(A - T44)
+                angle_norm = norm(s - s0)
+                print "Solution: %s" % str(i)
+                print "FK-norm: " + str(fk_norm)
+                if n.isnan(fk_norm):
+                    nans += 1
+                    print A
+                    print T44
+                    print s
+                    print s0
+                    continue
+                self.assertLess(fk_norm, 1e-14)
+                print "angle-norm: %s" % str(angle_norm)
+                if angle_norm < 1e-8:
+                    num_zeroed_angle_norms += 1
+                elif int(angle_norm) == 360:
+                    num_zeroed_angle_norms += 1
+                    
+                elif angle_norm < 1:
+                    print str(s - s0)
+            self.assertGreaterEqual(num_zeroed_angle_norms, 1)
+        print 'nans = '+str(nans)
+        self.assertEqual(nans, 0)
 #----------------------------------------------------------------------------------------------------------#
+
 if __name__ == '__main__':
+#    unittest.main()
     """
     GENERAL COMMENTS:
     ################

@@ -123,7 +123,6 @@ def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]
 #----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
-    print dh_table
     #Calculate last angles
     R = T44[0:3,0:3]    
     H3, _ = forward_kinematics(j1, j2, j3, **dh_table)
