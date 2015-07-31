@@ -205,8 +205,6 @@ def clear():
         print ''
 #----------------------------------------------------------------------------------------------------------#
 class TestIRB140(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super(TestIRB140, self).__init__(*args, **kwargs)
         
     def setUp(self):
         data = parse.parse_file("C:\\robot-studio-output.txt")
