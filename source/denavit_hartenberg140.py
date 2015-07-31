@@ -206,22 +206,19 @@ def clear():
 #----------------------------------------------------------------------------------------------------------#
 class TestIRB140(unittest.TestCase):
         
-    def setUp(self):
+    def test_forward_kinematics(self):
         data = parse.parse_file("C:\\robot-studio-output.txt")
         num_joint_conf = len(data['Joint_1_T'])
 
         self.data = data
         self.num_joint_conf = num_joint_conf
         self.T44 = mat(data['T44'][:]).reshape((num_joint_conf,4,4))
-        print "\nNumber of configurations: " + str(self.num_joint_conf) + "\n"
 
         a,b,c,d,e,f = data['Joint_1'][:], data['Joint_2'][:],\
                       data['Joint_3'][:], data['Joint_4'][:],\
                       data['Joint_5'][:], data['Joint_6'][:]
         self.joint_values = zip(a,b,c,d,e,f)
 
-    def test_forward_kinematics(self):
-        print '### TEST-forward-kinematics-from-file\n'
         data = self.data
         num_joint_conf = self.num_joint_conf
         for index in xrange(num_joint_conf):
@@ -239,6 +236,19 @@ class TestIRB140(unittest.TestCase):
             self.assertLess(norm(T44 - A), 1e-7)
         
     def test_inverse_kinematics(self):
+        data = parse.parse_file("C:\\robot-studio-output.txt")
+        num_joint_conf = len(data['Joint_1_T'])
+
+        self.data = data
+        self.num_joint_conf = num_joint_conf
+        self.T44 = mat(data['T44'][:]).reshape((num_joint_conf,4,4))
+        print "\nNumber of configurations: " + str(self.num_joint_conf) + "\n"
+
+        a,b,c,d,e,f = data['Joint_1'][:], data['Joint_2'][:],\
+                      data['Joint_3'][:], data['Joint_4'][:],\
+                      data['Joint_5'][:], data['Joint_6'][:]
+        self.joint_values = zip(a,b,c,d,e,f)
+
         print '### TEST-inverse-kinematics-from-file'
         nans = 0
         total_valid_sols = 0
@@ -298,6 +308,138 @@ class TestIRB140(unittest.TestCase):
         print 'total_valid = '+str(total_valid_sols)
         print 'total_possible = '+str(self.num_joint_conf*8)
         print 'total_zeroed_angles = '+str(num_zeroed_angles)
+
+    def test_elbow_down(self):
+        print 'Testing Elbow-down solutions.'
+        for _ in xrange(100):
+            j1 =  rand_range(-180, 180)
+            j2 = 40
+            j3 = -100
+            j4 = rand_range(-200, 200)
+            j5 = rand_range(-115, 115)
+            j6 = rand_range(-400, 400)
+            A, debug = forward_kinematics(j1,j2,j3,j4,j5,j6,**DH_TABLE)
+
+            s = inverse_kinematics_elbow_down(DH_TABLE, A)
+            self.assertNotEqual(n.isnan(n.sum(s)), True)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+
+            s = inverse_kinematics_elbow_up(DH_TABLE, A)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+
+
+    def test_elbow_up(self):
+        print 'Testing Elbow-up solutions.'
+        for _ in xrange(100):
+            j1 =  rand_range(-180, 180)
+            j2 = 40
+            j3 = -30
+            j4 = rand_range(-200, 200)
+            j5 = rand_range(-115, 115)
+            j6 = rand_range(-400, 400)
+            A, debug = forward_kinematics(j1,j2,j3,j4,j5,j6,**DH_TABLE)
+
+            s = inverse_kinematics_elbow_up(DH_TABLE, A)
+            self.assertNotEqual(n.isnan(n.sum(s)), True)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+
+            s = inverse_kinematics_elbow_down(DH_TABLE, A)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+
+    def test_elbow_up_flipped(self):
+        print 'Testing Elbow-up-flipped solutions.'
+        for _ in xrange(100):
+            j1 =  rand_range(-180, 180)
+            j2 = -90
+            j3 = -30
+            j4 = rand_range(-200, 200)
+            j5 = rand_range(-115, 115)
+            j6 = rand_range(-400, 400)
+            A, debug = forward_kinematics(j1,j2,j3,j4,j5,j6,**DH_TABLE)
+
+            s = inverse_kinematics_elbow_up(DH_TABLE, A, flipped = True)
+            self.assertNotEqual(n.isnan(n.sum(s)), True)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+
+            s = inverse_kinematics_elbow_down(DH_TABLE, A, flipped = True)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+
+    def test_elbow_down_flipped(self):
+        print 'Testing Elbow-down-flipped solutions.'
+        for _ in xrange(100):
+            j1 =  rand_range(-180, 180)
+            j2 = -40
+            j3 = -100
+            j4 = rand_range(-200, 200)
+            j5 = rand_range(-115, 115)
+            j6 = rand_range(-400, 400)
+            A, debug = forward_kinematics(j1,j2,j3,j4,j5,j6,**DH_TABLE)
+
+            sol = mat([j1,j2,j3,j4,j5,j6])
+            s = inverse_kinematics_elbow_down(DH_TABLE, A, flipped = True)
+            self.assertNotEqual(n.isnan(n.sum(s)), True)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+
+            s = inverse_kinematics_elbow_up(DH_TABLE, A, flipped = True)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+            
+
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
     unittest.main()
@@ -328,62 +470,74 @@ if __name__ == '__main__':
 ##
 ##    print "\nNumber of configurations: " + str(len(data['Joint_1'])) + "\n"
 ##    a,b,c,d,e,f = data['Joint_1'][index], data['Joint_2'][index], data['Joint_3'][index], data['Joint_4'][index], data['Joint_5'][index], data['Joint_6'][index],
-##
-##    A, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
-##
-##    print "T44 sanity check-norm: " + str(norm(T44 - A))
-##
-##    p_end = T44[0:3,3]
-##    wcp = calc_wcp(T44, 0.065)
-##    sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
-##    s0 = mat([a,b,c,d,e,f])
-##    all_norms = 0
-##
-##    solution_names = ['sol_elbup1', 'sol_elbdown1', 'sol_elbup1_fl', 'sol_elbdown1_fl',
-##                      'sol_elbup2', 'sol_elbdown2', 'sol_elbup2_fl', 'sol_elbdown2_fl']
-##
-##    num_valid_solutions = 0
-##    for i in xrange(0, 8):
-##        s = sol[:,i]
-##        num_valid_solutions += check_solution(*s)
-##        print check_solution(*s)
-##        print s
-##        gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-##        A, debug = forward_kinematics(gamma0, gamma1, gamma2,
-##                                         gamma3, gamma4, gamma5, **DH_TABLE)
-##        p0 = debug[0][:,3]
-##        p1 = matmul(debug[0],debug[1])[:,3]
-##        p2 = matmul(debug[0],debug[1],debug[2])[:,3]
-##        p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
-##        p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
-##        p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
-##
-##        print "\n\t[ Solution %s ]" % solution_names[i]
-##        print "\tFK-norm: " + str( norm(A - T44) )
-##        all_norms = all_norms + norm(A - T44)
-##        print "\tangle-norm: %0.2f" % norm(s - s0)
-##
-##        #Plotting
-##        from pylab import plot, show, legend
-##        M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
-##        if (i % 4) == 0:
-##            col = 'b-'
-##            lw = 3
-##        if (i % 4) == 1:
-##            col = 'r-'
-##            lw = 3
-##        if (i % 4) == 2:
-##            col = 'b-.'
-##            lw = 2
-##        if (i % 4) == 3:
-##            col = 'r-.'
-##            lw = 2
-##        plot(M[:,0], M[:,2], col, linewidth = lw)
-##        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
-##                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
-##    print "FK-norm-summary: " + str( all_norms )
-##    print "Num valid solutions: " + str( num_valid_solutions )
-##    plot([-1,-1,1,1],[0,1,1,0],'w')
-##    plot(wcp[0], wcp[2], 'ro')
-##    plot(p_end[0], p_end[2], 'ko')
-##    show()
+
+####    j1 = rand_range(-180, 180)
+####    j2 = -40
+####    j3 = -100
+####    j4 = rand_range(-200, 200)
+####    j5 = rand_range(-115, 115)
+####    j6 = rand_range(-400, 400)
+####    a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
+####
+####
+####    T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
+####
+####    #print "T44 sanity check-norm: " + str(norm(T44 - A))
+####
+####    p_end = T44[0:3,3]
+####    wcp = calc_wcp(T44, 0.065)
+####    sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
+####    s0 = mat([a,b,c,d,e,f])
+####    all_norms = 0
+####
+####    solution_names = ['sol_elbup1', 'sol_elbdown1', 'sol_elbup1_fl', 'sol_elbdown1_fl',
+####                      'sol_elbup2', 'sol_elbdown2', 'sol_elbup2_fl', 'sol_elbdown2_fl']
+####
+####    num_valid_solutions = 0
+####    for i in xrange(0, 8):
+####        if not ((i == 2) or (i == 3) or (i == 6) or (i == 7)):
+####            continue 
+####            
+####        s = sol[:,i]
+####        num_valid_solutions += check_solution(*s)
+####        print check_solution(*s)
+####        print s
+####        gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
+####        A, debug = forward_kinematics(gamma0, gamma1, gamma2,
+####                                         gamma3, gamma4, gamma5, **DH_TABLE)
+####        p0 = debug[0][:,3]
+####        p1 = matmul(debug[0],debug[1])[:,3]
+####        p2 = matmul(debug[0],debug[1],debug[2])[:,3]
+####        p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
+####        p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
+####        p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
+####
+####        print "\n\t[ Solution %s ]" % solution_names[i]
+####        print "\tFK-norm: " + str( norm(A - T44) )
+####        all_norms = all_norms + norm(A - T44)
+####        print "\tangle-norm: %0.2f" % norm(s - s0)
+####
+####        #Plotting
+####        from pylab import plot, show, legend
+####        M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
+####        if (i % 4) == 0:
+####            col = 'b-'
+####            lw = 3
+####        if (i % 4) == 1:
+####            col = 'r-'
+####            lw = 3
+####        if (i % 4) == 2:
+####            col = 'b-.'
+####            lw = 2
+####        if (i % 4) == 3:
+####            col = 'r-.'
+####            lw = 2
+####        plot(M[:,0], M[:,2], col, linewidth = lw)
+####        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
+####                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
+####    print "FK-norm-summary: " + str( all_norms )
+####    print "Num valid solutions: " + str( num_valid_solutions )
+####    plot([-1,-1,1,1],[0,1,1,0],'w')
+####    plot(wcp[0], wcp[2], 'ro')
+####    plot(p_end[0], p_end[2], 'ko')
+####    show()
