@@ -69,16 +69,25 @@ def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
         ### elbow-up ###
         # Third angle - j3
         th3 = ang_sats2(x1, alpha, beta)
-        j3 = th3 - 90
+        j3 =  th3 - 90
 
         # Second angle - j2
         th21 = atan2(s, x0)
         th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-        if h2-h1 < 0:
-            th2 = -(th21-th22)
+        if h2 - h1 < 0:
+            if norm(wcp[:2]) < norm(p0[:2]):
+                th2 = -(th21 + th22)
+                j2 = -(90 - th2)
+            else:
+                th2 = -(th21 - th22)
         else:
-            th2 = th21 + th22
-        j2 = 90 - th2
+            if norm(wcp[:2]) < norm(p0[:2]):
+                th2 = th21 - th22
+                j2 = -(90 - th2)
+            else:
+                th2 = th21 + th22
+        if not 'j2' in locals():
+            j2 = 90 - th2
     else:
         ### elbow-up (actually inverse, upside-down) ###
         # Third angle - j3
@@ -129,10 +138,19 @@ def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
         th21 = atan2(s, x0)
         th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
         if h2-h1 < 0:
-            th2 = -(th21+th22)
+            if norm(wcp[:2]) < norm(p0[:2]):
+                th2 =  -(th21 - th22)
+                j2 = -(90 - th2)
+            else:
+                th2 = -(th21 + th22)
         else:
-            th2 =  th21 - th22
-        j2 = 90 - th2
+            if norm(wcp[:2]) < norm(p0[:2]):
+                th2 = th21 + th22
+                j2 = -(90 - th2)
+            else:
+                th2 =  th21 - th22
+        if not 'j2' in locals():
+            j2 = 90 - th2
     else:
         ### elbow-down (actually inverse, upside-down) ###
         # Third angle - j3
@@ -215,108 +233,6 @@ def custom_round(v, prec = 1e-8):
 def clear():
     for i in xrange(0,100):
         print ''
-#----------------------------------------------------------------------------------------------------------#
-if __name__ == '__main__':
-##    unittest.main()
-##    """
-##    GENERAL COMMENTS:
-##    ################
-##        data['Joint_(i)_T'] = cumulative multiplication of up to i-1 of joint T-matrices
-##
-##        'debug' contains i:th matrices of python implementation of DH-algorithm
-##
-##        lambda function up_to(i) performs cumulative multiplication up to i:th joint
-##
-##        wcp = data['Joint_6_T'][index] = up_to(5)
-##    """
-##    clear()
-##    index = -1
-##
-##    data = parse.parse_file("C:\\robot-studio-output.txt")
-##    num_joint_conf = len(data['Joint_1_T'])
-##            
-##            
-##    params = zip(data['A'], data['alpha'], data['D'], data['theta'])
-##    T44 = mat(data['T44'][index]).reshape((4,4))
-##
-##    for key in data:
-##        if 'T' in key:
-##            data[key] = custom_round(mat(data[key]).reshape(num_joint_conf,4,4))
-##
-##    print "\nNumber of configurations: " + str(len(data['Joint_1'])) + "\n"
-##    a,b,c,d,e,f = data['Joint_1'][index], data['Joint_2'][index], data['Joint_3'][index], data['Joint_4'][index], data['Joint_5'][index], data['Joint_6'][index],
-
-    j1 = 0
-    j2 =  67.81576827839055
-    j3 = -222.64836963410147
-    j4 =  157.78092915244753
-    j5 =  109.07390106077256
-    j6 = -95.98652095283182
-    a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
-
-
-    T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
-
-    #print "T44 sanity check-norm: " + str(norm(T44 - A))
-
-    p_end = T44[0:3,3]
-    wcp = calc_wcp(T44, 0.065)
-    sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
-    s0 = mat([a,b,c,d,e,f])
-    all_norms = 0
-
-    solution_names = ['sol_elbup1', 'sol_elbdown1', 'sol_elbup1_fl', 'sol_elbdown1_fl',
-                      'sol_elbup2', 'sol_elbdown2', 'sol_elbup2_fl', 'sol_elbdown2_fl']
-
-    num_valid_solutions = 0
-    for i in xrange(0, 8):
-##        if not ((i == 1)):
-##            continue 
-        s = sol[:,i]
-        num_valid_solutions += check_solution(*s)
-        print check_solution(*s)
-        print s
-        gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-        A, debug = forward_kinematics(gamma0, gamma1, gamma2,
-                                         gamma3, gamma4, gamma5, **DH_TABLE)
-        A = A
-        p0 = debug[0][:,3]
-        p1 = matmul(debug[0],debug[1])[:,3]
-        p2 = matmul(debug[0],debug[1],debug[2])[:,3]
-        p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
-        p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
-        p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
-
-        print "\n\t[ Solution %s ]" % solution_names[i]
-        print "\tFK-norm: " + str( norm(A - T44) )
-        all_norms = all_norms + norm(A - T44)
-        print "\tangle-norm: %0.2f" % norm(s - s0)
-
-        #Plotting
-        from pylab import plot, show, legend
-        M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
-        if (i % 4) == 0:
-            col = 'b-'
-            lw = 3
-        if (i % 4) == 1:
-            col = 'r-'
-            lw = 3
-        if (i % 4) == 2:
-            col = 'b-.'
-            lw = 2
-        if (i % 4) == 3:
-            col = 'r-.'
-            lw = 2
-        plot(M[:,0], M[:,2], col, linewidth = lw)
-        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
-                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
-    print "FK-norm-summary: " + str( all_norms )
-    print "Num valid solutions: " + str( num_valid_solutions )
-    plot([-1,-1,1,1],[0,1,1,0],'w')
-    plot(wcp[0], wcp[2], 'ro')
-    plot(p_end[0], p_end[2], 'ko')
-    show()
-
 #----------------------------------------------------------------------------------------------------------#
 class TestIRB140(unittest.TestCase):
         
@@ -629,3 +545,110 @@ class TestIRB140(unittest.TestCase):
                     except Exception:
                         import pdb; pdb.set_trace()
             self.assertGreaterEqual(num_valid_solutions, 1)
+#----------------------------------------------------------------------------------------------------------#
+if __name__ == '__main__':
+##    unittest.main()
+##    """
+##    GENERAL COMMENTS:
+##    ################
+##        data['Joint_(i)_T'] = cumulative multiplication of up to i-1 of joint T-matrices
+##
+##        'debug' contains i:th matrices of python implementation of DH-algorithm
+##
+##        lambda function up_to(i) performs cumulative multiplication up to i:th joint
+##
+##        wcp = data['Joint_6_T'][index] = up_to(5)
+##    """
+##    clear()
+##    index = -1
+##
+##    data = parse.parse_file("C:\\robot-studio-output.txt")
+##    num_joint_conf = len(data['Joint_1_T'])
+##            
+##            
+##    params = zip(data['A'], data['alpha'], data['D'], data['theta'])
+##    T44 = mat(data['T44'][index]).reshape((4,4))
+##
+##    for key in data:
+##        if 'T' in key:
+##            data[key] = custom_round(mat(data[key]).reshape(num_joint_conf,4,4))
+##
+##    print "\nNumber of configurations: " + str(len(data['Joint_1'])) + "\n"
+##    a,b,c,d,e,f = data['Joint_1'][index], data['Joint_2'][index], data['Joint_3'][index], data['Joint_4'][index], data['Joint_5'][index], data['Joint_6'][index],
+
+##    j1 = 0
+##    j2 = 0
+##    j3 = -105
+##    j4 =  157.78092915244753
+##    j5 =  109.07390106077256
+##    j6 = -95.98652095283182
+
+    j1 = 0
+    j2 = -10
+    j3 = -89
+    j4 =  157.78092915244753
+    j5 =  109.07390106077256
+    j6 = -95.98652095283182
+
+    a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
+    T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
+
+    #print "T44 sanity check-norm: " + str(norm(T44 - A))
+
+    p_end = T44[0:3,3]
+    wcp = calc_wcp(T44, 0.065)
+    sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
+    s0 = mat([a,b,c,d,e,f])
+    all_norms = 0
+
+    solution_names = ['sol_elbup1', 'sol_elbdown1', 'sol_elbup1_fl', 'sol_elbdown1_fl',
+                      'sol_elbup2', 'sol_elbdown2', 'sol_elbup2_fl', 'sol_elbdown2_fl']
+
+    num_valid_solutions = 0
+    for i in xrange(0, 8):
+##        if not ((i == 1)):
+##            continue 
+        s = sol[:,i]
+        num_valid_solutions += check_solution(*s)
+        print check_solution(*s)
+        print s
+        gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
+        A, debug = forward_kinematics(gamma0, gamma1, gamma2,
+                                         gamma3, gamma4, gamma5, **DH_TABLE)
+        A = A
+        p0 = debug[0][:,3]
+        p1 = matmul(debug[0],debug[1])[:,3]
+        p2 = matmul(debug[0],debug[1],debug[2])[:,3]
+        p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
+        p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
+        p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
+
+        print "\n\t[ Solution %s ]" % solution_names[i]
+        print "\tFK-norm: " + str( norm(A - T44) )
+        all_norms = all_norms + norm(A - T44)
+        print "\tangle-norm: %0.2f" % norm(s - s0)
+
+        #Plotting
+        from pylab import plot, show, legend
+        M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
+        if (i % 4) == 0:
+            col = 'b-'
+            lw = 3
+        if (i % 4) == 1:
+            col = 'r-'
+            lw = 3
+        if (i % 4) == 2:
+            col = 'b-.'
+            lw = 2
+        if (i % 4) == 3:
+            col = 'r-.'
+            lw = 2
+        plot(M[:,0], M[:,2], col, linewidth = lw)
+        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
+                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
+    print "FK-norm-summary: " + str( all_norms )
+    print "Num valid solutions: " + str( num_valid_solutions )
+    plot([-1,-1,1,1],[0,1,1,0],'w')
+    plot(wcp[0], wcp[2], 'ro')
+    plot(p_end[0], p_end[2], 'ko')
+    show()
