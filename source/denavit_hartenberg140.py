@@ -77,7 +77,7 @@ def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
         if h2 - h1 < 0:
             if norm(wcp[:2]) < norm(p0[:2]):
                 th2 = -(th21 + th22)
-                j2 = -(90 - th2)
+                j2 = -(90 - th2)+360
             else:
                 th2 = -(th21 - th22)
         else:
@@ -103,6 +103,7 @@ def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
         j2 = -(90-th2)
     j4, j5, j6,\
         j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+
     return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
 
 def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
@@ -167,10 +168,20 @@ def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
 
     j4, j5, j6,\
         j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+
+
+    j1 = adjust_range(j1, -180, 180)
+    j2 = adjust_range(j2, -90, 110)
+    j3 = adjust_range(j3, -230, 50)
+    j4 = adjust_range(j4, -200, 200)
+    j5 = adjust_range(j5, -115, 115)
+    j6 = adjust_range(j6, -400, 400)
+    j41 = adjust_range(j41, -200, 200)
+    j51 = adjust_range(j51, -115, 115)
+    j61 = adjust_range(j61, -400, 400)
     return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
     
 def check_range(x, _min, _max, inclusive=True):
-
     #swap if needed
     if _max < _min:
         _max, _min = _min, _max
@@ -179,6 +190,20 @@ def check_range(x, _min, _max, inclusive=True):
         return _min <= x <= _max
     else:
         return _min < x < _max
+
+def adjust_range(x, _min, _max, inclusive=True, adjust_value = 360.0):
+    #swap if needed
+    if _max < _min:
+        _max, _min = _min, _max
+
+    if check_range(x, _min, _max, inclusive) == False:
+        if x < _min:
+            ret = x + adjust_value
+        else:
+            ret = x - adjust_value
+        return ret
+    else:
+        return x
 
 def check_solution(j1,j2,j3,j4,j5,j6, inclusive=True):
     sol  = check_range(j1, -180, 180, inclusive)
@@ -512,7 +537,7 @@ class TestIRB140(unittest.TestCase):
     def test_forward_kinematics_general(self):
         print '\ntest_forward_kinematics_general'
 
-        for _ in xrange(100):
+        for _ in xrange(100000):
             j1 = rand_range(-180, 180)
             j2 = rand_range(-90, 110)
             j3 = rand_range(-230, 50)
@@ -544,7 +569,10 @@ class TestIRB140(unittest.TestCase):
                         self.assertAlmostEqual(error, 0)
                     except Exception:
                         import pdb; pdb.set_trace()
-            self.assertGreaterEqual(num_valid_solutions, 1)
+            try:
+                self.assertGreaterEqual(num_valid_solutions, 1)
+            except Exception:
+                import pdb; pdb.set_trace()
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
 ##    unittest.main()
@@ -583,12 +611,26 @@ if __name__ == '__main__':
 ##    j5 =  109.07390106077256
 ##    j6 = -95.98652095283182
 
-    j1 = 0
-    j2 = -10
-    j3 = -89
-    j4 =  157.78092915244753
-    j5 =  109.07390106077256
-    j6 = -95.98652095283182
+##    j1 = 0
+##    j2 = -10
+##    j3 = -89
+##    j4 =  157.78092915244753
+##    j5 =  109.07390106077256
+##    j6 = -95.98652095283182
+
+    j1 = -113.41114583849777
+    j2 = 108.70369507191415
+    j3 = 48.03819273628227
+    j4 = 27.748005041418196
+    j5 = 106.60294661735583
+    j6 = 57.11190620943745
+
+    j1 =  rand_range(-180, 180)
+    j2 =  rand_range(-90, 110)
+    j3 =  rand_range(-230, 50)
+    j4 =  rand_range(-200, 200)
+    j5 =  rand_range(-115, 115)
+    j6 =  rand_range(-400, 400)
 
     a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
     T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
@@ -606,12 +648,12 @@ if __name__ == '__main__':
 
     num_valid_solutions = 0
     for i in xrange(0, 8):
-##        if not ((i == 1)):
+##        if not ((i == 6) or (i==2)):
 ##            continue 
         s = sol[:,i]
         num_valid_solutions += check_solution(*s)
-        print check_solution(*s)
         print s
+        print check_solution(*s)
         gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
         A, debug = forward_kinematics(gamma0, gamma1, gamma2,
                                          gamma3, gamma4, gamma5, **DH_TABLE)
