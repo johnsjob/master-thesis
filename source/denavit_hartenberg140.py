@@ -551,7 +551,7 @@ class TestIRB140(unittest.TestCase):
                 for s in sol.T:
                     A, debug2  = forward_kinematics(*s, **DH_TABLE)
                     self.assertAlmostEqual(norm(A-T44), 0)
-
+                    
     def test_forward_kinematics_general(self):
         print '\ntest_forward_kinematics_general'
 
@@ -595,6 +595,15 @@ class TestIRB140(unittest.TestCase):
                 self.assertEqual(num_valid_solutions, calc_valid_inv_kin_IRB140(DH_TABLE, T44).shape[1])
             except Exception:
                 import pdb; pdb.set_trace()
+
+            L = []
+            for s in iterdim(sol,1):
+                if check_solution(*s) == True:
+                    L.append(s)
+            L = mat(L).T
+            self.assertTrue(norm(calc_valid_inv_kin_IRB140(DH_TABLE, T44)- L) == 0.0)
+            
+                
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
     unittest.main()
@@ -654,13 +663,13 @@ if __name__ == '__main__':
     j5 =  rand_range(-115, 115)
     j6 =  rand_range(-400, 400)
 
-    j1 = 0
-    j2 = 0
-    j3 = 0
-
-    j4 = 0
-    j5 = 0
-    j6 = 380
+##    j1 = 0
+##    j2 = 0
+##    j3 = 0
+##
+##    j4 = 0
+##    j5 = 0
+##    j6 = 380
 
     a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
     T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
