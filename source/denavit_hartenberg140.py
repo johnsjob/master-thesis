@@ -104,6 +104,7 @@ def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
     j4, j5, j6,\
         j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
 
+    # returns non-flipped, flipped
     return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
 
 def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
@@ -230,9 +231,14 @@ def inverse_kinematics_irb140(dh_table, T44):
     sol_elbup1_fl,   sol_elbup2_fl   = inverse_kinematics_elbow_up(dh_table, T44, flipped = True)
     sol_elbdown1_fl, sol_elbdown2_fl = inverse_kinematics_elbow_down(dh_table, T44, flipped = True)
 
-    #first columnt is first solution and so forth
-    return mat(zip(sol_elbup1, sol_elbdown1, sol_elbup1_fl, sol_elbdown1_fl,
+    ret = mat(zip(sol_elbup1, sol_elbdown1, sol_elbup1_fl, sol_elbdown1_fl,
                    sol_elbup2, sol_elbdown2, sol_elbup2_fl, sol_elbdown2_fl))
+    ret = n.tile(ret,(1,3))
+    ret[-1,8] = ret[-1,8] + 360.0
+    ret[-1,16] = ret[-1,16] - 360.0
+    
+    #first columnt is first solution and so forth
+    return ret
 
 def filter_solutions(solutions, filter_function = check_solution):
     result = []
@@ -258,6 +264,16 @@ def custom_round(v, prec = 1e-8):
 def clear():
     for i in xrange(0,100):
         print ''
+#----------------------------------------------------------------------------------------------------------#
+def iterdim(a, axis=0):
+  """
+  Relevant Stackoverflow:
+        http://stackoverflow.com/questions/1589706/iterating-over-arbitrary-dimension-of-numpy-array
+  """
+  a = numpy.asarray(a)
+  leading_indices = (slice(None),)*axis
+  for i in xrange(a.shape[axis]) :
+    yield a[leading_indices+(i,)]
 #----------------------------------------------------------------------------------------------------------#
 class TestIRB140(unittest.TestCase):
         
@@ -509,9 +525,11 @@ class TestIRB140(unittest.TestCase):
 
                 T44, debug1  = forward_kinematics(*s0, **DH_TABLE)
                 sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
-                for i,s in enumerate(sol.T):
+                sol = sol.T
+
+                for i,s in enumerate(sol):
                     A, debug2  = forward_kinematics(*s, **DH_TABLE)
-                    if i in [0,1,4,5]: #all non-flipped solutions only
+                    if i in [l+m*8 for m,_ in enumerate(range(0, len(sol), 8)) for l in [0,1,4,5]]: #all non-flipped solutions only
                         self.assertAlmostEqual(norm(A-T44), 0)
                     else:
                         self.assertTrue(n.isnan(norm(A-T44)))
@@ -537,7 +555,7 @@ class TestIRB140(unittest.TestCase):
     def test_forward_kinematics_general(self):
         print '\ntest_forward_kinematics_general'
 
-        for _ in xrange(100000):
+        for _ in xrange(1000):
             j1 = rand_range(-180, 180)
             j2 = rand_range(-90, 110)
             j3 = rand_range(-230, 50)
@@ -575,7 +593,7 @@ class TestIRB140(unittest.TestCase):
                 import pdb; pdb.set_trace()
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
-##    unittest.main()
+    unittest.main()
 ##    """
 ##    GENERAL COMMENTS:
 ##    ################
@@ -632,6 +650,21 @@ if __name__ == '__main__':
     j5 =  rand_range(-115, 115)
     j6 =  rand_range(-400, 400)
 
+    j1 = 0
+    j2 = 0
+    j3 = 0
+
+    j4 = 0
+    j5 = 0
+    j6 = 380
+
+    j1 = rand_range(-180, 180)
+    j2 = 90
+    j3 = -89
+    j4 = rand_range(-200, 200)
+    j5 = rand_range(-115, 115)
+    j6 = rand_range(-400, 400)
+
     a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
     T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
 
@@ -647,13 +680,8 @@ if __name__ == '__main__':
                       'sol_elbup2', 'sol_elbdown2', 'sol_elbup2_fl', 'sol_elbdown2_fl']
 
     num_valid_solutions = 0
-    for i in xrange(0, 8):
-##        if not ((i == 6) or (i==2)):
-##            continue 
-        s = sol[:,i]
+    for i,s in enumerate(iterdim(sol, axis=1)):
         num_valid_solutions += check_solution(*s)
-        print s
-        print check_solution(*s)
         gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
         A, debug = forward_kinematics(gamma0, gamma1, gamma2,
                                          gamma3, gamma4, gamma5, **DH_TABLE)
@@ -665,10 +693,11 @@ if __name__ == '__main__':
         p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
         p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
 
-        print "\n\t[ Solution %s ]" % solution_names[i]
+        print "\n\t[ Solution %s ]" % solution_names[i % 8]
         print "\tFK-norm: " + str( norm(A - T44) )
         all_norms = all_norms + norm(A - T44)
         print "\tangle-norm: %0.2f" % norm(s - s0)
+        print "\t"+str(check_solution(*s))
 
         #Plotting
         from pylab import plot, show, legend
