@@ -596,7 +596,7 @@ class TestIRB140(unittest.TestCase):
             except Exception:
                 import pdb; pdb.set_trace()
 
-            L = []
+            L = [];
             for s in iterdim(sol,1):
                 if check_solution(*s) == True:
                     L.append(s)
