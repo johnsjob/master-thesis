@@ -247,8 +247,8 @@ def filter_solutions(solutions, filter_function = check_solution):
             result.append( s )
     return mat(zip(*result))
 
-def calc_valid_inv_kin_IRB140(T44):
-    return filter_solutions( inverse_kinematics_irb140(T44) )
+def calc_valid_inv_kin_IRB140(dh_table, T44):
+    return filter_solutions( inverse_kinematics_irb140(dh_table, T44) )
 
 def create_T44(pos, orientation):
     T44 = n.zeros((4,4))
@@ -555,7 +555,7 @@ class TestIRB140(unittest.TestCase):
     def test_forward_kinematics_general(self):
         print '\ntest_forward_kinematics_general'
 
-        for _ in xrange(1000):
+        for _ in xrange(10000):
             j1 = rand_range(-180, 180)
             j2 = rand_range(-90, 110)
             j3 = rand_range(-230, 50)
@@ -589,6 +589,10 @@ class TestIRB140(unittest.TestCase):
                         import pdb; pdb.set_trace()
             try:
                 self.assertGreaterEqual(num_valid_solutions, 1)
+            except Exception:
+                import pdb; pdb.set_trace()
+            try:
+                self.assertEqual(num_valid_solutions, calc_valid_inv_kin_IRB140(DH_TABLE, T44).shape[1])
             except Exception:
                 import pdb; pdb.set_trace()
 #----------------------------------------------------------------------------------------------------------#
@@ -657,13 +661,6 @@ if __name__ == '__main__':
     j4 = 0
     j5 = 0
     j6 = 380
-
-    j1 = rand_range(-180, 180)
-    j2 = 90
-    j3 = -89
-    j4 = rand_range(-200, 200)
-    j5 = rand_range(-115, 115)
-    j6 = rand_range(-400, 400)
 
     a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
     T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
