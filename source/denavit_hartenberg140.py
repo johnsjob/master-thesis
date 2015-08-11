@@ -596,12 +596,12 @@ class TestIRB140(unittest.TestCase):
             except Exception:
                 import pdb; pdb.set_trace()
 
-            L = [];
+            L = []
             for s in iterdim(sol,1):
                 if check_solution(*s) == True:
                     L.append(s)
             L = mat(L).T
-            self.assertTrue(norm(calc_valid_inv_kin_IRB140(DH_TABLE, T44)- L) == 0.0)
+            self.assertTrue(norm(calc_valid_inv_kin_IRB140(DH_TABLE, T44) - L) == 0.0)
             
                 
 #----------------------------------------------------------------------------------------------------------#
