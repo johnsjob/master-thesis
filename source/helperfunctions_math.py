@@ -142,6 +142,8 @@ def rotation_matrix_rot_tilt_skew(rot, tilt, skew):
     '''
         creates a rotation ZXZ-mapping from subspace to worldspace
         using euler angles in degrees (extrinsic mapping)
+
+        (!) Note - rot is rotated counter-clockwise compared to ordinary euler z-rotation.
     '''
     return matmul(rotation_matrix_z(-rot), rotation_matrix_x(tilt), rotation_matrix_z(skew))
 #----------------------------------------#
@@ -149,6 +151,8 @@ def rotation_matrix_skew_tilt_rot(rot, tilt, skew):
     '''
         creates a rotation ZXZ-mapping from subspace to worldspace
         using euler angles in degrees (intrinsic mapping)
+
+        (!) Note - rot is rotated counter-clockwise compared to ordinary euler z-rotation.
     '''
     return matmul(rotation_matrix_z(skew), rotation_matrix_x(tilt), rotation_matrix_z(-rot))
 #----------------------------------------#

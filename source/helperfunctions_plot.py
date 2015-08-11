@@ -14,13 +14,13 @@ def init_plot():
     return ax, fig
 #----------------------------------------#
 def plot_plane(ax, plane,style='-'):
-    s =mat([plane[:3,3], plane[:3,0]])
+    s =mat([plane[:3,3], plane[:3,3] + plane[:3,0]])
     ax.plot(s[:,0],s[:,1],s[:,2],'b'+style)
 
-    s =mat([plane[:3,3], plane[:3,1]])
+    s =mat([plane[:3,3], plane[:3,3] + plane[:3,1]])
     ax.plot(s[:,0],s[:,1],s[:,2],'g'+style)
 
-    s =mat([plane[:3,3], plane[:3,2]])
+    s =mat([plane[:3,3], plane[:3,3] + plane[:3,2]])
     ax.plot(s[:,0],s[:,1],s[:,2],'r'+style)
 #----------------------------------------#
 def plot_equal_perspective(ax, xList, yList, zList):
@@ -50,14 +50,20 @@ if __name__ == '__main__':
     flipped = True
     r, t, s = 0,0,0
     print; print "Define planes..."
-    plane1 = define_plane_from_angles([0,0,0],45,45,180)
-    func = lambda x: n.tan(x)
-    s = generate_curve(ampl_factor=1, y_func = func)
+    plane1 = define_plane_from_angles([1,0,0],45,45,180)
+    plane2 = define_plane_from_angles([0,0,0],0,10,0)
+    plane3 = define_plane_relative_from_plane(plane1, plane2)
+    plane4 = define_plane_relative_from_angles(plane3, [0,0,0], 0,10,0)
+
+    func = lambda x: n.sin(x)
+    s = generate_curve(ampl_factor=1, y_func = func, freq=1, offset=-0.0)
     ### <[v.T 1], [[R.T t],[0 1]]>
     q = get_transformed_points(plane1, s)
     ax.scatter(q[:,0], q[:,1], q[:,2])
     
+    plot_equal_perspective(ax, [-2,2], [-2,2], [-2,2])
     plot_plane(ax, plane1)
-    plot_equal_perspective(ax, [-1,1], [-1,1], [-1,1])
+    plot_plane(ax, plane3, '-.')
+    plot_plane(ax, plane4, '--')
 
     show()

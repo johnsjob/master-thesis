@@ -56,6 +56,23 @@ def define_plane_from_angles(origin, r,t,s, system_type = 'local'):
     else:
         return plane_transform
 #----------------------------------------#
+def define_plane_relative_from_angles(plane_transform, rel_origin, r,t,s, system_type = 'local'):
+    """
+    Calculates the global plane orientation and position relative another global plane,
+    from local position and orientation.
+    """
+    rel_plane = define_plane_from_angles(rel_origin, r, t, s, system_type)
+    absolute_plane_transform = plane_transform.dot(rel_plane)
+    return absolute_plane_transform
+#----------------------------------------#
+def define_plane_relative_from_plane(plane_transform, rel_plane):
+    """
+    Calculates the global plane orientation and position relative another global plane,
+    from local position and orientation.
+    """
+    absolute_plane_transform = plane_transform.dot(rel_plane)
+    return absolute_plane_transform
+#----------------------------------------#
 def get_plane_point(plane_transform,x,y):
     """
         From a subspace plane coordinate system with local coordinates (x,y)
@@ -64,7 +81,8 @@ def get_plane_point(plane_transform,x,y):
     pos = plane_transform.dot([x,y,0,1])
     return pos
 #----------------------------------------#
-def generate_curve(t=None, y_func=n.cos, curve_factor = n.pi, freq = 1, ampl_factor=1, num_points=50):
+def generate_symmetric_curve(t=None, x_func=n.cos, y_func=n.sin,
+                   curve_factor = n.pi, freq = 1, ampl_factor=1, num_points=20, offset=0):
     """
     Genrates a Homogenous point-curve with z=0 in the following matrix form:
     [[x1, y1, 0, 1},
@@ -77,7 +95,27 @@ def generate_curve(t=None, y_func=n.cos, curve_factor = n.pi, freq = 1, ampl_fac
     le = len(t)
     y = y_func(t/t[-1]*curve_factor*freq)
     y = y / n.max( n.abs(y) )
-    point_matrix = mat(zip(t, y*ampl_factor,n.zeros(le), n.ones(le)))
+    x = x_func(t/t[-1]*curve_factor*freq)
+    x = x / n.max( n.abs(x) )
+    point_matrix = mat(zip(x, y*ampl_factor,n.zeros(le), n.ones(le)))
+    return point_matrix
+#----------------------------------------#
+def generate_curve(t=None, y_func=n.sin,
+                   curve_factor = n.pi, freq = 1, ampl_factor=1, num_points=20, offset=0):
+    """
+    Genrates a Homogenous point-curve with z=0 in the following matrix form:
+    [[x1, y1, 0, 1},
+         .....     ,
+     [xn, yn, 0, 1}]
+     in local (unransformed) plane-coordinates in metres.
+    """
+    if t is None:
+        t = n.linspace(-1, 1, num_points)
+    le = len(t)
+    y = y_func(t/t[-1]*curve_factor*freq)
+    y = y / n.max( n.abs(y) )
+    x = t
+    point_matrix = mat(zip(x+offset, y*ampl_factor,n.zeros(le), n.ones(le)))
     return point_matrix
 #----------------------------------------#
 def get_transformed_points(plane_transform, point_matrix):
