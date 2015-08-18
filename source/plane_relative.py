@@ -26,8 +26,7 @@ def define_plane_from_directions(origin, dirx, diry, system_type = 'local'):
     diry = gram_schmith_step(diry, dirx)
     diry = diry / norm(diry)
     dirx = dirx / norm(dirx)
-    normal = dirx + diry
-    normal[-1] = 1
+    normal = mat([rand(), rand(), rand()])
     normal = gram_schmith_step(normal, dirx)
     normal = gram_schmith_step(normal, diry)
 
@@ -46,6 +45,7 @@ def define_plane_from_angles(origin, r,t,s, system_type = 'local'):
     """
     if not system_type in ['local','global']:
         raise ArithmeticError('Only local or global coordinate system descriptions allowed')
+    
     R = rotation_matrix_rot_tilt_skew(r,t,s)
     plane_transform = expand_matrix(R)
     plane_transform[:3,3] = origin
@@ -82,7 +82,7 @@ def get_plane_point(plane_transform,x,y):
     return pos
 #----------------------------------------#
 def generate_symmetric_curve(t=None, x_func=n.cos, y_func=n.sin,
-                   curve_factor = n.pi, freq = 1, ampl_factor=1, num_points=20, offset=0):
+                   curve_factor = 2*n.pi, freq = 1, ampl_factor=0.1, num_points=50, offset=0):
     """
     Genrates a Homogenous point-curve with z=0 in the following matrix form:
     [[x1, y1, 0, 1},
@@ -97,11 +97,11 @@ def generate_symmetric_curve(t=None, x_func=n.cos, y_func=n.sin,
     y = y / n.max( n.abs(y) )
     x = x_func(t/t[-1]*curve_factor*freq)
     x = x / n.max( n.abs(x) )
-    point_matrix = mat(zip(x, y*ampl_factor,n.zeros(le), n.ones(le)))
+    point_matrix = mat(zip(x*ampl_factor, y*ampl_factor,n.zeros(le), n.ones(le)))
     return point_matrix
 #----------------------------------------#
-def generate_curve(t=None, y_func=n.sin,
-                   curve_factor = n.pi, freq = 1, ampl_factor=1, num_points=20, offset=0):
+def generate_curve(xmin=-0.25, xmax=0.25, x_func=None, y_func=n.sin,
+                   curve_factor = n.pi, freq = 1, ampl_factor=0.25, num_points=50, offset=0):
     """
     Genrates a Homogenous point-curve with z=0 in the following matrix form:
     [[x1, y1, 0, 1},
@@ -109,13 +109,15 @@ def generate_curve(t=None, y_func=n.sin,
      [xn, yn, 0, 1}]
      in local (unransformed) plane-coordinates in metres.
     """
-    if t is None:
-        t = n.linspace(-1, 1, num_points)
-    le = len(t)
-    y = y_func(t/t[-1]*curve_factor*freq)
+    if x_func is None:
+        if xmin > xmax:
+            xmin, xmax = xmax, xmin
+        x_func = n.linspace(xmin, xmax, num_points)
+
+    le = len(x_func)
+    y = y_func(x_func / n.abs(xmax) * curve_factor * freq)
     y = y / n.max( n.abs(y) )
-    x = t
-    point_matrix = mat(zip(x+offset, y*ampl_factor,n.zeros(le), n.ones(le)))
+    point_matrix = mat(zip(x_func + offset, y * ampl_factor, n.zeros(le), n.ones(le)))
     return point_matrix
 #----------------------------------------#
 def get_transformed_points(plane_transform, point_matrix):

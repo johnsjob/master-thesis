@@ -54,7 +54,7 @@ def asin(x, unit='rad'):
         return _asin(x)
     elif unit == 'deg':
         return rad_to_deg( _asin(x) )
-#----------------------------------------#
+#----------------------------------------------------------------------------------------------------------#
 def matmul(*matrix_factors):
     '''
         Takes a list of matrices as arguments and perform
@@ -69,6 +69,25 @@ def matmul(*matrix_factors):
         with either a vector or a matrix of type numpy.ndarray.
     '''
     return reduce(dot, matrix_factors, 1)
+#----------------------------------------------------------------------------------------------------------#
+def matmul_series(*matrix_factors):
+    '''
+        Takes a list of matrices as arguments and perform
+        a series of matrix multiplications from left to right
+        in the order given, but contrary to matmul
+        it returns each partial result in a list.
+
+        The parameters may contain vectors and scalars as well as long as
+        the matrix-vector dimensions are the same.
+
+        Note:
+        The sequence can not start with a scalar, it must start
+        with either a vector or a matrix of type numpy.ndarray.
+    '''
+    res = []
+    for i in xrange(1,len(matrix_factors)):
+        res.append(reduce(dot, matrix_factors[:i+1], 1))
+    return res
 #----------------------------------------------------------------------------------------------------------#
 def homogenous_translation_x( tx ):
     return mat([[1,        0,      0,     tx],

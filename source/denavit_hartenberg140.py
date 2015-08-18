@@ -233,9 +233,9 @@ def inverse_kinematics_irb140(dh_table, T44):
 
     ret = mat(zip(sol_elbup1, sol_elbdown1, sol_elbup1_fl, sol_elbdown1_fl,
                    sol_elbup2, sol_elbdown2, sol_elbup2_fl, sol_elbdown2_fl))
-    ret = n.tile(ret,(1,3))
-    ret[-1,8] = ret[-1,8] + 360.0
-    ret[-1,16] = ret[-1,16] - 360.0
+##    ret = n.tile(ret,(1,3))
+##    ret[-1,8] = ret[-1,8] + 360.0
+##    ret[-1,16] = ret[-1,16] - 360.0
     
     #first columnt is first solution and so forth
     return ret
@@ -606,7 +606,7 @@ class TestIRB140(unittest.TestCase):
                 
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
-    unittest.main()
+##    unittest.main()
 ##    """
 ##    GENERAL COMMENTS:
 ##    ################
@@ -678,7 +678,7 @@ if __name__ == '__main__':
 
     p_end = T44[0:3,3]
     wcp = calc_wcp(T44, 0.065)
-    sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
+    sol = inverse_kinematics_irb140(DH_TABLE, T44)
     s0 = mat([a,b,c,d,e,f])
     all_norms = 0
 
@@ -703,6 +703,7 @@ if __name__ == '__main__':
         print "\tFK-norm: " + str( norm(A - T44) )
         all_norms = all_norms + norm(A - T44)
         print "\tangle-norm: %0.2f" % norm(s - s0)
+        print str(s - s0)
         print "\t"+str(check_solution(*s))
 
         #Plotting

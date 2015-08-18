@@ -1,26 +1,24 @@
 #plot imports
 from matplotlib.pylab import plot, hlines, xlim,\
 xlabel, ylabel, plt, grid, title, legend, show
-
-from plane_relative import *
-from numpy import array
+from numpy import array as mat
 import numpy as np
 
 def init_plot():
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
-    fig = plt.figure()
+    fig = plt.figure(figsize=plt.figaspect(1/4.))
     ax = fig.gca(projection='3d') 
     return ax, fig
 #----------------------------------------#
-def plot_plane(ax, plane,style='-'):
-    s =mat([plane[:3,3], plane[:3,3] + plane[:3,0]])
+def plot_plane(ax, plane,style='-',scale_factor=1):
+    s =mat([plane[:3,3], plane[:3,3] + plane[:3,0]*scale_factor])
     ax.plot(s[:,0],s[:,1],s[:,2],'b'+style)
 
-    s =mat([plane[:3,3], plane[:3,3] + plane[:3,1]])
+    s =mat([plane[:3,3], plane[:3,3] + plane[:3,1]*scale_factor])
     ax.plot(s[:,0],s[:,1],s[:,2],'g'+style)
 
-    s =mat([plane[:3,3], plane[:3,3] + plane[:3,2]])
+    s =mat([plane[:3,3], plane[:3,3] + plane[:3,2]*scale_factor])
     ax.plot(s[:,0],s[:,1],s[:,2],'r'+style)
 #----------------------------------------#
 def plot_equal_perspective(ax, xList, yList, zList):
@@ -39,31 +37,4 @@ def plot_equal_perspective(ax, xList, yList, zList):
 ##       ax.plot([xb], [yb], [zb], 'w')    
 #----------------------------------------#
 if __name__ == '__main__':
-    print; print "Init plots..."
-    ax,_ = init_plot()
-    #----------------------------------------#
-    ### flipped = True means that we are plotting the coordinate system locally,
-    ### X,Y,Z axes align with Euclidean axes
-    ###
-    ### flipped = False means that we are plotting the coordinate system
-    ### globally in the robot world system
-    flipped = True
-    r, t, s = 0,0,0
-    print; print "Define planes..."
-    plane1 = define_plane_from_angles([1,0,0],45,45,180)
-    plane2 = define_plane_from_angles([0,0,0],0,10,0)
-    plane3 = define_plane_relative_from_plane(plane1, plane2)
-    plane4 = define_plane_relative_from_angles(plane3, [0,0,0], 0,10,0)
-
-    func = lambda x: n.sin(x)
-    s = generate_curve(ampl_factor=1, y_func = func, freq=1, offset=-0.0)
-    ### <[v.T 1], [[R.T t],[0 1]]>
-    q = get_transformed_points(plane1, s)
-    ax.scatter(q[:,0], q[:,1], q[:,2])
-    
-    plot_equal_perspective(ax, [-2,2], [-2,2], [-2,2])
-    plot_plane(ax, plane1)
-    plot_plane(ax, plane3, '-.')
-    plot_plane(ax, plane4, '--')
-
-    show()
+    ax, _ = init_plot()
