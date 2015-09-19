@@ -33,7 +33,7 @@ L = 100
 do = mat([1,2,3,0])
 do = (do / norm(do))*L #length L
 #plane = plane_tools.define_plane(o, dirx, diry)
-plane = plane_tools.define_plane_from_directions(o, dirx, diry, 'global')
+plane = plane_tools.define_plane_from_directions(o, dirx, diry)
 
 Rd = rotation_matrix_rot_tilt_skew(-45, 45, 0)
 #----------------------------------------
@@ -205,7 +205,7 @@ if __name__ == '__main__':
         res = mat(r)
         err = abs(comp-res)
         l_err.append(norm(err))    
-    import pdb; pdb.set_trace()
+#    import pdb; pdb.set_trace()
     print 'solution error = ' + str(r.reshape((3,3))[:,2] - do[:3])
     print 'err, norm_err, angle_err = ' + str(vec_diff(r.reshape((3,3))[:,2],do[:3]))
 
