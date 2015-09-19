@@ -30,9 +30,10 @@ diry = R[:,1]
 #################################################
 #delta vector which we want to find in tool-space
 L = 100
-do = mat([1,2,3])
+do = mat([1,2,3,0])
 do = (do / norm(do))*L #length L
-plane = plane_tools.define_plane(o, dirx, diry)
+#plane = plane_tools.define_plane(o, dirx, diry)
+plane = plane_tools.define_plane_from_directions(o, dirx, diry, 'global')
 
 Rd = rotation_matrix_rot_tilt_skew(-45, 45, 0)
 #----------------------------------------
@@ -142,20 +143,23 @@ if __name__ == '__main__':
         skew = rand_range(-180,180) #50 + rand() * 0.001 - 0.0005
 
         #generate Xtcp orientation in world coordinates
-        Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)  #Rplane*Rtcp_tool0
-        append_to_relative_plane_orientation(Rrel)
+        #Rrel = plane_tools.get_plane_relative_R(plane, rot, tilt, skew)  #Rplane*Rtcp_tool0
+        Rrel = plane_tools.define_plane_relative_from_angles(plane, (0,0,0), rot, tilt, skew)
+        append_to_relative_plane_orientation(Rrel[:3,:3])
         
         #generate pen-tip position in Anoto2d in mm
         px,py = generate_random_Anoto_Point(point_spread)
         append_to_points2D([px, py])
 
         #generate Xtcp position in mm
-        Xtcp0 = plane_tools.get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, do)
-        append_to_Xtcp_o(Xtcp0)
+        #Xtcp0 = plane_tools.get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, do)
+        M = plane_tools.define_plane_relative_from_angles(plane, (0,0,0), rot, tilt, skew)
+        Xtcp0 = plane_tools.get_plane_point(plane, px, py) - M.dot(do)
+        append_to_Xtcp_o(Xtcp0[:3])
 
         #generate relative-tool-orientation in world coordinates
-        R_plane = plane_tools.get_plane_transform(plane)
-        RdRel = matmul(Rrel, Rd) #Rplane.T*Rplane*Rtcp_tool0*Rd
+        #R_plane = plane_tools.get_plane_transform(plane)
+        RdRel = matmul(Rrel[0:3,0:3], Rd) #Rplane.T*Rplane*Rtcp_tool0*Rd
         l_Rd_rel.append(RdRel)
 
 
@@ -191,7 +195,7 @@ if __name__ == '__main__':
 
     print
     print 'Preparing plots...'
-    comp = mat([dirx, diry, do]).T.reshape(9)
+    comp = mat([dirx, diry, do[:3]]).T.reshape(9)
     l_cond = []
     l_err = []
     for k in xrange(3,N):
@@ -200,9 +204,10 @@ if __name__ == '__main__':
 
         res = mat(r)
         err = abs(comp-res)
-        l_err.append(norm(err))
-    print 'solution error = ' + str(r.reshape((3,3))[:,2] - do)
-    print 'err, norm_err, angle_err = ' + str(vec_diff(r.reshape((3,3))[:,2],do))
+        l_err.append(norm(err))    
+    import pdb; pdb.set_trace()
+    print 'solution error = ' + str(r.reshape((3,3))[:,2] - do[:3])
+    print 'err, norm_err, angle_err = ' + str(vec_diff(r.reshape((3,3))[:,2],do[:3]))
 
     t = range(3,N)
     logcond = numpy.log10(l_cond)

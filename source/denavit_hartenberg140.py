@@ -699,11 +699,11 @@ if __name__ == '__main__':
         p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
         p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
 
-        print "\n\t[ Solution %s ]" % solution_names[i % 8]
+        print "\n[ Solution %s ]" % solution_names[i % 8]
         print "\tFK-norm: " + str( norm(A - T44) )
         all_norms = all_norms + norm(A - T44)
         print "\tangle-norm: %0.2f" % norm(s - s0)
-        print str(s - s0)
+        print "\t"+str(s - s0)
         print "\t"+str(check_solution(*s))
 
         #Plotting
