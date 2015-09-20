@@ -4,10 +4,10 @@ xlabel, ylabel, plt, grid, title, legend, show
 from numpy import array as mat
 import numpy as np
 
-def init_plot():
+def init_plot(aspect=1/4.0):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=plt.figaspect(1/4.))
+    fig = plt.figure(figsize=plt.figaspect(aspect))
     ax = fig.gca(projection='3d') 
     return ax, fig
 #----------------------------------------#
@@ -38,3 +38,4 @@ def plot_equal_perspective(ax, xList, yList, zList):
 #----------------------------------------#
 if __name__ == '__main__':
     ax, _ = init_plot()
+    

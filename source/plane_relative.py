@@ -172,3 +172,9 @@ def mat_flip(M):
                        [0, 0, 0,  1]])
     return transf_flip.dot(M)
 #--------------------------#
+def mat_flip3(M):
+    transf_flip = mat([[1, 0, 0],
+                       [0, -1, 0],
+                       [0, 0, -1]])
+    return transf_flip.dot(M)
+#--------------------------#

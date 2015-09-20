@@ -89,6 +89,13 @@ def matmul_series(*matrix_factors):
         res.append(reduce(dot, matrix_factors[:i+1], 1))
     return res
 #----------------------------------------------------------------------------------------------------------#
+def homogenous_matrix(R, t):
+    T = zeros((4,4))
+    T[:3, :3] = R
+    T[:3, 3] = t
+    T[3, :] = [0, 0, 0, 1]
+    return T
+#----------------------------------------------------------------------------------------------------------#
 def homogenous_translation_x( tx ):
     return mat([[1,        0,      0,     tx],
                 [0,        1,      0,      0],
