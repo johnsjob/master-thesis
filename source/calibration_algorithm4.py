@@ -38,7 +38,38 @@ do = (do / norm(do))*L #length L
 plane = plane_tools.define_plane_from_directions(o, dirx, diry)
 
 # Orientation of the tool in tool (local) coordinate system 
-Rd = rotation_matrix_rot_tilt_skew(-10, 20, 30)
+local_tool_orientation = rotation_matrix_rot_tilt_skew(-10, 20, 30)
+#----------------------------------------
+def merge_dicts(*list_of_dicts):
+    ret = {}
+    keys = []
+    print list_of_dicts
+    print type(list_of_dicts)
+    print len(list_of_dicts)
+    for d in list_of_dicts:
+        keys += d.keys()
+    print keys
+    keys = set().union(keys)
+    for k in keys:
+        if not ret.has_key(k):
+            ret[k] = []
+        for d in list_of_dicts:
+            if d.has_key(k):
+                empty = False
+                try:
+                    empty = len(d[k]) == 0
+                except:
+                    pass
+                if not empty:
+                    ret[k].append( d[k] )
+    for k in keys:
+        if len(ret[k]) == 1:
+            ret[k] = ret[k][0]
+        elif len(ret[k]) == 0:
+            del ret[k]
+        else:
+            ret[k] = mat(ret[k])
+    return ret
 #----------------------------------------
 l_xtcp = []
 l_anoto2D = []
@@ -47,12 +78,6 @@ l_Rd_rel = []
 #----------------------------------------
 def rad_to_ang(v):
     return v*180/pi
-#----------------------------------------
-def sys(dx, dy, dR):
-    S = [dx, dy] + (-dR).reshape(9).tolist()
-    row_value = 1
-    col_value = 11
-    return mat(S),  row_value, col_value
 #----------------------------------------
 def sys2(dx, dy, dR):
     r11,r12,r13,r21,r22,r23,r31,r32,r33 = (-dR).reshape(9)
@@ -128,72 +153,85 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_s
     r = solve(L,R)
     return r,c
 #----------------------------------------
-def extract_solutions(sol):
-    dirx = sol[0,:]
-    diry = sol[1,:]
-    do1 = sol[2:5,0]
-    do2 = sol[5:8,1]
-    do3 = sol[8:11,2]
-    return mat([dirx, diry, do1, do2, do3])
+def generate_Xflange_orientation(plane,rot, tilt, skew):
+    # Generate Xtcp-orientation in world coordinates (Rrel)
+    # Planes are homoenous matrices, if we want the orientation
+    # we need the 0:3,0:3 submatrix
+    return plane_tools.define_plane_relative_from_angles(plane, (0,0,0), rot, tilt, skew)[:3,:3]
 #----------------------------------------
 if __name__ == '__main__':
-
     print "Sampling points..."
     point_spread = 300
     
+    collected_info = {}
+    collected_info['plane'] = plane
+    collected_data = []
     #generating points and "forward-kinematics"
+    l = []
     for k in xrange(0,N):
+        info = {}
+        info['angles'] = \
+        {
+            'rot':  rand_range(-180,180),
+            'tilt': rand_range(-60, 60),
+            'skew': rand_range(-180,180) 
+         }
 
-        rot  = rand_range(-180,180) #30 + rand() * 0.001 - 0.0005
-        tilt = rand_range(-60, 60) #40 + rand() * 0.001 - 0.0005
-        skew = rand_range(-180,180) #50 + rand() * 0.001 - 0.0005
-
-        # Generate Xtcp-orientation in world coordinates (Rrel)
-        # Planes are homoenous matrices, if we want the orientation
-        # we need the 0:3,0:3 submatrix
-        Rrel = plane_tools.define_plane_relative_from_angles(plane, (0,0,0),
-                                                             rot, tilt, skew)[:3,:3]
-        append_to_relative_plane_orientation(Rrel)
+        #Rrel
+        info['Xflange_orientation_relative_to_paper_plane'] = \
+                                                generate_Xflange_orientation(collected_info['plane'],**info['angles'])
+        l.append(info['Xflange_orientation_relative_to_paper_plane'])
+#        append_to_relative_plane_orientation(Rrel)
         
         #generate pen-tip position in Anoto2d in mm
         px,py = generate_random_Anoto_Point(point_spread)
-        append_to_points2D([px, py])
+        info['pentip_2d'] = [px,py]
+#        append_to_points2D([px, py])
 
-        #generate global Xtcp position in mm
-        #M_relative = plane_tools.define_plane_relative_from_angles(plane, (0,0,0), rot, tilt, skew)
-        #Xtcp0 = (plane_tools.get_plane_point(plane, px, py) - M_relative.dot(do))[:3]
-        Xtcp0 = (plane_tools.get_plane_point(plane, px, py)[:3] - Rrel.dot(do[:3]))
-        append_to_Xtcp_o(Xtcp0)
+        # generate global Xtcp position in mm
+        # M_relative = plane_tools.define_plane_relative_from_angles(plane, (0,0,0), rot, tilt, skew)
+        # Xtcp0 = (plane_tools.get_plane_point(plane, px, py) - M_relative.dot(do))[:3]
+        info['Xtcp0'] = (plane_tools.get_plane_point(plane, px, py)[:3] - \
+                 info['Xflange_orientation_relative_to_paper_plane'].dot(do[:3]))
+        #append_to_Xtcp_o(Xtcp0)
 
         #generate relative-tool-orientation in world coordinates
-        #RdRel = matmul(Rrel, Rd) #Rplane.T*Rplane*Rtcp_tool0*Rd
-        RdRel = plane_tools.get_relative_R(Rd, Rrel)
-        l_Rd_rel.append(RdRel)
+        info['global_tool_orientation'] = matmul(info['Xflange_orientation_relative_to_paper_plane'], local_tool_orientation)
+        #l_Rd_rel.append(global_tool_orientation)
 
-    #convert the lists to ndarrays
-    l_xtcp = convert_to_matrix(l_xtcp)
-    l_R = convert_to_matrix(l_R)
-    l_anoto2D = convert_to_matrix(l_anoto2D)
-    l_Rd_rel = convert_to_matrix(l_Rd_rel)
+        info['forward_kinematics'] = homogenous_matrix(info['Xflange_orientation_relative_to_paper_plane'],
+                                                       info['Xtcp0'])
+        collected_data.append(info)
+    collected_info['data'] = merge_dicts(*collected_data)
+##    #convert the lists to ndarrays
+##    l_xtcp = convert_to_matrix(l_xtcp)
+##    l_R = convert_to_matrix(l_R)
+##    l_anoto2D = convert_to_matrix(l_anoto2D)
+##    l_Rd_rel = convert_to_matrix(l_Rd_rel)
 
-    #turn geometry into forward-kinematics
-    T44 = zeros((num_points,4,4))
-    T44[:,0:3,0:3] = l_R
-    T44[:,0:3,3] = l_xtcp
-    T44[:,3,:] = [0,0,0,1]
+    
+##    #turn geometry into forward-kinematics
+##    T44 = zeros((num_points,4,4))
+##    T44[:,0:3,0:3] = l_R
+##    T44[:,0:3,3] = l_xtcp
+##    T44[:,3,:] = [0,0,0,1]
 
     print "Solving for dirx, diry, do..."
     sys_of_eq = sys2
     import time
     start_time = time.clock()
 
-    r, cond_num = solve_tool0_tip_alt(T44, l_anoto2D, sys_of_eq)
-
+    #r, cond_num = solve_tool0_tip_alt(T44, l_anoto2D, sys_of_eq)
+    r, cond_num = solve_tool0_tip_alt(collected_info['data']['forward_kinematics'],
+                                      collected_info['data']['pentip_2d'],
+                                      sys_of_eq)
     stop_time = time.clock()
     time_spent = stop_time - start_time
 
-    #solve for orientation s which should be same as Rd
-    s = linalg.solve(l_R.reshape(360,3).T.dot(l_R.reshape(360,3)), l_R.reshape(360,3).T.dot(l_Rd_rel.reshape(360,3)))
+    #solve for orientation s which should be same as local_tool_orientation
+    #s = linalg.solve(l_R.reshape(360,3).T.dot(l_R.reshape(360,3)), l_R.reshape(360,3).T.dot(l_Rd_rel.reshape(360,3)))
+    s = linalg.solve(collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3).T.dot(collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3)),
+                     collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3).T.dot(collected_info['data']['global_tool_orientation'].reshape(360,3)))
 
     
     print
@@ -206,7 +244,10 @@ if __name__ == '__main__':
     l_cond = []
     l_err = []
     for k in xrange(3,N):
-        r,cond_num = solve_tool0_tip_alt(T44[0:k,:,:], l_anoto2D[0:k], sys_of_eq)
+        #r,cond_num = solve_tool0_tip_alt(T44[0:k,:,:], l_anoto2D[0:k], sys_of_eq)
+        r, cond_num = solve_tool0_tip_alt(collected_info['data']['forward_kinematics'][0:k,:,:],
+                                      collected_info['data']['pentip_2d'][0:k],
+                                      sys_of_eq)
         l_cond.append(cond_num)
 
         res = mat(r)
