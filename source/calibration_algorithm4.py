@@ -1,6 +1,9 @@
+# -*- coding: cp1252 -*-
 from __future__ import division
 #----------------------------------------#
-
+import numpy
+import time
+mat = numpy.array
 #custom imports
 from helperfunctions_math import *
 from helperfunctions_plot import *
@@ -15,11 +18,7 @@ num_points = 120
 #print; print "Init plots..."
 #ax,_ = init_plot()
 ###========================================#
-import numpy
-mat = numpy.array
 
-#num points we want to sample
-N = num_points
 #placing paper origin
 o = mat([1000*rand(), 1000*rand(), 1000*rand()])
 #defining paper orientation
@@ -31,8 +30,8 @@ diry = R[:,1]
 # define delta vector which
 # we want to find (in tool-space / local space)
 L = 100
-do = mat([1,2,3,0])
-do = (do / norm(do))*L #length L
+local_delta_vector = mat([1,2,3,0])
+local_delta_vector = (local_delta_vector / norm(local_delta_vector))*L #length L
 
 # define the paper-orientation in global (robot-system) directions
 plane = plane_tools.define_plane_from_directions(o, dirx, diry)
@@ -70,7 +69,7 @@ def merge_dicts(*list_of_dicts):
 def rad_to_ang(v):
     return v*180/pi
 #----------------------------------------
-def sys2(dx, dy, dR):
+def problem_formulation(dx, dy, dR):
     r11,r12,r13,r21,r22,r23,r31,r32,r33 = (-dR).reshape(9)
     S1 = [dx, dy, r11, 0,   0, r12, 0, 0,   r13]
     S2 = [0,   0, r21, dx, dy, r22, 0, 0,   r23]
@@ -94,7 +93,7 @@ from numpy.linalg import solve, det, inv, cond
 #----------------------------------------
 def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_sys_eq = None):
     try:
-        N,m,n = array_forward_kinematics_T44.shape
+        num_points,m,n = array_forward_kinematics_T44.shape
     except Exception as e:
         print 'solve_tool0_tip:\n\tWrong shape or type for input parameter: array_forward_kinematics_T44'
     try:
@@ -114,16 +113,16 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_s
     l_cond = []
     l_err = []
 
-    for i in xrange(0,N-1): #one less after forward-differences....
+    for i in xrange(0,num_points-1): #one less after forward-differences....
         A, row_value, col_value = array_lhs_sys_eq(danoto2D[i,0], danoto2D[i,1], dR[i])
         b = dxtcp[i]
         lhs.append(A)
         rhs.append(b)
-    lhs = mat(lhs).reshape(((N-1) * row_value, col_value))
+    lhs = mat(lhs).reshape(((num_points-1) * row_value, col_value))
 
     #shape the rhs depending on shape-info from lhs
     if row_value != 1:
-        rhs = mat(rhs).reshape((N-1) *  row_value)
+        rhs = mat(rhs).reshape((num_points-1) *  row_value)
     else:
         rhs = mat(rhs)
         
@@ -140,16 +139,13 @@ def generate_Xflange_orientation(plane,rot, tilt, skew):
     # we need the 0:3,0:3 submatrix
     return plane_tools.define_plane_relative_from_angles(plane, (0,0,0), rot, tilt, skew)[:3,:3]
 #----------------------------------------
-if __name__ == '__main__':
-    print "Sampling points..."
-    point_spread = 300
-    
-    collected_info = {}
-    collected_info['plane'] = plane
+def setup_geometry(current_plane=None, point_spread=300, num_points=120):
+    global local_delta_vector
+
+    collected_info = {'plane':current_plane}
     collected_data = []
     #generating points and "forward-kinematics"
-    l = []
-    for k in xrange(0,N):
+    for k in xrange(0,num_points):
         info = {}
         info['angles'] = \
         {
@@ -166,7 +162,7 @@ if __name__ == '__main__':
 
         # generate global Xtcp position in mm
         info['Xtcp0'] = (plane_tools.get_plane_point(plane, px, py)[:3] - \
-                 info['Xflange_orientation_relative_to_paper_plane'].dot(do[:3]))
+                 info['Xflange_orientation_relative_to_paper_plane'].dot(local_delta_vector[:3]))
 
         #generate relative-tool-orientation in world coordinates
         info['global_tool_orientation'] = matmul(info['Xflange_orientation_relative_to_paper_plane'], local_tool_orientation)
@@ -174,48 +170,50 @@ if __name__ == '__main__':
                                                        info['Xtcp0'])
         collected_data.append(info)
     collected_info['data'] = merge_dicts(*collected_data)
-
-    print "Solving for dirx, diry, do..."
-    sys_of_eq = sys2
-    import time
+    return collected_info
+#----------------------------------------
+def find_solution(collected_info):
     start_time = time.clock()
 
-    #r, cond_num = solve_tool0_tip_alt(T44, l_anoto2D, sys_of_eq)
-    r, cond_num = solve_tool0_tip_alt(collected_info['data']['forward_kinematics'],
+    result, cond_num = solve_tool0_tip_alt(collected_info['data']['forward_kinematics'],
                                       collected_info['data']['pentip_2d'],
-                                      sys_of_eq)
+                                      problem_formulation)
     stop_time = time.clock()
     time_spent = stop_time - start_time
 
     #solve for orientation s which should be same as local_tool_orientation
-    #s = linalg.solve(l_R.reshape(360,3).T.dot(l_R.reshape(360,3)), l_R.reshape(360,3).T.dot(l_Rd_rel.reshape(360,3)))
     s = linalg.solve(collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3).T.dot(collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3)),
                      collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3).T.dot(collected_info['data']['global_tool_orientation'].reshape(360,3)))
+    return result, s, cond_num, time_spent
+#----------------------------------------
+if __name__ == '__main__':
+    print "Sampling points..."    
+    collected_info = setup_geometry(plane)
 
-    
+    print "Solving for dirx, diry, local_delta_vector..."
+    result, s, cond_num, time_spent = find_solution(collected_info)
+
     print
-    print 'Time spent solving '+str(N)+' points: ' + str(time_spent) +' seconds.'
-
+    print 'Time spent solving '+str(num_points)+' points: ' + str(time_spent) +' seconds.'
 
     print
     print 'Preparing plots...'
-    comp = mat([dirx, diry, do[:3]]).T.reshape(9)
+    comp = mat([dirx, diry, local_delta_vector[:3]]).T.reshape(9)
     l_cond = []
     l_err = []
-    for k in xrange(3,N):
-        #r,cond_num = solve_tool0_tip_alt(T44[0:k,:,:], l_anoto2D[0:k], sys_of_eq)
+    for k in xrange(3,num_points):
         r, cond_num = solve_tool0_tip_alt(collected_info['data']['forward_kinematics'][0:k,:,:],
                                       collected_info['data']['pentip_2d'][0:k],
-                                      sys_of_eq)
+                                      problem_formulation)
         l_cond.append(cond_num)
 
         res = mat(r)
         err = abs(comp-res)
         l_err.append(norm(err))    
-    print 'solution error = ' + str(res.reshape((3,3))[:,2] - do[:3])
-    print 'err, norm_err, angle_err = ' + str(vec_diff(res.reshape((3,3))[:,2],do[:3]))
+    print 'solution error = ' + str(res.reshape((3,3))[:,2] - local_delta_vector[:3])
+    print 'err, norm_err, angle_err = ' + str(vec_diff(res.reshape((3,3))[:,2],local_delta_vector[:3]))
 
-    t = range(3,N)
+    t = range(3,num_points)
     logcond = numpy.log10(l_cond)
     logerr = numpy.log10(l_err)
     plot(t, logcond, label='Condition number',linewidth=2);
