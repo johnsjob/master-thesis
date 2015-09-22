@@ -43,12 +43,8 @@ local_tool_orientation = rotation_matrix_rot_tilt_skew(-10, 20, 30)
 def merge_dicts(*list_of_dicts):
     ret = {}
     keys = []
-    print list_of_dicts
-    print type(list_of_dicts)
-    print len(list_of_dicts)
     for d in list_of_dicts:
         keys += d.keys()
-    print keys
     keys = set().union(keys)
     for k in keys:
         if not ret.has_key(k):
@@ -70,11 +66,6 @@ def merge_dicts(*list_of_dicts):
         else:
             ret[k] = mat(ret[k])
     return ret
-#----------------------------------------
-l_xtcp = []
-l_anoto2D = []
-l_R = []
-l_Rd_rel = []
 #----------------------------------------
 def rad_to_ang(v):
     return v*180/pi
@@ -98,16 +89,6 @@ def generate_random_Anoto_Point(L):
     px = L*rand()-L/2.0
     py = L*rand()-L/2.0
     return px, py
-#----------------------------------------
-def append_to_points2D(x):
-    global l_anoto2D
-    l_anoto2D.append(x)
-def append_to_relative_plane_orientation(x):
-    global l_R
-    l_R.append(x)
-def append_to_Xtcp_o(x):
-    global l_xtcp
-    l_xtcp.append(x)
 #----------------------------------------
 from numpy.linalg import solve, det, inv, cond
 #----------------------------------------
@@ -175,46 +156,24 @@ if __name__ == '__main__':
             'rot':  rand_range(-180,180),
             'tilt': rand_range(-60, 60),
             'skew': rand_range(-180,180) 
-         }
-
-        #Rrel
+        }
+        # Xtcp (flange) orientation in global space, generated relative to the paper plane
         info['Xflange_orientation_relative_to_paper_plane'] = \
                                                 generate_Xflange_orientation(collected_info['plane'],**info['angles'])
-        l.append(info['Xflange_orientation_relative_to_paper_plane'])
-#        append_to_relative_plane_orientation(Rrel)
-        
         #generate pen-tip position in Anoto2d in mm
         px,py = generate_random_Anoto_Point(point_spread)
         info['pentip_2d'] = [px,py]
-#        append_to_points2D([px, py])
 
         # generate global Xtcp position in mm
-        # M_relative = plane_tools.define_plane_relative_from_angles(plane, (0,0,0), rot, tilt, skew)
-        # Xtcp0 = (plane_tools.get_plane_point(plane, px, py) - M_relative.dot(do))[:3]
         info['Xtcp0'] = (plane_tools.get_plane_point(plane, px, py)[:3] - \
                  info['Xflange_orientation_relative_to_paper_plane'].dot(do[:3]))
-        #append_to_Xtcp_o(Xtcp0)
 
         #generate relative-tool-orientation in world coordinates
         info['global_tool_orientation'] = matmul(info['Xflange_orientation_relative_to_paper_plane'], local_tool_orientation)
-        #l_Rd_rel.append(global_tool_orientation)
-
         info['forward_kinematics'] = homogenous_matrix(info['Xflange_orientation_relative_to_paper_plane'],
                                                        info['Xtcp0'])
         collected_data.append(info)
     collected_info['data'] = merge_dicts(*collected_data)
-##    #convert the lists to ndarrays
-##    l_xtcp = convert_to_matrix(l_xtcp)
-##    l_R = convert_to_matrix(l_R)
-##    l_anoto2D = convert_to_matrix(l_anoto2D)
-##    l_Rd_rel = convert_to_matrix(l_Rd_rel)
-
-    
-##    #turn geometry into forward-kinematics
-##    T44 = zeros((num_points,4,4))
-##    T44[:,0:3,0:3] = l_R
-##    T44[:,0:3,3] = l_xtcp
-##    T44[:,3,:] = [0,0,0,1]
 
     print "Solving for dirx, diry, do..."
     sys_of_eq = sys2
