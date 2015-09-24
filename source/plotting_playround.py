@@ -1,5 +1,6 @@
 from helperfunctions_plot import *
 from plane_relative import *
+import plane_relative
 from denavit_hartenberg140 import *
 
 import itertools as it
@@ -11,10 +12,11 @@ if __name__ == '__main__':
     ax, fig = init_plot(1.0)
 
     plane0 = define_plane_from_angles([0,0,0],
-                                      30, 0, 0)
-    plane_rel = define_plane_relative_from_angles(plane0, [0.1,0,0],
-                                      30,45,0)
-
+                                      0, 45, 0)
+##    plane_rel = define_plane_from_angles([0.1,0,0],
+##                                      30, 45, 0, 'global')
+    plane_rel = plane_relative.define_plane_relative_from_angles(plane0,[0.1,0,0],
+                                                                 30, 0, 0,'global')
 
     ######
     plot_plane(ax, plane0, scale_factor=0.1)

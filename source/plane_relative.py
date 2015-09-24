@@ -56,10 +56,13 @@ def define_plane_from_angles(origin, r,t,s, system_type = 'local'):
     else:
         return plane_transform
 #----------------------------------------#
-def define_plane_relative_from_angles(plane_transform, rel_origin, r,t,s, system_type = 'local'):
+def define_plane_relative_from_angles(plane_transform, rel_origin, r,t,s, system_type='local'):
     """
-    Calculates the global plane orientation and position relative another global plane,
+    Calculates the plane orientation and position relative another plane,
     from local position and orientation.
+
+    The reuslting plane inherits the coordinate system type from plane_transform
+    and is either 'local' or 'global'
     """
     rel_plane = define_plane_from_angles(rel_origin, r, t, s, system_type)
     absolute_plane_transform = plane_transform.dot(rel_plane)
@@ -67,8 +70,11 @@ def define_plane_relative_from_angles(plane_transform, rel_origin, r,t,s, system
 #----------------------------------------#
 def define_plane_relative_from_plane(plane_transform, rel_plane):
     """
-    Calculates the global plane orientation and position relative another global plane,
+    Calculates the plane orientation and position relative another plane,
     from local position and orientation.
+
+    The reuslting plane inherits the coordinate system type from plane_transform
+    and is either 'local' or 'global'
     """
     absolute_plane_transform = plane_transform.dot(rel_plane)
     return absolute_plane_transform

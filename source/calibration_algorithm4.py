@@ -4,40 +4,35 @@ from __future__ import division
 import numpy
 import time
 mat = numpy.array
-#custom imports
+from numpy.linalg import solve, det, inv, cond
+#----------------------------------------
+# custom imports
 from helperfunctions_math import *
 from helperfunctions_plot import *
 import plane_relative as plane_tools
 #----------------------------------------#
-def convert_to_matrix(x):
-    return mat(x)
-#----------------------------------------#
-#num_points = 12 absolute minimum, actually 12+1
+# num_points = 12 absolute minimum, actually 12+1
 num_points = 120
 #========================================#
-#print; print "Init plots..."
-#ax,_ = init_plot()
-###========================================#
-
-#placing paper origin
+# placing paper origin
 o = mat([1000*rand(), 1000*rand(), 1000*rand()])
-#defining paper orientation
-R = rotation_matrix_rot_tilt_skew( -(rand()*360-180), rand()*90-60, rand()*360-180 )
-#extracting basis vectors
-dirx = R[:,0]
-diry = R[:,1]
+
+### defining paper orientation
+r,t,s = -rand_range(-180,180), rand_range(-180,180), rand_range(-180, 180)
+
+# define the paper-orientation in global (robot-system) directions
+plane = plane_tools.define_plane_from_angles(o, r, t, s, 'local')
+dirx = plane[:3,0]
+diry = plane[:3,1]
+
+# Orientation of the tool in tool (local) coordinate system 
+local_tool_orientation = rotation_matrix_rot_tilt_skew(-10, 20, 30)
 #################################################
 # define delta vector which
 # we want to find (in tool-space / local space)
 L = 100
-local_delta_vector = mat([1,2,3,0])
+local_delta_vector = mat([1,2,3])
 local_delta_vector = (local_delta_vector / norm(local_delta_vector))*L #length L
-
-# define the paper-orientation in global (robot-system) directions
-plane = plane_tools.define_plane_from_directions(o, dirx, diry)
-
-# Orientation of the tool in tool (local) coordinate system 
-local_tool_orientation = rotation_matrix_rot_tilt_skew(-10, 20, 30)
 #----------------------------------------
 def merge_dicts(*list_of_dicts):
     ret = {}
@@ -89,8 +84,6 @@ def generate_random_Anoto_Point(L):
     py = L*rand()-L/2.0
     return px, py
 #----------------------------------------
-from numpy.linalg import solve, det, inv, cond
-#----------------------------------------
 def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_sys_eq = None):
     try:
         num_points,m,n = array_forward_kinematics_T44.shape
@@ -101,8 +94,8 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_s
     except Exception as e:
         print 'solve_tool0_tip:\n\tWrong shape or type for input parameter: array_anoto2D'
 
-    l_xtcp = array_forward_kinematics_T44[:,0:3,3]
-    l_R = array_forward_kinematics_T44[:,0:3,0:3]
+    l_xtcp = array_forward_kinematics_T44[:, 0:3, 3]
+    l_R = array_forward_kinematics_T44[:, 0:3, 0:3]
 
     dxtcp = diff(l_xtcp, axis=0)
     dR = diff(l_R, axis=0)
@@ -113,7 +106,7 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_s
     l_cond = []
     l_err = []
 
-    for i in xrange(0,num_points-1): #one less after forward-differences....
+    for i in xrange(0, num_points-1): #one less after forward-differences....
         A, row_value, col_value = array_lhs_sys_eq(danoto2D[i,0], danoto2D[i,1], dR[i])
         b = dxtcp[i]
         lhs.append(A)
@@ -129,15 +122,20 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44, array_anoto2D, array_lhs_s
     L = lhs.T.dot(lhs)
     R = lhs.T.dot(rhs)
 
-    c = cond(L)
-    r = solve(L,R)
-    return r,c
+    X, Y, D = solve(L, R).reshape(3,3).T
+    Z = cross(X, Y)
+    result = mat([X,Y,Z,D]).T
+    condition = cond(L)
+    return result, condition
 #----------------------------------------
 def generate_Xflange_orientation(plane,rot, tilt, skew):
-    # Generate Xtcp-orientation in world coordinates (Rrel)
-    # Planes are homoenous matrices, if we want the orientation
-    # we need the 0:3,0:3 submatrix
-    return plane_tools.define_plane_relative_from_angles(plane, (0,0,0), rot, tilt, skew)[:3,:3]
+    """
+        Generate Xtcp-orientation in world coordinates (Rrel)
+        Planes are homoenous matrices, if we want the orientation
+        we need the 0:3,0:3 submatrix.
+    """
+    return plane_tools.define_plane_relative_from_angles(plane, (0,0,0),
+                                                         rot, tilt, skew,'global')[:3,:3]
 #----------------------------------------
 def setup_geometry(current_plane=None, point_spread=300, num_points=120):
     global local_delta_vector
@@ -162,12 +160,17 @@ def setup_geometry(current_plane=None, point_spread=300, num_points=120):
 
         # generate global Xtcp position in mm
         info['Xtcp0'] = (plane_tools.get_plane_point(plane, px, py)[:3] - \
-                 info['Xflange_orientation_relative_to_paper_plane'].dot(local_delta_vector[:3]))
+                 matmul( info['Xflange_orientation_relative_to_paper_plane'], local_delta_vector[:3]) )
+        # ^OK
 
-        #generate relative-tool-orientation in world coordinates
-        info['global_tool_orientation'] = matmul(info['Xflange_orientation_relative_to_paper_plane'], local_tool_orientation)
-        info['forward_kinematics'] = homogenous_matrix(info['Xflange_orientation_relative_to_paper_plane'],
-                                                       info['Xtcp0'])
+        # generate relative-tool-orientation in world coordinates
+        info['global_tool_orientation'] = matmul( info['Xflange_orientation_relative_to_paper_plane'],
+                                                  local_tool_orientation )
+        # ^OK
+
+        info['forward_kinematics'] = homogenous_matrix( info['Xflange_orientation_relative_to_paper_plane'],
+                                                        info['Xtcp0'] )
+        # ^OK
         collected_data.append(info)
     collected_info['data'] = merge_dicts(*collected_data)
     return collected_info
@@ -181,10 +184,19 @@ def find_solution(collected_info):
     stop_time = time.clock()
     time_spent = stop_time - start_time
 
-    #solve for orientation s which should be same as local_tool_orientation
-    s = linalg.solve(collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3).T.dot(collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3)),
-                     collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3).T.dot(collected_info['data']['global_tool_orientation'].reshape(360,3)))
-    return result, s, cond_num, time_spent
+
+    # solve for orientation s which should be same as local_tool_orientation
+    flange_orientation_reshaped = collected_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(360,3)
+
+    lhs = matmul( flange_orientation_reshaped.T,
+                  flange_orientation_reshaped)
+
+    rhs = matmul( flange_orientation_reshaped.T,
+                  collected_info['data']['global_tool_orientation'].reshape(360,3))
+
+    solved_tool_orientation = linalg.solve(lhs, rhs)
+
+    return result, solved_tool_orientation, cond_num, time_spent
 #----------------------------------------
 if __name__ == '__main__':
     print "Sampling points..."    
@@ -198,20 +210,19 @@ if __name__ == '__main__':
 
     print
     print 'Preparing plots...'
-    comp = mat([dirx, diry, local_delta_vector[:3]]).T.reshape(9)
+    comp = mat(list(plane[:3,:3].T.flatten()) +
+               list(local_delta_vector)).reshape(4,3).T
     l_cond = []
     l_err = []
     for k in xrange(3,num_points):
-        r, cond_num = solve_tool0_tip_alt(collected_info['data']['forward_kinematics'][0:k,:,:],
+        res, cond_num = solve_tool0_tip_alt(collected_info['data']['forward_kinematics'][0:k,:,:],
                                       collected_info['data']['pentip_2d'][0:k],
                                       problem_formulation)
         l_cond.append(cond_num)
 
-        res = mat(r)
         err = abs(comp-res)
         l_err.append(norm(err))    
-    print 'solution error = ' + str(res.reshape((3,3))[:,2] - local_delta_vector[:3])
-    print 'err, norm_err, angle_err = ' + str(vec_diff(res.reshape((3,3))[:,2],local_delta_vector[:3]))
+    print 'solution error = ' + str(norm(err))
 
     t = range(3,num_points)
     logcond = numpy.log10(l_cond)
