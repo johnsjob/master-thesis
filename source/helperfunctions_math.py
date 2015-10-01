@@ -85,6 +85,7 @@ def matmul_series(*matrix_factors):
         with either a vector or a matrix of type numpy.ndarray.
     '''
     res = []
+    res.append(matrix_factors[0])
     for i in xrange(1,len(matrix_factors)):
         res.append(reduce(dot, matrix_factors[:i+1], 1))
     return res
