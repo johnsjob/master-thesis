@@ -33,29 +33,45 @@ local_delta_vector = (local_delta_vector / norm(local_delta_vector))*L #length L
 local_tool_orientation = rotation_matrix_rot_tilt_skew(-10, 20, 30)
 #----------------------------------------
 def merge_dicts(*list_of_dicts):
+    # init
     ret = {}
     keys = []
+
+    # get all unique keys
     for d in list_of_dicts:
         keys += d.keys()
     keys = set().union(keys)
+
+    # for all keys ...
     for k in keys:
+        # prepare a k:th-list if none exists
         if not ret.has_key(k):
             ret[k] = []
+        # for all dicts ...
         for d in list_of_dicts:
+            # if dict has key ...
             if d.has_key(k):
+                # check so that the key is not an empty list ...
                 empty = False
                 try:
                     empty = len(d[k]) == 0
                 except:
+                    # not a list/array-type, equivalent to non-empty list
                     pass
+                # append item or non-empty list
                 if not empty:
                     ret[k].append( d[k] )
+    # for all keys ...
     for k in keys:
+        # if we only got one item for this key from al the dicts ...
         if len(ret[k]) == 1:
+            # un-list it
             ret[k] = ret[k][0]
+        # remove empy lists if any manage to get here
         elif len(ret[k]) == 0:
             del ret[k]
         else:
+            # turn remaining lists into numpy-arrays
             ret[k] = mat(ret[k])
     return ret
 #----------------------------------------

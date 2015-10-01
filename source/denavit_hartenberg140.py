@@ -555,7 +555,10 @@ class TestIRB140(unittest.TestCase):
     def test_forward_kinematics_general(self):
         print '\ntest_forward_kinematics_general'
 
-        for _ in xrange(10000):
+        for counter in xrange(10000):
+            fcounter = (counter / 10000.0)*100
+            if fcounter % 1.0 == 0.0:
+                print fcounter
             j1 = rand_range(-180, 180)
             j2 = rand_range(-90, 110)
             j3 = rand_range(-230, 50)
@@ -606,7 +609,7 @@ class TestIRB140(unittest.TestCase):
                 
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
-##    unittest.main()
+    unittest.main()
 ##    """
 ##    GENERAL COMMENTS:
 ##    ################
@@ -649,84 +652,84 @@ if __name__ == '__main__':
 ##    j5 =  109.07390106077256
 ##    j6 = -95.98652095283182
 
-    j1 = -113.41114583849777
-    j2 = 108.70369507191415
-    j3 = 48.03819273628227
-    j4 = 27.748005041418196
-    j5 = 106.60294661735583
-    j6 = 57.11190620943745
-
-    j1 =  rand_range(-180, 180)
-    j2 =  rand_range(-90, 110)
-    j3 =  rand_range(-230, 50)
-    j4 =  rand_range(-200, 200)
-    j5 =  rand_range(-115, 115)
-    j6 =  rand_range(-400, 400)
-
-##    j1 = 0
-##    j2 = 0
-##    j3 = 0
-##
-##    j4 = 0
-##    j5 = 0
-##    j6 = 380
-
-    a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
-    T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
-
-    #print "T44 sanity check-norm: " + str(norm(T44 - A))
-
-    p_end = T44[0:3,3]
-    wcp = calc_wcp(T44, 0.065)
-    sol = inverse_kinematics_irb140(DH_TABLE, T44)
-    s0 = mat([a,b,c,d,e,f])
-    all_norms = 0
-
-    solution_names = ['sol_elbup1', 'sol_elbdown1', 'sol_elbup1_fl', 'sol_elbdown1_fl',
-                      'sol_elbup2', 'sol_elbdown2', 'sol_elbup2_fl', 'sol_elbdown2_fl']
-
-    num_valid_solutions = 0
-    for i,s in enumerate(iterdim(sol, axis=1)):
-        num_valid_solutions += check_solution(*s)
-        gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-        A, debug = forward_kinematics(gamma0, gamma1, gamma2,
-                                         gamma3, gamma4, gamma5, **DH_TABLE)
-        A = A
-        p0 = debug[0][:,3]
-        p1 = matmul(debug[0],debug[1])[:,3]
-        p2 = matmul(debug[0],debug[1],debug[2])[:,3]
-        p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
-        p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
-        p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
-
-        print "\n[ Solution %s ]" % solution_names[i % 8]
-        print "\tFK-norm: " + str( norm(A - T44) )
-        all_norms = all_norms + norm(A - T44)
-        print "\tangle-norm: %0.2f" % norm(s - s0)
-        print "\t"+str(s - s0)
-        print "\t"+str(check_solution(*s))
-
-        #Plotting
-        from pylab import plot, show, legend
-        M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
-        if (i % 4) == 0:
-            col = 'b-'
-            lw = 3
-        if (i % 4) == 1:
-            col = 'r-'
-            lw = 3
-        if (i % 4) == 2:
-            col = 'b-.'
-            lw = 2
-        if (i % 4) == 3:
-            col = 'r-.'
-            lw = 2
-        plot(M[:,0], M[:,2], col, linewidth = lw)
-        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
-                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
-    print "FK-norm-summary: " + str( all_norms )
-    print "Num valid solutions: " + str( num_valid_solutions )
-    plot([-1,-1,1,1],[0,1,1,0],'w')
-    plot(wcp[0], wcp[2], 'ro')
-    plot(p_end[0], p_end[2], 'ko')
-    show()
+######    j1 = -113.41114583849777
+######    j2 = 108.70369507191415
+######    j3 = 48.03819273628227
+######    j4 = 27.748005041418196
+######    j5 = 106.60294661735583
+######    j6 = 57.11190620943745
+######
+######    j1 =  rand_range(-180, 180)
+######    j2 =  rand_range(-90, 110)
+######    j3 =  rand_range(-230, 50)
+######    j4 =  rand_range(-200, 200)
+######    j5 =  rand_range(-115, 115)
+######    j6 =  rand_range(-400, 400)
+######
+########    j1 = 0
+########    j2 = 0
+########    j3 = 0
+########
+########    j4 = 0
+########    j5 = 0
+########    j6 = 380
+######
+######    a,b,c,d,e,f = j1,j2,j3,j4,j5,j6
+######    T44, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
+######
+######    #print "T44 sanity check-norm: " + str(norm(T44 - A))
+######
+######    p_end = T44[0:3,3]
+######    wcp = calc_wcp(T44, 0.065)
+######    sol = inverse_kinematics_irb140(DH_TABLE, T44)
+######    s0 = mat([a,b,c,d,e,f])
+######    all_norms = 0
+######
+######    solution_names = ['sol_elbup1', 'sol_elbdown1', 'sol_elbup1_fl', 'sol_elbdown1_fl',
+######                      'sol_elbup2', 'sol_elbdown2', 'sol_elbup2_fl', 'sol_elbdown2_fl']
+######
+######    num_valid_solutions = 0
+######    for i,s in enumerate(iterdim(sol, axis=1)):
+######        num_valid_solutions += check_solution(*s)
+######        gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
+######        A, debug = forward_kinematics(gamma0, gamma1, gamma2,
+######                                         gamma3, gamma4, gamma5, **DH_TABLE)
+######        A = A
+######        p0 = debug[0][:,3]
+######        p1 = matmul(debug[0],debug[1])[:,3]
+######        p2 = matmul(debug[0],debug[1],debug[2])[:,3]
+######        p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
+######        p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
+######        p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
+######
+######        print "\n[ Solution %s ]" % solution_names[i % 8]
+######        print "\tFK-norm: " + str( norm(A - T44) )
+######        all_norms = all_norms + norm(A - T44)
+######        print "\tangle-norm: %0.2f" % norm(s - s0)
+######        print "\t"+str(s - s0)
+######        print "\t"+str(check_solution(*s))
+######
+######        #Plotting
+######        from pylab import plot, show, legend
+######        M = mat(zip([0,0,0],p0,p1,p2,p3,p4,p5)).T
+######        if (i % 4) == 0:
+######            col = 'b-'
+######            lw = 3
+######        if (i % 4) == 1:
+######            col = 'r-'
+######            lw = 3
+######        if (i % 4) == 2:
+######            col = 'b-.'
+######            lw = 2
+######        if (i % 4) == 3:
+######            col = 'r-.'
+######            lw = 2
+######        plot(M[:,0], M[:,2], col, linewidth = lw)
+######        legend(['elbow-up', 'elbow-down', 'elbow-up-flipped', 'elbow-down-flipped',
+######                'elbow-up-2', 'elbow-down-2', 'elbow-up-flipped-2', 'elbow-down-flipped-2'])
+######    print "FK-norm-summary: " + str( all_norms )
+######    print "Num valid solutions: " + str( num_valid_solutions )
+######    plot([-1,-1,1,1],[0,1,1,0],'w')
+######    plot(wcp[0], wcp[2], 'ro')
+######    plot(p_end[0], p_end[2], 'ko')
+######    show()

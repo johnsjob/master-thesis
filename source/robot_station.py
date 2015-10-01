@@ -37,6 +37,25 @@ def get_closest_solution(s0, s):
     t = (norm_list - min(norm_list)) == 0.0
     index1 = index_list1[t][0]
     return s[index1]
+
+def add_solutions(solutions, solution_value, index=5):
+    for s in solutions.T:
+        tmp1 = s.copy()
+        tmp2 = s.copy()
+        old_val = s[index]
+        tmp1[index] = old_val + solution_value
+        yield tmp1
+        tmp2[index] = old_val - solution_value
+        yield tmp2
+
+def traverse_solutions(*args):
+    for solutions in args:
+        for s in solutions.T:
+            yield s
+
+def make_array(list_of):
+    return mat(list_of).T
+
 		
 if __name__ == '__main__':
     for count in n.linspace(-180,180,10):
@@ -48,6 +67,12 @@ if __name__ == '__main__':
         j4 =  0#rand_range(-200, 200)
         j5 =  0#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
+        j1 =  count
+        j2 =  0
+        j3 =  rand_range(-10, 10)
+        j4 =  0
+        j5 =  0
+        j6 =  0
         joint_values = j1,j2,j3,j4,j5,j6
 
         T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
@@ -82,6 +107,13 @@ if __name__ == '__main__':
             T44[:,3] = p
             T44[:3,:3] = plane[:3,:3]
             solutions = inverse_kinematics_irb140(DH_TABLE, T44)
+            app = [solutions]
+            for k in [3,4,5]:
+                app.append( make_array( list(add_solutions(solutions, 180, k)) ))
+                app.append( make_array( list(add_solutions(solutions, 360, k)) ))
+            sols = list(traverse_solutions(*app))
+            solutions = make_array(sols)
+            #import pdb; pdb.set_trace()
             solutions = filter_solutions(solutions)
             print solutions.T.shape
             all_solutions.append(solutions.T)
@@ -94,21 +126,27 @@ if __name__ == '__main__':
             l.append(get_closest_solutions_pair(a[i], a[i+1]))
         l = mat(l)
 
-        sol = []
-        sol.append(get_closest_solutions_pair(a[0],a[1])[0])
-        for i in xrange(1,len(a)):
-            sol.append(get_closest_solution(sol[i-1],a[i]))
-        sol = mat(sol)
-        s = list(l[:,0,:])
-        s.append(l[-1,1,:])
-        s = mat(s)
+####        sol = []
+####        sol.append(get_closest_solutions_pair(a[0],a[1])[0])
+####        for i in xrange(1,len(a)):
+####            sol.append(get_closest_solution(sol[i-1],a[i]))
+####        sol = mat(sol)
+####        s = list(l[:,0,:])
+####        s.append(l[-1,1,:])
+####        s = mat(s)
+####        sol = s
         
         print 'stop: %0.2f' % (time.time() - start)
         r = work_it(work_it(sol, func=diff, axis=0),func=norm, axis=1)
+##        if (r >= 180.0).any():
+##            print r
+##            print n.round(n.max(n.abs(work_it(sol, func=diff, axis=0)),0))
+##            import pdb; pdb.set_trace()
 
         ax0 = fig.add_subplot(1,2,2)
         ax0.plot(n.linspace(0,360,49),r);
         xlabel('curve angle')
         ylabel('solution distance')
-    show()
+    print n.round(n.max(n.abs(work_it(sol, func=diff, axis=0)),0))
+    #show()
     #plot(n.max(abs(s-sol), axis=1)); show()
