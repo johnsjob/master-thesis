@@ -57,11 +57,11 @@ if __name__ == '__main__':
         ax, fig = init_plot()
         fig.clear()
         j1 =  count
-        j2 =  rand_range(-90, 110)
-        j3 =  rand_range(-230, 50)
-        j4 =  rand_range(-200, 200)
-        j5 =  rand_range(-115, 115)
-        j6 =  rand_range(-400, 400)
+        j2 =  0#rand_range(-90, 110)
+        j3 =  0#rand_range(-230, 50)
+        j4 =  0#rand_range(-200, 200)
+        j5 =  0#rand_range(-115, 115)
+        j6 =  0#rand_range(-400, 400)
 
         joint_values = j1,j2,j3,j4,j5,j6
 
@@ -107,7 +107,7 @@ if __name__ == '__main__':
                                [0,1])
         #show()
     ######
-        plane = global_robot_frames[0]
+        plane = global_robot_frames[-1]
         global_plane_curve = point_matrix_tf
 
         lost_p = 0
@@ -118,9 +118,9 @@ if __name__ == '__main__':
             angle_solutions = inverse_kinematics_irb140(DH_TABLE, FK_p)
             angle_solutions = filter_solutions( angle_solutions )
             angle_solutions = angle_solutions.T
-            if n.sum( angle_solutions.shape) == 0.0:
-                lost_p += 1
-                continue
+##            if n.sum( angle_solutions.shape) == 0.0:
+##                lost_p += 1
+##                continue
             print angle_solutions.shape
             all_solutions.append(angle_solutions)
 

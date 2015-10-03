@@ -101,6 +101,7 @@ def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
         else:
             th2 = th21 - th22
         j2 = -(90-th2)
+
     j4, j5, j6,\
         j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
 
@@ -170,16 +171,7 @@ def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
     j4, j5, j6,\
         j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
 
-
-    j1 = adjust_range(j1, -180, 180)
-    j2 = adjust_range(j2, -90, 110)
-    j3 = adjust_range(j3, -230, 50)
-    j4 = adjust_range(j4, -200, 200)
-    j5 = adjust_range(j5, -115, 115)
-    j6 = adjust_range(j6, -400, 400)
-    j41 = adjust_range(j41, -200, 200)
-    j51 = adjust_range(j51, -115, 115)
-    j61 = adjust_range(j61, -400, 400)
+    # returns non-flipped, flipped
     return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
     
 def check_range(x, _min, _max, inclusive=True):
@@ -192,19 +184,19 @@ def check_range(x, _min, _max, inclusive=True):
     else:
         return _min < x < _max
 
-def adjust_range(x, _min, _max, inclusive=True, adjust_value = 360.0):
-    #swap if needed
-    if _max < _min:
-        _max, _min = _min, _max
-
-    if check_range(x, _min, _max, inclusive) == False:
-        if x < _min:
-            ret = x + adjust_value
-        else:
-            ret = x - adjust_value
-        return ret
-    else:
-        return x
+##def adjust_range(x, _min, _max, inclusive=True, adjust_value = 360.0):
+##    #swap if needed
+##    if _max < _min:
+##        _max, _min = _min, _max
+##
+##    if check_range(x, _min, _max, inclusive) == False:
+##        if x < _min:
+##            ret = x + adjust_value
+##        else:
+##            ret = x - adjust_value
+##        return ret
+##    else:
+##        return x
 
 def check_solution(j1,j2,j3,j4,j5,j6, inclusive=True):
     sol  = check_range(j1, -180, 180, inclusive)
@@ -233,9 +225,6 @@ def inverse_kinematics_irb140(dh_table, T44):
 
     ret = mat(zip(sol_elbup1, sol_elbdown1, sol_elbup1_fl, sol_elbdown1_fl,
                    sol_elbup2, sol_elbdown2, sol_elbup2_fl, sol_elbdown2_fl))
-##    ret = n.tile(ret,(1,3))
-##    ret[-1,8] = ret[-1,8] + 360.0
-##    ret[-1,16] = ret[-1,16] - 360.0
     
     #first columnt is first solution and so forth
     return ret
@@ -245,6 +234,7 @@ def filter_solutions(solutions, filter_function = check_solution):
     for s in solutions.T:
         if filter_function(*s) == True:
             result.append( s )
+    # returns non-flipped, flipped
     return mat(zip(*result))
 
 def calc_valid_inv_kin_IRB140(dh_table, T44):

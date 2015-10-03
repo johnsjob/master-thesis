@@ -62,17 +62,11 @@ if __name__ == '__main__':
         ax, fig = init_plot()
         fig.clear()
         j1 =  count #rand_range(-180, 180)
-        j2 =  0#rand_range(-90, 110)
+        j2 =  rand_range(-90, 110)
         j3 =  0#rand_range(-230, 50)
         j4 =  0#rand_range(-200, 200)
         j5 =  0#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
-        j1 =  count
-        j2 =  0
-        j3 =  rand_range(-10, 10)
-        j4 =  0
-        j5 =  0
-        j6 =  0
         joint_values = j1,j2,j3,j4,j5,j6
 
         T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
@@ -99,7 +93,7 @@ if __name__ == '__main__':
         plot_equal_perspective(ax, [-0.5,0.5],[-0.5,0.5],[0,1])
         #show()
     ######
-        plane = global_robot[0]
+        plane = global_robot[-1]
         s = point_matrix_tf
         all_solutions = []
         for p in s:
@@ -107,13 +101,6 @@ if __name__ == '__main__':
             T44[:,3] = p
             T44[:3,:3] = plane[:3,:3]
             solutions = inverse_kinematics_irb140(DH_TABLE, T44)
-            app = [solutions]
-            for k in [3,4,5]:
-                app.append( make_array( list(add_solutions(solutions, 180, k)) ))
-                app.append( make_array( list(add_solutions(solutions, 360, k)) ))
-            sols = list(traverse_solutions(*app))
-            solutions = make_array(sols)
-            #import pdb; pdb.set_trace()
             solutions = filter_solutions(solutions)
             print solutions.T.shape
             all_solutions.append(solutions.T)
@@ -121,23 +108,24 @@ if __name__ == '__main__':
 
         import time
         start = time.time()
-        l = []
-        for i in xrange(len(a)-1):
-            l.append(get_closest_solutions_pair(a[i], a[i+1]))
-        l = mat(l)
+####        l = []
+####        for i in xrange(len(a)-1):
+####            l.append(get_closest_solutions_pair(a[i], a[i+1]))
+####        l = mat(l)
 
-####        sol = []
-####        sol.append(get_closest_solutions_pair(a[0],a[1])[0])
-####        for i in xrange(1,len(a)):
-####            sol.append(get_closest_solution(sol[i-1],a[i]))
-####        sol = mat(sol)
-####        s = list(l[:,0,:])
-####        s.append(l[-1,1,:])
-####        s = mat(s)
-####        sol = s
+        sol = []
+        pair = get_closest_solutions_pair(a[0],a[1])
+        sol.append(pair[0])
+        for i in xrange(1,len(a)):
+            sol.append(get_closest_solution(sol[i-1],a[i]))
+        sol = mat(sol)
+##        s = list(l[:,0,:])
+##        s.append(l[-1,1,:])
+##        s = mat(s)
         
         print 'stop: %0.2f' % (time.time() - start)
         r = work_it(work_it(sol, func=diff, axis=0),func=norm, axis=1)
+        #r = n.max(n.abs(n.diff(sol,axis=0)),axis=1)
 ##        if (r >= 180.0).any():
 ##            print r
 ##            print n.round(n.max(n.abs(work_it(sol, func=diff, axis=0)),0))
@@ -147,6 +135,7 @@ if __name__ == '__main__':
         ax0.plot(n.linspace(0,360,49),r);
         xlabel('curve angle')
         ylabel('solution distance')
+        show()
     print n.round(n.max(n.abs(work_it(sol, func=diff, axis=0)),0))
     #show()
     #plot(n.max(abs(s-sol), axis=1)); show()
