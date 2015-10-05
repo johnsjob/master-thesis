@@ -31,10 +31,13 @@ def construct_robot_geometry(fk_debug_info):
 
 def get_closest_solutions_pair(s0, s1):
     data = []
+    #import pdb; pdb.set_trace()
+    s0 = filter_solutions(s0)
+    s1 = filter_solutions(s1)
     for i, s0i in enumerate(s0.T):
         for j, s1j in enumerate(s1.T):
             print norm(s0i-s1j, ord=inf)
-            data.append([norm(s0i - s1j,ord=inf), i, j])
+            data.append([norm(s0i - s1j, ord = inf), i, j])
     data = mat(data)
     print '+++'
 
@@ -102,11 +105,13 @@ if __name__ == '__main__':
             fk_p = homogenous_matrix(plane[:3,:3],
                                      point[:3])
             angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
+            #angle_solutions = filter_solutions(angle_solutions)
+            #angle_solutions = angle_solutions.T
             for k in angle_solutions.T:
                 T44, debug = forward_kinematics(*k, **DH_TABLE)
                 # sanity check
                 err = norm(fk_p - T44)
-                assert( err < 1e-10)
+                #assert( err < 1e-10)
             print angle_solutions.shape
             all_solutions.append(angle_solutions)
         all_solutions = mat(all_solutions)
@@ -137,4 +142,4 @@ if __name__ == '__main__':
         ax = fig.add_subplot(1,2,2)
         plot(max_err_solutions)
         show()
-#        break
+        break

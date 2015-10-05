@@ -61,8 +61,8 @@ if __name__ == '__main__':
     for count in n.linspace(-180,180,10):
         ax, fig = init_plot()
         fig.clear()
-        j1 =  count #rand_range(-180, 180)
-        j2 =  rand_range(-90, 110)
+        j1 =  180 #rand_range(-180, 180)
+        j2 =  0#rand_range(-90, 110)
         j3 =  0#rand_range(-230, 50)
         j4 =  0#rand_range(-200, 200)
         j5 =  0#rand_range(-115, 115)

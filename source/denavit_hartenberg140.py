@@ -235,6 +235,7 @@ def filter_solutions(solutions, filter_function = check_solution):
         if filter_function(*s) == True:
             result.append( s )
     # returns non-flipped, flipped
+    #import pdb; pdb.set_trace()
     return mat(zip(*result))
 
 def calc_valid_inv_kin_IRB140(dh_table, T44):
