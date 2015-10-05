@@ -8,22 +8,35 @@ def work_it(M, func=n.diff, axis=1):
     return np.apply_along_axis(func, axis, arr=M)
 
 def get_closest_solutions_pair(s0, s1):
-    diff_list = []
-    index_list0 = []
-    index_list1 = []
-    for i0, k in enumerate(s0):
-        for i1, l in enumerate(s1):
-            diff_list.append(k-l)
-            index_list0.append(i0)
-            index_list1.append(i1)
-    index_list0 = mat(index_list0)
-    index_list1 = mat(index_list1)
-    diff_list = mat(diff_list)
-    norm_list = mat(map(norm, diff_list))
-    t = (norm_list - min(norm_list)) == 0.0
-    index0 = index_list0[t][0]
-    index1 = index_list1[t][0]
-    return mat((s0[index0], s1[index1]))
+##    diff_list = []
+##    index_list0 = []
+##    index_list1 = []
+##    for i0, k in enumerate(s0):
+##        for i1, l in enumerate(s1):
+##            diff_list.append(k-l)
+##            index_list0.append(i0)
+##            index_list1.append(i1)
+##    index_list0 = mat(index_list0)
+##    index_list1 = mat(index_list1)
+##    diff_list = mat(diff_list)
+##    norm_list = mat(map(norm, diff_list))
+##    t = (norm_list - min(norm_list)) == 0.0
+##    index0 = index_list0[t][0]
+##    index1 = index_list1[t][0]
+##    return mat((s0[index0], s1[index1]))
+    data = []
+    for i, s0i in enumerate(s0):
+        for j, s1j in enumerate(s1):
+            data.append([norm(s0i - s1j, ord = inf), i, j])
+    data = mat(data)
+
+    ret = []
+    solution_col_row_pairs = n.argwhere(data == data.min(axis = 0)[0])
+    solution_indices = solution_col_row_pairs[:,0]
+    for solution_data in data[solution_indices]:
+        norm_value, i, j = solution_data
+        pair = mat([s0[i], s1[j]])
+        return pair
 
 def get_closest_solution(s0, s):
     diff_list = []
@@ -136,6 +149,7 @@ if __name__ == '__main__':
         xlabel('curve angle')
         ylabel('solution distance')
         show()
+        break
     print n.round(n.max(n.abs(work_it(sol, func=diff, axis=0)),0))
     #show()
     #plot(n.max(abs(s-sol), axis=1)); show()
