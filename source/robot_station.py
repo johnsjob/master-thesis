@@ -27,7 +27,7 @@ def get_closest_solutions_pair(s0, s1):
     data = []
     for i, s0i in enumerate(s0):
         for j, s1j in enumerate(s1):
-            data.append([norm(s0i - s1j, ord = inf), i, j])
+            data.append([norm(s0i - s1j, ord = None), i, j])
     data = mat(data)
 
     ret = []
@@ -80,6 +80,9 @@ if __name__ == '__main__':
         j4 =  0#rand_range(-200, 200)
         j5 =  0#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
+
+        j1,j2,j3,j4,j5,j6 = (-140.0, -14.35476839088895, 20.6520766452779, 0, 0, 0)
+
         joint_values = j1,j2,j3,j4,j5,j6
 
         T44, debug = forward_kinematics(*joint_values, **DH_TABLE)

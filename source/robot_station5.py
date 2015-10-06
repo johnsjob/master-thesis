@@ -48,13 +48,15 @@ if __name__ == '__main__':
     for count in n.linspace(-180,180,10):
         ax, fig = init_plot()
         fig.clear()
-        j1 =  180
-        j2 =  0#rand_range(-90, 110)
-        j3 =  0#rand_range(-230, 50)
+        j1 =  count
+        j2 =  rand_range(-90, 110)
+        j3 =  rand_range(-230, 50)
         j4 =  0#rand_range(-200, 200)
         j5 =  0#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
 
+        j1,j2,j3,j4,j5,j6 = (-140.0, -14.35476839088895, 20.6520766452779, 0, 0, 0)
+        
         joint_values = j1,j2,j3,j4,j5,j6
 
         # get forward kinematics i.e. last global robot-frame
@@ -125,8 +127,8 @@ if __name__ == '__main__':
         chosen_solutions = mat(chosen_solutions).reshape(num_solutions, 6)
         diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
         max_err_solutions = n.max(n.abs(diff_solutions), axis=1)
-        norm = lambda x: n.linalg.norm(x, ord=norm_order)
-        max_err_solutions = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
+        _norm = lambda x: n.linalg.norm(x, ord=norm_order)
+        max_err_solutions = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=_norm, axis=1)
 
         ax = fig.add_subplot(1,2,2)
         plot(max_err_solutions)

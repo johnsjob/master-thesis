@@ -36,8 +36,9 @@ def get_closest_solutions_pair(s0, s1):
     s1 = filter_solutions(s1)
     for i, s0i in enumerate(s0.T):
         for j, s1j in enumerate(s1.T):
-            print norm(s0i-s1j, ord=inf)
-            data.append([norm(s0i - s1j, ord = inf), i, j])
+            order=None
+            print norm(s0i-s1j, ord=order)
+            data.append([norm(s0i - s1j, ord = order), i, j])
     data = mat(data)
     print '+++'
 
@@ -59,12 +60,15 @@ if __name__ == '__main__':
     for count in n.linspace(-180,180,10):
         ax, fig = init_plot()
         fig.clear()
-        j1 =  180
+        j1 =  -180
         j2 =  0#rand_range(-90, 110)
         j3 =  0#rand_range(-230, 50)
         j4 =  0#rand_range(-200, 200)
         j5 =  0#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
+
+        j1,j2,j3,j4,j5,j6 = (-140.0, -14.35476839088895, 20.6520766452779, 0, 0, 0)
+
 
         joint_values = j1,j2,j3,j4,j5,j6
 
@@ -142,4 +146,4 @@ if __name__ == '__main__':
         ax = fig.add_subplot(1,2,2)
         plot(max_err_solutions)
         show()
-#        break
+        break
