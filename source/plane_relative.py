@@ -103,6 +103,8 @@ def generate_symmetric_curve(t=None, x_func=n.cos, y_func=n.sin,
     y = y / n.max( n.abs(y) )
     x = x_func(t/t[-1]*curve_factor*freq)
     x = x / n.max( n.abs(x) )
+
+    ampl_factor = ampl_factor/2.0
     point_matrix = mat(zip(x*ampl_factor, y*ampl_factor,n.zeros(le), n.ones(le)))
     return point_matrix
 #----------------------------------------#
