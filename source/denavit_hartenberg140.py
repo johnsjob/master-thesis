@@ -103,10 +103,13 @@ def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
         j2 = -(90-th2)
 
     j4, j5, j6,\
-        j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+        j41,j51,j61, \
+        j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
 
-    # returns non-flipped, flipped
-    return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
+    # returns non-flipped
+    return (j1, j2, j3, j4, j5, j6),\
+           (j1, j2, j3, j41, j51, j61), \
+           (j1, j2, j3, j42, j52, j62)
 
 def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
     #Geometrical paramaters
@@ -169,10 +172,13 @@ def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
         j2 = -(90 - th2)
 
     j4, j5, j6,\
-        j41,j51,j61 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+        j41,j51,j61, \
+        j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
 
-    # returns non-flipped, flipped
-    return (j1, j2, j3, j4, j5, j6), (j1, j2, j3, j41, j51, j61)
+    # returns non-flipped
+    return (j1, j2, j3, j4, j5, j6),\
+           (j1, j2, j3, j41, j51, j61), \
+           (j1, j2, j3, j42, j52, j62)
     
 def check_range(x, _min, _max, inclusive=True):
     #swap if needed
@@ -218,13 +224,25 @@ def inverse_kinematics_irb140(dh_table, T44):
     if dim[0] != 4:
         raise ArithmeticError('Forward-kinematics must have dimension of 4!')
 
-    sol_elbup1,      sol_elbup2      = inverse_kinematics_elbow_up(dh_table, T44)
-    sol_elbdown1,    sol_elbdown2    = inverse_kinematics_elbow_down(dh_table, T44)
-    sol_elbup1_fl,   sol_elbup2_fl   = inverse_kinematics_elbow_up(dh_table, T44, flipped = True)
-    sol_elbdown1_fl, sol_elbdown2_fl = inverse_kinematics_elbow_down(dh_table, T44, flipped = True)
+    sol_elbup1,\
+    sol_elbup2,\
+    sol_elbup3      = inverse_kinematics_elbow_up(dh_table, T44)
+    
+    sol_elbdown1,\
+    sol_elbdown2,\
+    sol_elbdown3    = inverse_kinematics_elbow_down(dh_table, T44)
+    
+    sol_elbup1_fl,\
+    sol_elbup2_fl,\
+    sol_elbup3_fl   = inverse_kinematics_elbow_up(dh_table, T44, flipped = True)
+    
+    sol_elbdown1_fl,\
+    sol_elbdown2_fl,\
+    sol_elbdown3_fl = inverse_kinematics_elbow_down(dh_table, T44, flipped = True)
 
     ret = mat(zip(sol_elbup1, sol_elbdown1, sol_elbup1_fl, sol_elbdown1_fl,
-                   sol_elbup2, sol_elbdown2, sol_elbup2_fl, sol_elbdown2_fl))
+                  sol_elbup2, sol_elbdown2, sol_elbup2_fl, sol_elbdown2_fl,
+                  sol_elbup3, sol_elbdown3, sol_elbup3_fl, sol_elbdown3_fl))
     
     #first columnt is first solution and so forth
     return ret

@@ -33,15 +33,20 @@ def get_closest_solutions_pair(s0, s1, norm_func,**kwargs):
     data = []
     for i, s0i in enumerate(s0):
         for j, s1j in enumerate(s1):
+            print norm_func(s0i - s1j, **kwargs)
             data.append([norm_func(s0i - s1j, **kwargs), i, j])
+    print ''
     data = mat(data)
 
     ret = []
     solution_col_row_pairs = n.argwhere(data == data.min(axis = 0)[0])
     solution_indices = solution_col_row_pairs[:,0]
+    print len(data[solution_indices])
     for solution_data in data[solution_indices]:
         norm_value, i, j = solution_data
         pair = mat([s0[i], s1[j]])
+        print 'small: ' + str(n.linalg.norm(n.diff(pair, axis=0)))
+        #import pdb; pdb.set_trace()
         return pair
 
 def merge_solutions(*args):
@@ -65,6 +70,7 @@ def extract_closest_solutions(all_solutions, norm_func, **kwargs):
         chosen_solutions = []
         num_solutions = len(all_solutions)
         for k in xrange(num_solutions-1):
+            print 'INDEX: ' + str(k)
             if k == 0:
                 o = all_solutions[k]
             else:
@@ -89,11 +95,11 @@ if __name__ == '__main__':
     for count in n.linspace(-180,180,10):
         ax, fig = init_plot()
         fig.clear()
-        j1 =  -180
+        j1 =  180
         j2 =  0#rand_range(-90, 110)
         j3 =  0#rand_range(-230, 50)
         j4 =  0#rand_range(-200, 200)
-        j5 =  0#rand_range(-115, 115)
+        j5 =  45#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
 
         joint_values = j1,j2,j3,j4,j5,j6
@@ -135,14 +141,16 @@ if __name__ == '__main__':
             fk_p = homogenous_matrix(plane[:3,:3],
                                      point[:3])
             angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
-            #angle_solutions = filter_solutions(angle_solutions)
-
-##            extra = [angle_solutions]
-##            for index in xrange(6):
-##                extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
-##                extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-##            angle_solutions = merge_solutions(*extra)
 ##            angle_solutions = filter_solutions(angle_solutions)
+
+            extra = [angle_solutions]
+            for index in xrange(3,6):
+                extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+                extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+##                extra.append( generate_modulo_solutions(angle_solutions, index, 2*360.0))
+##                extra.append( generate_modulo_solutions(angle_solutions, index, -2*360.0))
+            angle_solutions = merge_solutions(*extra)
+            angle_solutions = filter_solutions(angle_solutions)
             print angle_solutions.shape
 
 #### This sanity check is very time-costly
@@ -151,11 +159,18 @@ if __name__ == '__main__':
                 # sanity check
                 err = norm(fk_p - T44)
                 assert( err < 1e-10)
+            print 'sanity checking solutions.....OK!'
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
+        #filter_solutions(all_solutions.T.reshape(6,156*50)).
         print all_solutions.shape
 
+        #check so that all chosen solutions are within angle-ranges
         chosen_solutions = extract_closest_solutions(all_solutions, norm)
+        all_solutions_valid = mat(filter_solutions(chosen_solutions.T).shape) - mat(chosen_solutions.T.shape)
+        all_solutions_valid = n.sum(all_solutions_valid) == 0.0
+        assert(all_solutions_valid == True)
+        print 'All solutions withing valid ranges!'
 
         diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
         solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
