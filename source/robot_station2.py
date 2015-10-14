@@ -63,8 +63,6 @@ if __name__ == '__main__':
         j5 =  0#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
 
-        j1,j2,j3,j4,j5,j6 = (-140.0, -14.35476839088895, 20.6520766452779, 0, 0, 0)
-
         joint_values = j1,j2,j3,j4,j5,j6
 
         # get forward kinematics i.e. last global robot-frame

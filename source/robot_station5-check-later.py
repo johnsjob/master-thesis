@@ -6,7 +6,7 @@ from denavit_hartenberg140 import *
 
 import itertools as it
 
-def apply_along_axis(M, func=n.diff, axis=1):
+def apply_along_axis(M, func, axis=1):
     return n.apply_along_axis(func, axis, arr=M)
 
 def plot_robot_geometry(ax, global_robot_frames):
@@ -29,51 +29,73 @@ def construct_robot_geometry(fk_debug_info):
         global_robot_frames = mat( global_robot_frames )
         return global_robot_frames
 
-def get_closest_solutions_pair(s0, s1):
-##    data = []
-##    for i, s0i in enumerate(s0):
-##        for j, s1j in enumerate(s1):
-##            data.append([norm(s0i - s1j, ord = inf), i, j])
-##    data = mat(data)
-##
-##    ret = []
-##    solution_col_row_pairs = n.argwhere(data == data.min(axis = 0)[0])
-##    solution_indices = solution_col_row_pairs[:,0]
-##    for solution_data in data[solution_indices]:
-##        norm_value, i, j = solution_data
-##        pair = mat([s0[i], s1[j]])
-##        return pair
-    diff_list = []
-    index_list0 = []
-    index_list1 = []
-    for i0, k in enumerate(s0):
-        for i1, l in enumerate(s1):
-            diff_list.append(k-l)
-            index_list0.append(i0)
-            index_list1.append(i1)
-    index_list0 = mat(index_list0)
-    index_list1 = mat(index_list1)
-    diff_list = mat(diff_list)
-    norm_list = mat(map(norm, diff_list))
-    t = (norm_list - min(norm_list)) == 0.0
-    index0 = index_list0[t][0]
-    index1 = index_list1[t][0]
-    return mat((s0[index0], s1[index1]))
+def get_closest_solutions_pair(s0, s1, norm_func,**kwargs):
+    data = []
+    for i, s0i in enumerate(s0):
+        for j, s1j in enumerate(s1):
+            data.append([norm_func(s0i - s1j, **kwargs), i, j])
+    data = mat(data)
 
+    ret = []
+    solution_col_row_pairs = n.argwhere(data == data.min(axis = 0)[0])
+    solution_indices = solution_col_row_pairs[:,0]
+    for solution_data in data[solution_indices]:
+        norm_value, i, j = solution_data
+        pair = mat([s0[i], s1[j]])
+        return pair
 
+def merge_solutions(*args):
+    result = []
+    for m in args:
+        result += zip(*m)
+    return mat(zip(*result))
+
+def __modulo_solutions(solution_matrix, index, modulo=360.0):
+    for s in solution_matrix.T:
+        result = s.copy()
+        value = result[index]
+        result[index] = value + modulo
+        yield result
+
+def generate_modulo_solutions(solution_matrix, index, modulo=360.0):
+    return mat(zip(*__modulo_solutions(solution_matrix, index, modulo)))
+
+def extract_closest_solutions(all_solutions, norm_func, **kwargs):
+        # obtain closest solutions
+        chosen_solutions = []
+        num_solutions = len(all_solutions)
+        for k in xrange(num_solutions-1):
+            if k == 0:
+                o = all_solutions[k]
+            else:
+                o = chosen_solutions[-1]
+
+            pair = get_closest_solutions_pair(o, all_solutions[k+1], norm_func, **kwargs)
+
+            if k == 0:
+                chosen_solutions.append(mat([pair[0]]))
+                chosen_solutions.append(mat([pair[1]]))
+            else:
+                chosen_solutions.append(mat([pair[1]]))
+
+        chosen_solutions = mat(chosen_solutions).reshape(num_solutions, 6)
+        return chosen_solutions
+def my_norm(x, **kwargs):
+    max_num = len(x)
+    factors = mat([max_num-k for k in xrange(max_num)])
+    return norm(factors*x)
+        
 if __name__ == '__main__':
     for count in n.linspace(-180,180,10):
         ax, fig = init_plot()
         fig.clear()
-        j1 =  count
+        j1 =  180
         j2 =  0#rand_range(-90, 110)
         j3 =  0#rand_range(-230, 50)
         j4 =  0#rand_range(-200, 200)
-        j5 =  0#rand_range(-115, 115)
+        j5 =  45#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
 
-#        j1,j2,j3,j4,j5,j6 = (-140.0, -14.35476839088895, 20.6520766452779, 0, 0, 0)
-        
         joint_values = j1,j2,j3,j4,j5,j6
 
         # get forward kinematics i.e. last global robot-frame
@@ -113,40 +135,34 @@ if __name__ == '__main__':
             fk_p = homogenous_matrix(plane[:3,:3],
                                      point[:3])
             angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
+            #angle_solutions = filter_solutions(angle_solutions)
+
+            extra = [angle_solutions]
+            for index in xrange(6):
+                extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+                extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+            angle_solutions = merge_solutions(*extra)
             angle_solutions = filter_solutions(angle_solutions)
+
             print angle_solutions.shape
-            for k in angle_solutions.T:
-                T44, debug = forward_kinematics(*k, **DH_TABLE)
-                # sanity check
-                err = norm(fk_p - T44)
-                assert( err < 1e-10)
+
+#### This sanity check is very time-costly
+####            for k in angle_solutions.T:
+####                T44, debug = forward_kinematics(*k, **DH_TABLE)
+####                # sanity check
+####                err = norm(fk_p - T44)
+####                assert( err < 1e-10)
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
         print all_solutions.shape
 
-        # obtain closest solutions
-        chosen_solutions = []
-        num_solutions = len(all_solutions)
-        for k in xrange(num_solutions-1):
-            if k == 0:
-                o = all_solutions[k]
-            else:
-                o = chosen_solutions[-1]
+        chosen_solutions = extract_closest_solutions(all_solutions, norm)
 
-            pair = get_closest_solutions_pair(o, all_solutions[k+1])
-
-            if k == 0:
-                chosen_solutions.append(mat([pair[0]]))
-                chosen_solutions.append(mat([pair[1]]))
-            else:
-                chosen_solutions.append(mat([pair[1]]))
-
-        chosen_solutions = mat(chosen_solutions).reshape(num_solutions, 6)
         diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
-        max_err_solutions = n.max(n.abs(diff_solutions), axis=1)
-        max_err_solutions = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
+        solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
+        print apply_along_axis(n.abs(apply_along_axis(chosen_solutions, func=diff, axis=0)),func=n.max, axis=0)
 
         ax = fig.add_subplot(1,2,2)
-        plot(max_err_solutions)
+        plot(n.linspace(0,359,len(solution_distance)),solution_distance)
         show()
         break

@@ -37,22 +37,22 @@ def get_closest_solutions_pair(s0, s1):
     for i, s0i in enumerate(s0.T):
         for j, s1j in enumerate(s1.T):
             order=None
-            print norm(s0i-s1j, ord=order)
+####            print norm(s0i-s1j, ord=order)
             data.append([norm(s0i - s1j, ord = order), i, j])
     data = mat(data)
-    print '+++'
+####    print '+++'
 
     ret = []
     solution_col_row_pairs = n.argwhere(data == data.min(axis = 0)[0])
     solution_indices = solution_col_row_pairs[:,0]
-    print len(data[solution_indices])
+####    print len(data[solution_indices])
     for solution_data in data[solution_indices]:
-        print solution_data
+####        print solution_data
         norm_value, i, j = solution_data
         pair = mat([s0.T[i], s1.T[j]])
-        print '###'
-        print norm(pair[0]-pair[1], ord=inf)
-        print
+####        print '###'
+####        print norm(pair[0]-pair[1], ord=inf)
+####        print
         return pair
 
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         j5 =  0#rand_range(-115, 115)
         j6 =  0#rand_range(-400, 400)
 
-        j1,j2,j3,j4,j5,j6 = (-140.0, -14.35476839088895, 20.6520766452779, 0, 0, 0)
+#        j1,j2,j3,j4,j5,j6 = (-140.0, -14.35476839088895, 20.6520766452779, 0, 0, 0)
 
 
         joint_values = j1,j2,j3,j4,j5,j6
