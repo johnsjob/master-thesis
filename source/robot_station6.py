@@ -106,7 +106,7 @@ if __name__ == '__main__':
         j2 =  90#rand_range(0, 90)
         j3 =  0
         j4 =  rand_range(-90, 90)
-        j5 =  rand_range(-90, 90)
+        j5 =  rand_range(-60, 60)
         j6 =  rand_range(-180, 180)
 
         joint_values = j1,j2,j3,j4,j5,j6
@@ -116,20 +116,20 @@ if __name__ == '__main__':
         IK_angles = inverse_kinematics_irb140(DH_TABLE, T44)
 
         # sanity check of forward kinematics
-##        for angles in IK_angles.T:
-##            t44, _ = forward_kinematics(*joint_values, **DH_TABLE)
-##            assert(norm(T44 - t44) < 1e-7)
+        for angles in IK_angles.T:
+            t44, _ = forward_kinematics(*joint_values, **DH_TABLE)
+            assert(norm(T44 - t44) < 1e-7)
 
         # list of global-robot-frames
         global_robot_frames = construct_robot_geometry(debug)
             
         # generate a curve in the last global robot-frame
         num_p = 50
-        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.15)
+        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
         # plot robot frames
-        ax = fig.add_subplot(1,3,1, projection='3d')
+        ax = fig.add_subplot(1,2,1, projection='3d')
         plot_robot_geometry(ax, global_robot_frames)
         plot_curve(ax, point_matrix_tf)
         plot_equal_perspective(ax,
@@ -183,7 +183,7 @@ if __name__ == '__main__':
         solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
         print apply_along_axis(n.abs(apply_along_axis(chosen_solutions, func=diff, axis=0)),func=n.max, axis=0)
 
-        ax = fig.add_subplot(1,3,2)
+        ax = fig.add_subplot(1,2,2)
         plot(solution_distance)
         show()
         fig.clear()
