@@ -92,19 +92,19 @@ def my_norm(x, **kwargs):
     return norm(factors*x)
         
 if __name__ == '__main__':
-    for count in n.linspace(-180,180,10):
+    for count in xrange(1000):
         ax, fig = init_plot()
         fig.clear()
-        j1 =  0
-        j2 =  0#rand_range(-90, 110)
-        j3 =  0#rand_range(-230, 50)
-        j4 =  0#rand_range(-200, 200)
-        j5 =  0#rand_range(-115, 115)
-        j6 =  0#rand_range(-400, 400)
-
         j1 =  rand_range(-120,120)
-        j2 =  90#rand_range(0, 90)
-        j3 =  0
+        j2 =  rand_range(-90, 110)
+        j3 =  rand_range(-230, 50)
+        j4 =  rand_range(-200, 200)
+        j5 =  rand_range(-115, 115)
+        j6 =  rand_range(-400, 400)
+
+        j1 =  rand_range(-120, 120)
+        j2 =  90
+        j3 =  rand_range(-10, 10)
         j4 =  rand_range(-90, 90)
         j5 =  rand_range(-60, 60)
         j6 =  rand_range(-180, 180)
@@ -125,7 +125,7 @@ if __name__ == '__main__':
             
         # generate a curve in the last global robot-frame
         num_p = 50
-        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
+        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.60)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
         # plot robot frames
@@ -158,22 +158,26 @@ if __name__ == '__main__':
 ##                extra.append( generate_modulo_solutions(angle_solutions, index, -2*360.0))
             angle_solutions = merge_solutions(*extra)
             angle_solutions = filter_solutions(angle_solutions)
-            print angle_solutions.shape
+####            print angle_solutions.shape
 
 #### This sanity check is very time-costly
-            for k in angle_solutions.T:
-                T44, debug = forward_kinematics(*k, **DH_TABLE)
-                # sanity check
-                err = norm(fk_p - T44)
-                assert( err < 1e-10)
-            print 'sanity checking solutions.....OK!'
+####            for k in angle_solutions.T:
+####                T44, debug = forward_kinematics(*k, **DH_TABLE)
+####                # sanity check
+####                err = norm(fk_p - T44)
+####                assert( err < 1e-10)
+####            print 'sanity checking solutions.....OK!'
+
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
         #filter_solutions(all_solutions.T.reshape(6,156*50)).
         print all_solutions.shape
 
         #check so that all chosen solutions are within angle-ranges
-        chosen_solutions = extract_closest_solutions(all_solutions, norm)
+        try:
+            chosen_solutions = extract_closest_solutions(all_solutions, norm)
+        except:
+            continue
         all_solutions_valid = mat(filter_solutions(chosen_solutions.T).shape) - mat(chosen_solutions.T.shape)
         all_solutions_valid = n.sum(all_solutions_valid) == 0.0
         assert(all_solutions_valid == True)
@@ -181,6 +185,11 @@ if __name__ == '__main__':
 
         diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
         solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
+
+        stop_running = False
+        if not (n.max(solution_distance) < 20.0):
+            print 'too large deviation: '+str(n.max(solution_distance))
+            continue
         print apply_along_axis(n.abs(apply_along_axis(chosen_solutions, func=diff, axis=0)),func=n.max, axis=0)
 
         ax = fig.add_subplot(1,2,2)
@@ -206,4 +215,4 @@ if __name__ == '__main__':
             
             legend(['j'+str(k+1)])
         show()
-#        break
+        break
