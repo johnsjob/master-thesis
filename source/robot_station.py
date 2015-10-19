@@ -1,156 +1,218 @@
+import random
+
 from helperfunctions_plot import *
+from pylab import axhline
 from plane_relative import *
 from denavit_hartenberg140 import *
 
 import itertools as it
 
-def work_it(M, func=n.diff, axis=1):
-    return np.apply_along_axis(func, axis, arr=M)
+def apply_along_axis(M, func, axis=1):
+    return n.apply_along_axis(func, axis, arr=M)
 
-def get_closest_solutions_pair(s0, s1):
-##    diff_list = []
-##    index_list0 = []
-##    index_list1 = []
-##    for i0, k in enumerate(s0):
-##        for i1, l in enumerate(s1):
-##            diff_list.append(k-l)
-##            index_list0.append(i0)
-##            index_list1.append(i1)
-##    index_list0 = mat(index_list0)
-##    index_list1 = mat(index_list1)
-##    diff_list = mat(diff_list)
-##    norm_list = mat(map(norm, diff_list))
-##    t = (norm_list - min(norm_list)) == 0.0
-##    index0 = index_list0[t][0]
-##    index1 = index_list1[t][0]
-##    return mat((s0[index0], s1[index1]))
+def plot_robot_geometry(ax, global_robot_frames):
+        for robot_frame in global_robot_frames:
+            plot_plane(ax,robot_frame, '--',scale_factor=0.1)
+        
+        ax.plot(global_robot_frames[:,0,3],
+                global_robot_frames[:,1,3],
+                global_robot_frames[:,2,3], 'k',linewidth=2)
+
+def plot_curve(ax, point_matrix):
+        ax.scatter(point_matrix[:,0],
+                   point_matrix[:,1],
+                   point_matrix[:,2])
+
+def construct_robot_geometry(fk_debug_info):
+        plane0 = define_plane_from_angles([0,0,0],0, 0, 0)
+        global_robot_frames = matmul_series(*fk_debug_info)
+        global_robot_frames.insert(0, plane0)
+        global_robot_frames = mat( global_robot_frames )
+        return global_robot_frames
+
+def get_closest_solutions_pair(s0, s1, norm_func,**kwargs):
     data = []
     for i, s0i in enumerate(s0):
         for j, s1j in enumerate(s1):
-            data.append([norm(s0i - s1j, ord = None), i, j])
+####            print norm_func(s0i - s1j, **kwargs)
+            data.append([norm_func(s0i - s1j, **kwargs), i, j])
+####    print ''
     data = mat(data)
 
     ret = []
     solution_col_row_pairs = n.argwhere(data == data.min(axis = 0)[0])
     solution_indices = solution_col_row_pairs[:,0]
+####    print len(data[solution_indices])
     for solution_data in data[solution_indices]:
         norm_value, i, j = solution_data
         pair = mat([s0[i], s1[j]])
+####        print 'small: ' + str(n.linalg.norm(n.diff(pair, axis=0)))
         return pair
 
-def get_closest_solution(s0, s):
-    diff_list = []
-    index_list1 = []
-    for i1, l in enumerate(s):
-        diff_list.append(s0-l)
-        index_list1.append(i1)
-    index_list1 = mat(index_list1)
-    diff_list = mat(diff_list)
-    norm_list = mat(map(norm, diff_list))
-    t = (norm_list - min(norm_list)) == 0.0
-    index1 = index_list1[t][0]
-    return s[index1]
+def merge_solutions(*args):
+    result = []
+    for m in args:
+        result += zip(*m)
+    return mat(zip(*result))
 
-def add_solutions(solutions, solution_value, index=5):
-    for s in solutions.T:
-        tmp1 = s.copy()
-        tmp2 = s.copy()
-        old_val = s[index]
-        tmp1[index] = old_val + solution_value
-        yield tmp1
-        tmp2[index] = old_val - solution_value
-        yield tmp2
+def __modulo_solutions(solution_matrix, index, modulo=360.0):
+    for s in solution_matrix.T:
+        result = s.copy()
+        value = result[index]
+        result[index] = value + modulo
+        yield result
 
-def traverse_solutions(*args):
-    for solutions in args:
-        for s in solutions.T:
-            yield s
+def generate_modulo_solutions(solution_matrix, index, modulo=360.0):
+    return mat(zip(*__modulo_solutions(solution_matrix, index, modulo)))
 
-def make_array(list_of):
-    return mat(list_of).T
+def extract_closest_solutions(all_solutions, norm_func, **kwargs):
+        # obtain closest solutions
+        chosen_solutions = []
+        num_solutions = len(all_solutions)
+        for k in xrange(num_solutions-1):
+####            print 'INDEX: ' + str(k)
+            if k == 0:
+                o = all_solutions[k]
+            else:
+                o = chosen_solutions[-1]
 
-		
+            pair = get_closest_solutions_pair(o, all_solutions[k+1], norm_func, **kwargs)
+
+            if k == 0:
+                chosen_solutions.append(mat([pair[0]]))
+                chosen_solutions.append(mat([pair[1]]))
+            else:
+                chosen_solutions.append(mat([pair[1]]))
+
+        chosen_solutions = mat(chosen_solutions).reshape(num_solutions, 6)
+        return chosen_solutions
+def my_norm(x, **kwargs):
+    max_num = len(x)
+    factors = mat([max_num-k for k in xrange(max_num)])
+    return norm(factors*x)
+        
 if __name__ == '__main__':
-    for count in n.linspace(-180,180,10):
+    for count in xrange(1000):
         ax, fig = init_plot()
         fig.clear()
-        j1 =  180 #rand_range(-180, 180)
-        j2 =  0#rand_range(-90, 110)
-        j3 =  0#rand_range(-230, 50)
-        j4 =  0#rand_range(-200, 200)
-        j5 =  0#rand_range(-115, 115)
-        j6 =  0#rand_range(-400, 400)
+        j1 =  rand_range(-120,120)
+        j2 =  rand_range(-90, 110)
+        j3 =  rand_range(-230, 50)
+        j4 =  rand_range(-200, 200)
+        j5 =  rand_range(-115, 115)
+        j6 =  rand_range(-400, 400)
+
+        j1 =  rand_range(-120, 120)
+        j2 =  90
+        j3 =  rand_range(-10, 10)
+        j4 =  rand_range(-90, 90)
+        j5 =  rand_range(-60, 60)
+        j6 =  rand_range(-180, 180)
 
         joint_values = j1,j2,j3,j4,j5,j6
 
+        # get forward kinematics i.e. last global robot-frame
         T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
-        sol = inverse_kinematics_irb140(DH_TABLE, T44)
+        IK_angles = inverse_kinematics_irb140(DH_TABLE, T44)
 
-        plane0 = define_plane_from_angles([0,0,0],0, 0, 0)
+        # sanity check of forward kinematics
+        for angles in IK_angles.T:
+            t44, _ = forward_kinematics(*joint_values, **DH_TABLE)
+            assert(norm(T44 - t44) < 1e-7)
 
-        global_robot = matmul_series(*debug)
-        global_robot.insert(0, debug[0])
-        global_robot.insert(0, plane0)
-        global_robot = mat(global_robot)
-        global_robot_points = global_robot[:,:3,3]
-
-        point_matrix = generate_symmetric_curve()
+        # list of global-robot-frames
+        global_robot_frames = construct_robot_geometry(debug)
+            
+        # generate a curve in the last global robot-frame
+        num_p = 50
+        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.60)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
-    ######
+        # plot robot frames
         ax = fig.add_subplot(1,2,1, projection='3d')
-        for p in global_robot:
-            plot_plane(ax, p, '--',scale_factor=0.1)
-
-        ax.scatter(point_matrix_tf[:,0],point_matrix_tf[:,1],point_matrix_tf[:,2])
-        ax.plot(global_robot_points[:,0], global_robot_points[:,1], global_robot_points[:,2],'k',linewidth=2)
-        plot_equal_perspective(ax, [-0.5,0.5],[-0.5,0.5],[0,1])
+        plot_robot_geometry(ax, global_robot_frames)
+        plot_curve(ax, point_matrix_tf)
+        plot_equal_perspective(ax,
+                               [-0.5,0.5],
+                               [-0.5,0.5],
+                               [0,1])
         #show()
-    ######
-        plane = global_robot[-1]
-        s = point_matrix_tf
+
+        # rename some variables for convenience
+        plane = global_robot_frames[-1]
+        global_plane_curve = point_matrix_tf
+
+        # perform inverse kinematics over a curve and collect all solutions
         all_solutions = []
-        for p in s:
-            T44 = n.zeros((4,4))
-            T44[:,3] = p
-            T44[:3,:3] = plane[:3,:3]
-            solutions = inverse_kinematics_irb140(DH_TABLE, T44)
-            solutions = filter_solutions(solutions)
-            print solutions.T.shape
-            all_solutions.append(solutions.T)
-        a = mat(all_solutions)
+        for point in global_plane_curve:
+            fk_p = homogenous_matrix(plane[:3,:3],
+                                     point[:3])
+            angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
+            #angle_solutions = filter_solutions(angle_solutions)
 
-        import time
-        start = time.time()
-####        l = []
-####        for i in xrange(len(a)-1):
-####            l.append(get_closest_solutions_pair(a[i], a[i+1]))
-####        l = mat(l)
+            extra = [angle_solutions]
+            for index in xrange(3,6):
+                extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+                extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+##                extra.append( generate_modulo_solutions(angle_solutions, index, 2*360.0))
+##                extra.append( generate_modulo_solutions(angle_solutions, index, -2*360.0))
+            angle_solutions = merge_solutions(*extra)
+            angle_solutions = filter_solutions(angle_solutions)
+####            print angle_solutions.shape
 
-        sol = []
-        pair = get_closest_solutions_pair(a[0],a[1])
-        sol.append(pair[0])
-        for i in xrange(1,len(a)):
-            sol.append(get_closest_solution(sol[i-1],a[i]))
-        sol = mat(sol)
-##        s = list(l[:,0,:])
-##        s.append(l[-1,1,:])
-##        s = mat(s)
+#### This sanity check is very time-costly
+####            for k in angle_solutions.T:
+####                T44, debug = forward_kinematics(*k, **DH_TABLE)
+####                # sanity check
+####                err = norm(fk_p - T44)
+####                assert( err < 1e-10)
+####            print 'sanity checking solutions.....OK!'
+
+            all_solutions.append(angle_solutions.T)
+        all_solutions = mat(all_solutions)
+        #filter_solutions(all_solutions.T.reshape(6,156*50)).
+        print all_solutions.shape
+
+        #check so that all chosen solutions are within angle-ranges
+        try:
+            chosen_solutions = extract_closest_solutions(all_solutions, norm)
+        except:
+            continue
+        all_solutions_valid = mat(filter_solutions(chosen_solutions.T).shape) - mat(chosen_solutions.T.shape)
+        all_solutions_valid = n.sum(all_solutions_valid) == 0.0
+        assert(all_solutions_valid == True)
+        print 'All solutions within valid ranges!'
+
+        diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
+        solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
+
+        stop_running = False
+        if not (n.max(solution_distance) < 20.0):
+            print 'too large deviation: '+str(n.max(solution_distance))
+            continue
+        print apply_along_axis(n.abs(apply_along_axis(chosen_solutions, func=diff, axis=0)),func=n.max, axis=0)
+
+        ax = fig.add_subplot(1,2,2)
+        plot(solution_distance)
+        show()
+        fig.clear()
         
-        print 'stop: %0.2f' % (time.time() - start)
-        r = work_it(work_it(sol, func=diff, axis=0),func=norm, axis=1)
-        #r = n.max(n.abs(n.diff(sol,axis=0)),axis=1)
-##        if (r >= 180.0).any():
-##            print r
-##            print n.round(n.max(n.abs(work_it(sol, func=diff, axis=0)),0))
-##            import pdb; pdb.set_trace()
+        ax, fig = init_plot()
+        fig.clear()
 
-        ax0 = fig.add_subplot(1,2,2)
-        ax0.plot(n.linspace(0,360,49),r);
-        xlabel('curve angle')
-        ylabel('solution distance')
+        joint_ranges = [[-180, 180],
+                         [-90, 110],
+                         [-230, 50],
+                         [-200, 200],
+                         [-115, 115],
+                         [-400, 400]]
+
+        for k in xrange(6):
+            ax = fig.add_subplot(3,2,k+1)
+            plot(chosen_solutions[:,k])
+            axhline(joint_ranges[k][0])
+            axhline(joint_ranges[k][1])
+            
+            legend(['j'+str(k+1)])
         show()
         break
-    print n.round(n.max(n.abs(work_it(sol, func=diff, axis=0)),0))
-    #show()
-    #plot(n.max(abs(s-sol), axis=1)); show()
