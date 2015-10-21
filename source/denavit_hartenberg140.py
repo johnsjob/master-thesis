@@ -77,7 +77,7 @@ def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
         if h2 - h1 < 0:
             if norm(wcp[:2]) < norm(p0[:2]):
                 th2 = -(th21 + th22)
-                j2 = -(90 - th2)+360
+                j2 = -(90 - th2)+360 #What?!!?!
             else:
                 th2 = -(th21 - th22)
         else:
