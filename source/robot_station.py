@@ -102,12 +102,12 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  rand_range(-120, 120)
-        j2 =  90
-        j3 =  rand_range(-10, 10)
-        j4 =  rand_range(-90, 90)
-        j5 =  rand_range(-60, 60)
-        j6 =  rand_range(-180, 180)
+        j1 =  0
+        j2 =  0
+        j3 =  0
+        j4 =  0
+        j5 =  0
+        j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,j6
 
@@ -125,7 +125,7 @@ if __name__ == '__main__':
             
         # generate a curve in the last global robot-frame
         num_p = 50
-        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.60)
+        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.20)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
         # plot robot frames
@@ -183,17 +183,20 @@ if __name__ == '__main__':
         assert(all_solutions_valid == True)
         print 'All solutions within valid ranges!'
 
+        max_norm = lambda x,**kwargs: norm(x,ord=inf,**kwargs)
         diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
         solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
+        solution_distance_max = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=max_norm, axis=1)
 
-        stop_running = False
-        if not (n.max(solution_distance) < 20.0):
-            print 'too large deviation: '+str(n.max(solution_distance))
-            continue
+##        stop_running = False
+##        if not (n.max(solution_distance) < 20.0):
+##            print 'too large deviation: '+str(n.max(solution_distance))
+##            continue
         print apply_along_axis(n.abs(apply_along_axis(chosen_solutions, func=diff, axis=0)),func=n.max, axis=0)
 
         ax = fig.add_subplot(1,2,2)
         plot(solution_distance)
+        plot(solution_distance_max)
         show()
         fig.clear()
         
