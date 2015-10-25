@@ -41,12 +41,88 @@ DH_TABLE = {  'table':[-70, 90, 352, 180,'R',
              'convention': 'standard'
             }
 #----------------------------------------------------------------------------------------------------------#
-def elbow_up(dh_table, T44, flipped=False):
+def calc_j1(wcp, flipped):
+    j1 = atan2(wcp[1], wcp[0])
+    if flipped is True:
+        if j1 >= 0:
+            j1 = j1 - 180
+        else:
+            j1 = j1 + 180
+    return j1
+#----------------------------------------------------------------------------------------------------------#
+def elbow_up_flipped(dh_table, T44):
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
     #First angle - j1, used to adjust a point-position
-    j1 = atan2(wcp[1],wcp[0])
+    j1 = calc_j1(wcp, flipped=True)
+
+    p0 = mat([70e-3, 0, 352e-3])
+    p0 = homogenous_rotation_z(j1)[0:3,0:3].dot(p0)
+
+    x0 = norm(wcp[0:2] - p0[0:2])
+    h1 = p0[2]
+    h2 = wcp[2]
+    s = h2 - h1
+    x1 = norm(p0 - wcp)
+    beta = 380e-3
+    alpha = 360e-3
+
+    th3 = ang_sats2(x1, alpha, beta)
+    j3 = -90 + th3
+
+    th21 = atan2(s, x0)
+    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
+    j2 = -90 + th21 - th22
+    #import pdb; pdb.set_trace()
+            
+    j4, j5, j6,\
+    j41,j51,j61, \
+    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+
+    return (j1, j2, j3, j4, j5, j6),\
+           (j1, j2, j3, j41, j51, j61), \
+           (j1, j2, j3, j42, j52, j62)
+#----------------------------------------------------------------------------------------------------------#
+def elbow_down_flipped(dh_table, T44):
+    #Geometrical paramaters
+    wcp = calc_wcp(T44, 0.065)
+
+    #First angle - j1, used to adjust a point-position
+    j1 = calc_j1(wcp, flipped=True)
+    
+    p0 = mat([70e-3, 0, 352e-3])
+    p0 = homogenous_rotation_z(j1)[0:3,0:3].dot(p0)
+
+    x0 = norm(wcp[0:2] - p0[0:2])
+    h1 = p0[2]
+    h2 = wcp[2]
+    s = h2 - h1
+    x1 = norm(p0 - wcp)
+    beta = 380e-3
+    alpha = 360e-3
+
+    th3 = ang_sats2(x1, alpha, beta)
+    j3 = -90 - th3
+
+    th21 = atan2(s, x0)
+    th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
+    j2 = -90 + (th21 + th22)
+
+    j4, j5, j6,\
+    j41,j51,j61, \
+    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+
+    return (j1, j2, j3, j4, j5, j6),\
+           (j1, j2, j3, j41, j51, j61), \
+           (j1, j2, j3, j42, j52, j62)
+#----------------------------------------------------------------------------------------------------------#
+def elbow_up(dh_table, T44):
+    #Geometrical paramaters
+    wcp = calc_wcp(T44, 0.065)
+
+    #First angle - j1, used to adjust a point-position
+    j1 = calc_j1(wcp, flipped=False)
 
     p0 = mat([70e-3, 0, 352e-3])
     p0 = homogenous_rotation_z(j1)[0:3,0:3].dot(p0)
@@ -64,7 +140,8 @@ def elbow_up(dh_table, T44, flipped=False):
 
     th21 = atan2(s, x0)
     th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-    j2 = 90 - (th21 + th22)            
+    j2 = 90 - (th21 + th22)
+    import pdb; pdb.set_trace()
             
     j4, j5, j6,\
     j41,j51,j61, \
@@ -74,12 +151,12 @@ def elbow_up(dh_table, T44, flipped=False):
            (j1, j2, j3, j41, j51, j61), \
            (j1, j2, j3, j42, j52, j62)
 #----------------------------------------------------------------------------------------------------------#
-def elbow_down(dh_table, T44, flipped=False):
+def elbow_down(dh_table, T44):
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
     #First angle - j1, used to adjust a point-position
-    j1 = atan2(wcp[1],wcp[0])
+    j1 = calc_j1(wcp, flipped=False)
 
     p0 = mat([70e-3, 0, 352e-3])
     p0 = homogenous_rotation_z(j1)[0:3,0:3].dot(p0)
@@ -108,7 +185,11 @@ def elbow_down(dh_table, T44, flipped=False):
            (j1, j2, j3, j42, j52, j62)
 #----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
-    return elbow_up(dh_table, T44, flipped)
+    if not flipped:
+        return elbow_up(dh_table, T44)
+    else:
+        return elbow_up_flipped(dh_table, T44)
+        
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
@@ -179,7 +260,10 @@ def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
            (j1, j2, j3, j42, j52, j62)
 
 def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
-    return elbow_down(dh_table, T44, flipped)
+    if not flipped:
+        return elbow_down(dh_table, T44)
+    else:
+        return elbow_down_flipped(dh_table, T44)
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
