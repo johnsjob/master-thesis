@@ -96,7 +96,7 @@ if __name__ == '__main__':
         ax, fig = init_plot()
         fig.clear()
 
-        j1 =  180
+        j1 =  0
         j2 =  0
         j3 =  0
         j4 =  0
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         plot_equal_perspective(ax,
                                    [-0.5,0.5],
                                    [-0.5,0.5],
-                                   [0,1])
+                                   [0,0.5])
         # plot robot frames
         ax = fig.add_subplot(2,2,2, projection='3d')
         plot_robot_geometry(ax, global_robot_frames)
@@ -156,7 +156,7 @@ if __name__ == '__main__':
         plot_equal_perspective(ax,
                                    [-0.5,0.5],
                                    [-0.5,0.5],
-                                   [0,1])
+                                   [0,0.5])
 
         # plot robot frames
         ax = fig.add_subplot(2,2,3, projection='3d')
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         plot_equal_perspective(ax,
                                    [-0.5,0.5],
                                    [-0.5,0.5],
-                                   [0,1])
+                                   [0,0.5])
         # plot robot frames
         ax = fig.add_subplot(2,2,4, projection='3d')
         plot_robot_geometry(ax, global_robot_frames)
@@ -181,6 +181,6 @@ if __name__ == '__main__':
         plot_equal_perspective(ax,
                                    [-0.5,0.5],
                                    [-0.5,0.5],
-                                   [0,1])
+                                   [0,0.5])
         show()
         break
