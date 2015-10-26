@@ -141,7 +141,9 @@ def elbow_up(dh_table, T44):
     th21 = atan2(s, x0)
     th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
     j2 = 90 - (th21 + th22)
-    import pdb; pdb.set_trace()
+    if norm(wcp[:2])-norm(p0[:2]) < 0:
+        j2 = -90 + (th21 - th22)
+##        j3 = -90-th3
             
     j4, j5, j6,\
     j41,j51,j61, \
@@ -175,7 +177,10 @@ def elbow_down(dh_table, T44):
     th21 = atan2(s, x0)
     th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
     j2 = 90 - (th21 - th22)
-
+    if norm(wcp[:2])-norm(p0[:2]) < 0:
+        j2 = -90 + (th21+th22)
+##        j3 = -90-th3
+    
     j4, j5, j6,\
     j41,j51,j61, \
     j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
@@ -466,7 +471,7 @@ class TestIRB140(unittest.TestCase):
 
             print "T44 sanity check-norm: " + str(norm(T44 - A))
             self.assertLess(norm(T44 - A), 1e-7)
-        
+
     def test_inverse_kinematics_from_file(self):
         print '\ntest_inverse_kinematics'
         data = parse.parse_file("C:\\robot-studio-output.txt")
