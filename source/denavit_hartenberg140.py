@@ -732,17 +732,16 @@ class TestIRB140(unittest.TestCase):
             j5 = rand_range(-115, 115)
             j6 = rand_range(-400, 400)
 
-            # makes sure we never end up at a singular point
-            if abs(90 - j2) <= 1e-7:
-                if abs(j2 - j3) <= 1e-7:
-                    j3 = j3 + n.sign(rand_range(-1, 1)) * rand_range(0.5, 1)
+            # makes sure we never end up at a singular point                
 
-            if abs(j2) <= 1e-7:
-                if abs(j2 - j3) <= 1e-7:
-                    j3 = j3 + n.sign(rand_range(-1, 1)) * rand_range(0.5, 1)
+            while (abs(j3) - 90) < 1e-7:
+                j3 = rand_range(-230, 50)
 
             s0 = j1,j2,j3,j4,j5,j6
             T44, debug1  = forward_kinematics(j1, j2, j3, j4, j5, j6, **DH_TABLE)
+            while norm(calc_wcp(T44,L=0.065)[:2]) < 1e-7:
+                j2 = rand_range(-90, 110)
+                T44, debug1  = forward_kinematics(j1, j2, j3, j4, j5, j6, **DH_TABLE)
             
             sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
 

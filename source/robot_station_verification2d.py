@@ -94,8 +94,8 @@ if __name__ == '__main__':
         fig.clear()
 
         j1 =  0
-        j2 =  10
-        j3 =  -110
+        j2 =  180
+        j3 =  -90+5
         j4 =  0
         j5 =  0
         j6 =  0
@@ -113,19 +113,19 @@ if __name__ == '__main__':
         IK_angles = mat(zip(elbow_up, elbow_down, elbow_up_fl, elbow_down_fl)).reshape(6,12)
         mode = ['up','down','up_fl','down_fl']
         # sanity check of forward kinematics
-##        for i,angles in enumerate(IK_angles.T):
-##            t44, _ = forward_kinematics(*angles, **DH_TABLE)
-##            print mode[i/3]
-##            print '\nERROR:'
-##            print round(n.abs(angles-joint_values))
-##            print '\nFK-ERROR:'
-##            print norm(T44 - t44)
-##            print '\nANGLE-ERROR:'
-##            print norm(angles - mat(joint_values))
-##            assert(norm(T44 - t44) < 1e-10)
-##            print '---'
-##            assert(norm(T44 - t44) < 1e-7)
-##        print "forward kinematics ok!"
+        for i,angles in enumerate(IK_angles.T):
+            t44, _ = forward_kinematics(*angles, **DH_TABLE)
+            print mode[i/3]
+            print '\nERROR:'
+            print round(n.abs(angles-joint_values))
+            print '\nFK-ERROR:'
+            print norm(T44 - t44)
+            print '\nANGLE-ERROR:'
+            print norm(angles - mat(joint_values))
+            assert(norm(T44 - t44) < 1e-10)
+            print '---'
+            assert(norm(T44 - t44) < 1e-7)
+        print "forward kinematics ok!"
 
         # list of global-robot-frames
         global_robot_frames = construct_robot_geometry(debug)
