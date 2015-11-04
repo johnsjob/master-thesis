@@ -27,25 +27,6 @@ def construct_robot_geometry(fk_debug_info):
         global_robot_frames = mat( global_robot_frames )
         return global_robot_frames
 
-def get_closest_solutions_pair(s0, s1, norm_func,**kwargs):
-    data = []
-    for i, s0i in enumerate(s0):
-        for j, s1j in enumerate(s1):
-####            print norm_func(s0i - s1j, **kwargs)
-            data.append([norm_func(s0i - s1j, **kwargs), i, j])
-####    print ''
-    data = mat(data)
-
-    ret = []
-    solution_col_row_pairs = n.argwhere(data == data.min(axis = 0)[0])
-    solution_indices = solution_col_row_pairs[:,0]
-####    print len(data[solution_indices])
-    for solution_data in data[solution_indices]:
-        norm_value, i, j = solution_data
-        pair = mat([s0[i], s1[j]])
-####        print 'small: ' + str(n.linalg.norm(n.diff(pair, axis=0)))
-        return pair
-
 def merge_solutions(*args):
     result = []
     for m in args:
@@ -62,27 +43,6 @@ def __modulo_solutions(solution_matrix, index, modulo=360.0):
 def generate_modulo_solutions(solution_matrix, index, modulo=360.0):
     return mat(zip(*__modulo_solutions(solution_matrix, index, modulo)))
 
-def extract_closest_solutions(all_solutions, norm_func, **kwargs):
-        # obtain closest solutions
-        chosen_solutions = []
-        num_solutions = len(all_solutions)
-        for k in xrange(num_solutions-1):
-####            print 'INDEX: ' + str(k)
-            if k == 0:
-                o = all_solutions[k]
-            else:
-                o = chosen_solutions[-1]
-
-            pair = get_closest_solutions_pair(o, all_solutions[k+1], norm_func, **kwargs)
-
-            if k == 0:
-                chosen_solutions.append(mat([pair[0]]))
-                chosen_solutions.append(mat([pair[1]]))
-            else:
-                chosen_solutions.append(mat([pair[1]]))
-
-        chosen_solutions = mat(chosen_solutions).reshape(num_solutions, 6)
-        return chosen_solutions
 def my_norm(x, **kwargs):
     max_num = len(x)
     factors = mat([max_num-k for k in xrange(max_num)])
@@ -94,8 +54,8 @@ if __name__ == '__main__':
         fig.clear()
 
         j1 =  0
-        j2 =  180
-        j3 =  -90+5
+        j2 =  90
+        j3 =  0
         j4 =  0
         j5 =  0
         j6 =  0
@@ -129,7 +89,8 @@ if __name__ == '__main__':
 
         # list of global-robot-frames
         global_robot_frames = construct_robot_geometry(debug)
-            
+
+        L = 1
         # plot robot frames
         ax = fig.add_subplot(2,2,1)
         plot_robot_geometry(ax, global_robot_frames)
@@ -138,6 +99,10 @@ if __name__ == '__main__':
         global_IK_frames = construct_robot_geometry(debug_IK)
 
         plot_robot_geometry(ax, global_IK_frames,'g--')
+        ax.plot([-L, L, -L, L],
+                [L, L, 0, 0],'w.')
+        
+        
 ##        plot_equal_perspective(ax,
 ##                                   [-0.5,0.5],
 ##                                   [-0.5,0.5],
@@ -150,6 +115,8 @@ if __name__ == '__main__':
         global_IK_frames = construct_robot_geometry(debug_IK)
 
         plot_robot_geometry(ax, global_IK_frames,'r--')
+        ax.plot([-L, L, -L, L],
+                [L, L, 0, 0],'w.')
 ##        plot_equal_perspective(ax,
 ##                                   [-0.5,0.5],
 ##                                   [-0.5,0.5],
@@ -163,6 +130,8 @@ if __name__ == '__main__':
         global_IK_frames = construct_robot_geometry(debug_IK)
 
         plot_robot_geometry(ax, global_IK_frames,'g--')
+        ax.plot([-L, L, -L, L],
+                [L, L, 0, 0],'w.')
 ##        plot_equal_perspective(ax,
 ##                                   [-0.5,0.5],
 ##                                   [-0.5,0.5],
@@ -175,6 +144,8 @@ if __name__ == '__main__':
         global_IK_frames = construct_robot_geometry(debug_IK)
 
         plot_robot_geometry(ax, global_IK_frames,'r--')
+        ax.plot([-L, L, -L, L],
+                [L, L, 0, 0],'w.')
 ##        plot_equal_perspective(ax,
 ##                                   [-0.5,0.5],
 ##                                   [-0.5,0.5],

@@ -30,24 +30,6 @@ def construct_robot_geometry(fk_debug_info):
         global_robot_frames = mat( global_robot_frames )
         return global_robot_frames
 
-def get_closest_solutions_pair(s0, s1, norm_func,**kwargs):
-    data = []
-    for i, s0i in enumerate(s0):
-        for j, s1j in enumerate(s1):
-####            print norm_func(s0i - s1j, **kwargs)
-            data.append([norm_func(s0i - s1j, **kwargs), i, j])
-####    print ''
-    data = mat(data)
-
-    ret = []
-    solution_col_row_pairs = n.argwhere(data == data.min(axis = 0)[0])
-    solution_indices = solution_col_row_pairs[:,0]
-####    print len(data[solution_indices])
-    for solution_data in data[solution_indices]:
-        norm_value, i, j = solution_data
-        pair = mat([s0[i], s1[j]])
-####        print 'small: ' + str(n.linalg.norm(n.diff(pair, axis=0)))
-        return pair
 
 def merge_solutions(*args):
     result = []
@@ -65,32 +47,49 @@ def __modulo_solutions(solution_matrix, index, modulo=360.0):
 def generate_modulo_solutions(solution_matrix, index, modulo=360.0):
     return mat(zip(*__modulo_solutions(solution_matrix, index, modulo)))
 
-def extract_closest_solutions(all_solutions, norm_func, **kwargs):
-        # obtain closest solutions
-        chosen_solutions = []
-        num_solutions = len(all_solutions)
-        for k in xrange(num_solutions-1):
-####            print 'INDEX: ' + str(k)
-            if k == 0:
-                o = all_solutions[k]
-            else:
-                o = chosen_solutions[-1]
-
-            pair = get_closest_solutions_pair(o, all_solutions[k+1], norm_func, **kwargs)
-
-            if k == 0:
-                chosen_solutions.append(mat([pair[0]]))
-                chosen_solutions.append(mat([pair[1]]))
-            else:
-                chosen_solutions.append(mat([pair[1]]))
-
-        chosen_solutions = mat(chosen_solutions).reshape(num_solutions, 6)
-        return chosen_solutions
 def my_norm(x, **kwargs):
     max_num = len(x)
     factors = mat([max_num-k for k in xrange(max_num)])
     return norm(factors*x)
-        
+
+def calc_pair_norms(p0, p1):
+    res = []
+    for s0 in p0:
+        tmp = []
+        for s1 in p1:
+            #N = norm(s0 - s1)
+            N = abs(s0[1]-s1[1])
+            print N
+            tmp.append(N)
+        res.append(tmp)
+    print ''
+##        break
+    return res
+    
+def map_norms(solutions):
+    res = []
+    num_solutions = len(solutions)
+    for i in xrange(num_solutions-num_solutions+2):
+        p_i = solutions[i]
+        p_j = solutions[i+1]
+        pair_norms = calc_pair_norms(p_i, p_j)
+        res.append(pair_norms)
+##        break
+    return res
+
+def map_edge_connections(i,res_i, res):
+    res_i = mat(res_i)
+    num_edges_j, num_edges_k = res_i.shape
+    for j in xrange(num_edges_j):
+        for k in xrange(num_edges_k):
+            glob = 'p('+str(i)+','+str(j)+')'
+            loc = 'p('+str(i+1)+','+str(k)+')'
+            if not res.has_key(glob):
+                res[glob] = {}
+            res[glob][loc] = res_i[j,k]
+        res[glob] = dict(res[glob])
+    #import pdb; pdb.set_trace()
+
 if __name__ == '__main__':
     for count in xrange(1000):
         ax, fig = init_plot()
@@ -148,74 +147,76 @@ if __name__ == '__main__':
             fk_p = homogenous_matrix(plane[:3,:3],
                                      point[:3])
             angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
-            #angle_solutions = filter_solutions(angle_solutions)
-
             extra = [angle_solutions]
             for index in xrange(3,6):
                 extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
                 extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-##                extra.append( generate_modulo_solutions(angle_solutions, index, 2*360.0))
-##                extra.append( generate_modulo_solutions(angle_solutions, index, -2*360.0))
             angle_solutions = merge_solutions(*extra)
             angle_solutions = filter_solutions(angle_solutions)
-####            print angle_solutions.shape
-
-#### This sanity check is very time-costly
-####            for k in angle_solutions.T:
-####                T44, debug = forward_kinematics(*k, **DH_TABLE)
-####                # sanity check
-####                err = norm(fk_p - T44)
-####                assert( err < 1e-10)
-####            print 'sanity checking solutions.....OK!'
-
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
-        #filter_solutions(all_solutions.T.reshape(6,156*50)).
+        all_solutions = [
+            [[0,1],[2,3],[12,13]],
+            [[4,5],[6,7]],
+            [[8,9],[10,11]]
+            ]
+        all_solutions = mat(all_solutions)
         print all_solutions.shape
+        res = map_norms(all_solutions)
 
-        #check so that all chosen solutions are within angle-ranges
-        try:
-            chosen_solutions = extract_closest_solutions(all_solutions, norm)
-        except:
-            continue
-        all_solutions_valid = mat(filter_solutions(chosen_solutions.T).shape) - mat(chosen_solutions.T.shape)
-        all_solutions_valid = n.sum(all_solutions_valid) == 0.0
-        assert(all_solutions_valid == True)
-        print 'All solutions within valid ranges!'
-
-        max_norm = lambda x,**kwargs: norm(x,ord=inf,**kwargs)
-        diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
-        solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
-        solution_distance_max = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=max_norm, axis=1)
-
-##        stop_running = False
-##        if not (n.max(solution_distance) < 20.0):
-##            print 'too large deviation: '+str(n.max(solution_distance))
-##            continue
-        print apply_along_axis(n.abs(apply_along_axis(chosen_solutions, func=diff, axis=0)),func=n.max, axis=0)
-
-        ax = fig.add_subplot(1,2,2)
-        plot(solution_distance)
-        plot(solution_distance_max)
-        show()
-        fig.clear()
-        
-        ax, fig = init_plot()
-        fig.clear()
-
-        joint_ranges = [[-180, 180],
-                         [-90, 110],
-                         [-230, 50],
-                         [-200, 200],
-                         [-115, 115],
-                         [-400, 400]]
-
-        for k in xrange(6):
-            ax = fig.add_subplot(3,2,k+1)
-            plot(chosen_solutions[:,k])
-            axhline(joint_ranges[k][0])
-            axhline(joint_ranges[k][1])
-            
-            legend(['j'+str(k+1)])
-        show()
+        d = {}
+        for i in xrange(2):
+            res_i = res[i]
+            map_edge_connections(i, res_i, d)
+        for k in sorted(d.keys()):
+            print k+':'
+            for l in sorted(d[k].keys()):
+                print '\t'+l+' = '+str(d[k][l])
+        #import pdb; pdb.set_trace()
         break
+####        #check so that all chosen solutions are within angle-ranges
+####        try:
+####            chosen_solutions = extract_closest_solutions(all_solutions, norm)
+####        except:
+####            continue
+####        all_solutions_valid = mat(filter_solutions(chosen_solutions.T).shape) - mat(chosen_solutions.T.shape)
+####        all_solutions_valid = n.sum(all_solutions_valid) == 0.0
+####        assert(all_solutions_valid == True)
+####        print 'All solutions within valid ranges!'
+####
+####        max_norm = lambda x,**kwargs: norm(x,ord=inf,**kwargs)
+####        diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
+####        solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
+####        solution_distance_max = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=max_norm, axis=1)
+####
+######        stop_running = False
+######        if not (n.max(solution_distance) < 20.0):
+######            print 'too large deviation: '+str(n.max(solution_distance))
+######            continue
+####        print apply_along_axis(n.abs(apply_along_axis(chosen_solutions, func=diff, axis=0)),func=n.max, axis=0)
+####
+####        ax = fig.add_subplot(1,2,2)
+####        plot(solution_distance)
+####        plot(solution_distance_max)
+####        show()
+####        fig.clear()
+####        
+####        ax, fig = init_plot()
+####        fig.clear()
+####
+####        joint_ranges = [[-180, 180],
+####                         [-90, 110],
+####                         [-230, 50],
+####                         [-200, 200],
+####                         [-115, 115],
+####                         [-400, 400]]
+####
+####        for k in xrange(6):
+####            ax = fig.add_subplot(3,2,k+1)
+####            plot(chosen_solutions[:,k])
+####            axhline(joint_ranges[k][0])
+####            axhline(joint_ranges[k][1])
+####            
+####            legend(['j'+str(k+1)])
+####        show()
+####        break
