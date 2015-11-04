@@ -61,8 +61,8 @@ def calc_pair_norms(p0, p1):
     for s0 in p0:
         tmp = []
         for s1 in p1:
-            #N = norm(s0 - s1)
-            N = abs(s0[0]-s1[0])
+            N = norm(s0 - s1)
+            #N = abs(s0[0]-s1[0])
             print N
             tmp.append(N)
         res.append(tmp)
@@ -73,7 +73,7 @@ def calc_pair_norms(p0, p1):
 def map_norms(solutions):
     res = []
     num_solutions = len(solutions)
-    for i in xrange(num_solutions-num_solutions+2):
+    for i in xrange(num_solutions-1):
         p_i = solutions[i]
         p_j = solutions[i+1]
         pair_norms = calc_pair_norms(p_i, p_j)
@@ -159,27 +159,36 @@ if __name__ == '__main__':
             angle_solutions = filter_solutions(angle_solutions)
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
-        all_solutions = [
-            [[0],[0],[0]],
-            [[2],[1]],
-            [[3],[4]]
-            ]
+####        all_solutions = [
+####            [[0],[0],[0]],
+####            [[2],[1]],
+####            [[3],[4],[5]]
+####            ]
+####        all_solutions = mat(all_solutions)
+####        for k in xrange(len(all_solutions)):
+####            all_solutions[k] = mat(all_solutions[k])
+########        #1/0
         all_solutions = mat(all_solutions)
         print all_solutions.shape
         print mat(all_solutions[0]).shape
         res = map_norms(all_solutions)
 
         d = {}
-        for i in xrange(2):
+        for i in xrange(len(res)):
             res_i = res[i]
             map_edge_connections(i, res_i, d)
         for k in sorted(d.keys()):
             print k+':'
             for l in sorted(d[k].keys()):
                 print '\t'+l+' = '+str(d[k][l])
+        #fix the ends that are not connected to anything
+        glob_ends = ['p('+str(len(res))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
+        for k in glob_ends:
+            d[k] = {}
         graph = d
+        #graph['p(2,2)'] = {}
         from graph import shortestPath as sp
-        print sp(graph, 'p(0,0)','p(2,0)')
+        print sp(graph, 'p(0,2)','p(2,2)')
         #import pdb; pdb.set_trace()
         break
 ####        #check so that all chosen solutions are within angle-ranges
