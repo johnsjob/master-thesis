@@ -14,13 +14,13 @@ sys.path.append('../int/djikstra/')
 def apply_along_axis(M, func, axis=1):
     return n.apply_along_axis(func, axis, arr=M)
 
-def plot_robot_geometry(ax, global_robot_frames):
+def plot_robot_geometry(ax, global_robot_frames, color='k'):
         for robot_frame in global_robot_frames:
-            plot_plane(ax,robot_frame, '--',scale_factor=0.1)
+            plot_plane(ax,robot_frame, '--', scale_factor=0.1)
         
         ax.plot(global_robot_frames[:,0,3],
                 global_robot_frames[:,1,3],
-                global_robot_frames[:,2,3], 'k',linewidth=2)
+                global_robot_frames[:,2,3], color, linewidth=2)
 
 def plot_curve(ax, point_matrix):
         ax.scatter(point_matrix[:,0],
@@ -123,9 +123,12 @@ if __name__ == '__main__':
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,j6
+        joint_values2 = [  17.73012915,  -26.82580298, -153.76780724,  -91.85597258,
+        -17.73974443,  271.94855948]
 
         # get forward kinematics i.e. last global robot-frame
         T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
+        _, debug2 = forward_kinematics(*joint_values2, **DH_TABLE)
         IK_angles = inverse_kinematics_irb140(DH_TABLE, T44)
 
         # sanity check of forward kinematics
@@ -135,15 +138,17 @@ if __name__ == '__main__':
 
         # list of global-robot-frames
         global_robot_frames = construct_robot_geometry(debug)
+        global_robot_frames2 = construct_robot_geometry(debug2)
             
         # generate a curve in the last global robot-frame
-        num_p = 75
+        num_p = 50
         point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
         # plot robot frames
         ax = fig.add_subplot(1,2,1, projection='3d')
-        plot_robot_geometry(ax, global_robot_frames)
+        #plot_robot_geometry(ax, global_robot_frames,'b--')
+        plot_robot_geometry(ax, global_robot_frames2,'k')
         plot_curve(ax, point_matrix_tf)
         plot_equal_perspective(ax,
                                [-0.5,0.5],
@@ -225,9 +230,11 @@ if __name__ == '__main__':
         for i,k in enumerate(all_solution_distances):
             if n.max(abs(k)) < 20:
                 count = count + 1
-                print n.max(abs(k))
-                print i
+                print 'max-err: ' + str(n.max(abs(k)))
+                print 'index: ' + str(i)
         print 'valid paths: ' + str(count)
-        #plot(mat(chosen_solutions)[133,:,:3]); show()
+        show()
+        print mat(chosen_solutions)[175,10,:]
+        plot(mat(chosen_solutions)[175,:,:3]); show()
         show()
         break
