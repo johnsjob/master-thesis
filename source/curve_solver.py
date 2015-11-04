@@ -81,18 +81,30 @@ def map_norms(solutions):
 ##        break
     return res
 
-def map_edge_connections(i,res_i, res):
+def map_edge_connections(i,res_i, dict_res):
     res_i = mat(res_i)
     num_edges_j, num_edges_k = res_i.shape
     for j in xrange(num_edges_j):
         for k in xrange(num_edges_k):
             glob = 'p('+str(i)+','+str(j)+')'
             loc = 'p('+str(i+1)+','+str(k)+')'
-            if not res.has_key(glob):
-                res[glob] = {}
-            res[glob][loc] = res_i[j,k]
-        res[glob] = dict(res[glob])
+            if not dict_res.has_key(glob):
+                dict_res[glob] = {}
+            dict_res[glob][loc] = res_i[j,k]
+        dict_res[glob] = dict(dict_res[glob])
     #import pdb; pdb.set_trace()
+
+def extract_solution_from_node_id(str_node_id, all_solutions):
+    glob, loc = str_node_id[2:-1].split(',')
+    glob = int(glob)
+    loc = int(loc)
+    return all_solutions[glob][loc]
+
+def get_solutions_from_node_ids(all_solutions, *node_ids):
+    res = []
+    for node_id in node_ids:
+        res.append( extract_solution_from_node_id(node_id, all_solutions) )
+    return res
 
 if __name__ == '__main__':
     for count in xrange(1000):
@@ -188,7 +200,11 @@ if __name__ == '__main__':
         graph = d
         #graph['p(2,2)'] = {}
         from graph import shortestPath as sp
-        print sp(graph, 'p(0,2)','p(2,2)')
+        R = sp(graph, 'p(0,0)','p(49,0)')
+        print R
+        S = get_solutions_from_node_ids(all_solutions, *R)
+        S = mat(S)
+        print n.round(n.diff(S,axis=0))
         #import pdb; pdb.set_trace()
         break
 ####        #check so that all chosen solutions are within angle-ranges
