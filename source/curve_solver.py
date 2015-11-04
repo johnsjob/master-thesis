@@ -7,6 +7,10 @@ from denavit_hartenberg140 import *
 
 import itertools as it
 
+import sys
+sys.path.append('../int/djikstra/')
+
+
 def apply_along_axis(M, func, axis=1):
     return n.apply_along_axis(func, axis, arr=M)
 
@@ -58,7 +62,7 @@ def calc_pair_norms(p0, p1):
         tmp = []
         for s1 in p1:
             #N = norm(s0 - s1)
-            N = abs(s0[1]-s1[1])
+            N = abs(s0[0]-s1[0])
             print N
             tmp.append(N)
         res.append(tmp)
@@ -156,12 +160,13 @@ if __name__ == '__main__':
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
         all_solutions = [
-            [[0,1],[2,3],[12,13]],
-            [[4,5],[6,7]],
-            [[8,9],[10,11]]
+            [[0],[0],[0]],
+            [[2],[1]],
+            [[3],[4]]
             ]
         all_solutions = mat(all_solutions)
         print all_solutions.shape
+        print mat(all_solutions[0]).shape
         res = map_norms(all_solutions)
 
         d = {}
@@ -172,6 +177,9 @@ if __name__ == '__main__':
             print k+':'
             for l in sorted(d[k].keys()):
                 print '\t'+l+' = '+str(d[k][l])
+        graph = d
+        from graph import shortestPath as sp
+        print sp(graph, 'p(0,0)','p(2,0)')
         #import pdb; pdb.set_trace()
         break
 ####        #check so that all chosen solutions are within angle-ranges
