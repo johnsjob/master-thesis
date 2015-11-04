@@ -228,5 +228,6 @@ if __name__ == '__main__':
                 print n.max(abs(k))
                 print i
         print 'valid paths: ' + str(count)
+        #plot(mat(chosen_solutions)[133,:,:3]); show()
         show()
         break
