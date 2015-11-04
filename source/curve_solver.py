@@ -62,12 +62,10 @@ def calc_pair_norms(p0, p1):
         tmp = []
         for s1 in p1:
             N = norm(s0 - s1)
-            #N = abs(s0[0]-s1[0])
-            print N
+###            print N
             tmp.append(N)
         res.append(tmp)
-    print ''
-##        break
+###    print ''
     return res
     
 def map_norms(solutions):
@@ -117,8 +115,8 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  0
-        j2 =  90
+        j1 =  -180
+        j2 =  0
         j3 =  0
         j4 =  0
         j5 =  0
@@ -139,8 +137,8 @@ if __name__ == '__main__':
         global_robot_frames = construct_robot_geometry(debug)
             
         # generate a curve in the last global robot-frame
-        num_p = 50
-        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.20)
+        num_p = 75
+        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
         # plot robot frames
@@ -184,15 +182,16 @@ if __name__ == '__main__':
         print all_solutions.shape
         print mat(all_solutions[0]).shape
         res = map_norms(all_solutions)
-
+        print '#1'
         d = {}
         for i in xrange(len(res)):
             res_i = res[i]
             map_edge_connections(i, res_i, d)
-        for k in sorted(d.keys()):
-            print k+':'
-            for l in sorted(d[k].keys()):
-                print '\t'+l+' = '+str(d[k][l])
+###        for k in sorted(d.keys()):
+###            print k+':'
+###            for l in sorted(d[k].keys()):
+###                print '\t'+l+' = '+str(d[k][l])
+        print '#2'
         #fix the ends that are not connected to anything
         glob_ends = ['p('+str(len(res))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
         for k in glob_ends:
@@ -200,56 +199,34 @@ if __name__ == '__main__':
         graph = d
         #graph['p(2,2)'] = {}
         from graph import shortestPath as sp
-        R = sp(graph, 'p(0,0)','p(49,0)')
-        print R
-        S = get_solutions_from_node_ids(all_solutions, *R)
-        S = mat(S)
-        print n.round(n.diff(S,axis=0))
-        #import pdb; pdb.set_trace()
+        num_starts = len(all_solutions[0])
+        num_ends = len(all_solutions[-1])
+        chosen_solutions = []
+        print '#3'
+        import time
+        _start = time.time()
+        for s in xrange(num_starts):
+            print s
+            for e in xrange(num_ends):
+                #R = sp(graph, 'p(0,'+str(s)+')','p(49,'+str(e)+')')
+                R = sp(graph, 'p(0,'+str(s)+')','p('+str(len(all_solutions) - 1)+','+str(e)+')')
+                S = get_solutions_from_node_ids(all_solutions, *R)
+                S = mat(S)
+                chosen_solutions.append(S)
+        _stop = time.time()
+        print 'time: ' + str(_stop-_start)
+        print '#4'
+        all_solution_distances = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=1),func=norm, axis=2)
+        ax = fig.add_subplot(1,2,2)
+        for solution_distance in all_solution_distances:
+            plot(solution_distance)
+        print 'total paths available:' + str(len(chosen_solutions))
+        count = 0
+        for i,k in enumerate(all_solution_distances):
+            if n.max(abs(k)) < 20:
+                count = count + 1
+                print n.max(abs(k))
+                print i
+        print 'valid paths: ' + str(count)
+        show()
         break
-####        #check so that all chosen solutions are within angle-ranges
-####        try:
-####            chosen_solutions = extract_closest_solutions(all_solutions, norm)
-####        except:
-####            continue
-####        all_solutions_valid = mat(filter_solutions(chosen_solutions.T).shape) - mat(chosen_solutions.T.shape)
-####        all_solutions_valid = n.sum(all_solutions_valid) == 0.0
-####        assert(all_solutions_valid == True)
-####        print 'All solutions within valid ranges!'
-####
-####        max_norm = lambda x,**kwargs: norm(x,ord=inf,**kwargs)
-####        diff_solutions = apply_along_axis(chosen_solutions, func=n.diff, axis=0)
-####        solution_distance = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=norm, axis=1)
-####        solution_distance_max = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=0),func=max_norm, axis=1)
-####
-######        stop_running = False
-######        if not (n.max(solution_distance) < 20.0):
-######            print 'too large deviation: '+str(n.max(solution_distance))
-######            continue
-####        print apply_along_axis(n.abs(apply_along_axis(chosen_solutions, func=diff, axis=0)),func=n.max, axis=0)
-####
-####        ax = fig.add_subplot(1,2,2)
-####        plot(solution_distance)
-####        plot(solution_distance_max)
-####        show()
-####        fig.clear()
-####        
-####        ax, fig = init_plot()
-####        fig.clear()
-####
-####        joint_ranges = [[-180, 180],
-####                         [-90, 110],
-####                         [-230, 50],
-####                         [-200, 200],
-####                         [-115, 115],
-####                         [-400, 400]]
-####
-####        for k in xrange(6):
-####            ax = fig.add_subplot(3,2,k+1)
-####            plot(chosen_solutions[:,k])
-####            axhline(joint_ranges[k][0])
-####            axhline(joint_ranges[k][1])
-####            
-####            legend(['j'+str(k+1)])
-####        show()
-####        break
