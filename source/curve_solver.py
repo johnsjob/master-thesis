@@ -34,6 +34,10 @@ def construct_robot_geometry(fk_debug_info):
         global_robot_frames = mat( global_robot_frames )
         return global_robot_frames
 
+def plot_robot(ax, color='k', *joint_values):
+    T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
+    robot_frames = construct_robot_geometry(debug)
+    plot_robot_geometry(ax, robot_frames, color)
 
 def merge_solutions(*args):
     result = []
@@ -115,7 +119,7 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  -180
+        j1 =  180
         j2 =  0
         j3 =  0
         j4 =  0
@@ -123,12 +127,9 @@ if __name__ == '__main__':
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,j6
-        joint_values2 = [  17.73012915,  -26.82580298, -153.76780724,  -91.85597258,
-        -17.73974443,  271.94855948]
-
+ 
         # get forward kinematics i.e. last global robot-frame
         T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
-        _, debug2 = forward_kinematics(*joint_values2, **DH_TABLE)
         IK_angles = inverse_kinematics_irb140(DH_TABLE, T44)
 
         # sanity check of forward kinematics
@@ -138,7 +139,6 @@ if __name__ == '__main__':
 
         # list of global-robot-frames
         global_robot_frames = construct_robot_geometry(debug)
-        global_robot_frames2 = construct_robot_geometry(debug2)
             
         # generate a curve in the last global robot-frame
         num_p = 50
@@ -147,8 +147,7 @@ if __name__ == '__main__':
 
         # plot robot frames
         ax = fig.add_subplot(1,2,1, projection='3d')
-        #plot_robot_geometry(ax, global_robot_frames,'b--')
-        plot_robot_geometry(ax, global_robot_frames2,'k')
+        plot_robot_geometry(ax, global_robot_frames,'b--')
         plot_curve(ax, point_matrix_tf)
         plot_equal_perspective(ax,
                                [-0.5,0.5],
@@ -233,6 +232,15 @@ if __name__ == '__main__':
                 print 'max-err: ' + str(n.max(abs(k)))
                 print 'index: ' + str(i)
         print 'valid paths: ' + str(count)
+######        ax = fig.add_subplot(1,3,3, projection='3d')
+######        for k in chosen_solutions:
+######            for l in k:
+######                #print len(l)
+######                t44, deb = forward_kinematics(*l, **DH_TABLE)
+######                frames = construct_robot_geometry(deb)
+######                plot_robot_geometry(ax, frames)
+######                assert(norm(T44[:3,:3] - t44[:3,:3]) < 1e-7)
+######            show()
         show()
         print mat(chosen_solutions)[175,10,:]
         plot(mat(chosen_solutions)[175,:,:3]); show()
