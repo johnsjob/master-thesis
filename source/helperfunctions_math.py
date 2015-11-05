@@ -90,7 +90,21 @@ def matmul_series(*matrix_factors):
         res.append(reduce(dot, matrix_factors[:i+1], 1))
     return res
 #----------------------------------------------------------------------------------------------------------#
-def homogenous_matrix(R, t):
+def homogenous_matrix(*args):
+    """
+    Creates a homogenous matrix ( 4x4 matrix of type [[R,t],[0,1]] ),
+    allows input on the forms:
+    1: (rot, tilt, skew, x,y,z)
+    2: (rot, tilt, skew, t)
+    3: (R, t), where R is list or numpy.array
+    """
+    if len(args) == 2:
+        R,t = args
+    elif len(args) == 4 or len(args) == 6:
+        (rot, tilt, skew) = args[:3]
+        t = args[3:]
+        R = rotation_matrix_rot_tilt_skew(rot, tilt, skew)
+
     T = zeros((4,4))
     T[:3, :3] = R
     T[:3, 3] = t
