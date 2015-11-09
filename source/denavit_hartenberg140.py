@@ -148,7 +148,7 @@ def elbow_up(dh_table, T44):
     j4, j5, j6,\
     j41,j51,j61, \
     j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
-
+    import pdb; pdb.set_trace()
     return (j1, j2, j3, j4, j5, j6),\
            (j1, j2, j3, j41, j51, j61), \
            (j1, j2, j3, j42, j52, j62)

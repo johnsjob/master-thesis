@@ -149,6 +149,8 @@ def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     j52 = j51
     j62 = j6 + n.sign(j6-j61)*180
 
+    import pdb; pdb.set_trace()
+    
     return j4, j5, j6, j41, j51, j61, j42, j52, j62
 #----------------------------------------------------------------------------------------------------------#
 

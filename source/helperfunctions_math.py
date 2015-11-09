@@ -96,15 +96,28 @@ def homogenous_matrix(*args):
     allows input on the forms:
     1: (rot, tilt, skew, x,y,z)
     2: (rot, tilt, skew, t)
-    3: (R, t), where R is list or numpy.array
+    3: (angles, x,y,z)
+    4: (R, t), where R is list or numpy.array
     """
-    if len(args) == 2:
-        R,t = args
-    elif len(args) == 4 or len(args) == 6:
-        (rot, tilt, skew) = args[:3]
-        t = args[3:]
-        R = rotation_matrix_rot_tilt_skew(rot, tilt, skew)
+    l_args = len(args)
 
+    if  l_args == 2:
+        R,t = args
+    elif l_args == 4: 
+        if type(args[0]) in (tuple, list, numpy.array()):
+            (rot, tilt, skew), t = args[0], args[1:]
+        else:
+            (rot, tilt, skew), t = args[:3], args[3:][0]
+    elif l_args == 6:
+        (rot, tilt, skew), t = args[:3], args[3:]        
+
+    if not type(t) in [list, numpy.array]:
+        raise ArithmeticError('translation part can not be a scalar.')
+    elif len(t) < 3:
+        raise ArithmeticError('translation part must be of dimension 3.')
+    
+
+    R = rotation_matrix_rot_tilt_skew(rot, tilt, skew)
     T = zeros((4,4))
     T[:3, :3] = R
     T[:3, 3] = t
