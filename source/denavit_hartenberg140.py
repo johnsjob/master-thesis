@@ -189,154 +189,18 @@ def elbow_down(dh_table, T44):
            (j1, j2, j3, j41, j51, j61), \
            (j1, j2, j3, j42, j52, j62)
 #----------------------------------------------------------------------------------------------------------#
-def inverse_kinematics_elbow_up(dh_table, T44, flipped=False):
+def inverse_kinematics_elbow_up(dh_table, T44, flipped = False):
     if not flipped:
         return elbow_up(dh_table, T44)
     else:
         return elbow_up_flipped(dh_table, T44)
-        
-    #Geometrical paramaters
-    wcp = calc_wcp(T44, 0.065)
 
-    #First angle - j1, used to adjust a point-position
-    j1 = atan2(wcp[1],wcp[0])
-    if flipped:
-        if j1 > 0:
-            j1 = j1 - 180
-        elif j1 < 0:
-            j1 = j1 + 180
-
-    p0 = mat([70e-3, 0, 352e-3])
-    p0 = homogenous_rotation_z(j1)[0:3,0:3].dot(p0)
-
-    x0 = norm(wcp[0:2] - p0[0:2])
-    h1 = 0.352
-    h2 = wcp[2]
-    s = abs(h2 - h1)
-    x1 = norm(p0 - wcp)
-    beta = 380e-3
-    alpha = 360e-3
-    m = atan(70e-3/352e-3)
-    
-    if not flipped:
-        ### elbow-up ###
-        # Third angle - j3
-        th3 = ang_sats2(x1, alpha, beta)
-        j3 =  th3 - 90
-
-        # Second angle - j2
-        th21 = atan2(s, x0)
-        th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-        if h2 - h1 < 0:
-            if norm(wcp[:2]) < norm(p0[:2]):
-                th2 = -(th21 + th22)
-                j2 = -(90 - th2)
-            else:
-                th2 = -(th21 - th22)
-        else:
-            if norm(wcp[:2]) < norm(p0[:2]):
-                th2 = th21 - th22
-                j2 = -(90 - th2)
-            else:
-                th2 = th21 + th22
-        if not 'j2' in locals():
-            j2 = 90 - th2
-    else:
-        ### elbow-up (actually inverse, upside-down) ###
-        # Third angle - j3
-        th3 = ang_sats2(x1, alpha, beta)
-        j3 = -(90 - th3)
-        # Second angle - j2
-        th21 = atan2(s, x0)
-        th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-        if h2-h1 < 0:
-            th2 = -(th21 + th22)
-        else:
-            th2 = th21 - th22
-        j2 = -(90-th2)
-
-    j4, j5, j6,\
-        j41,j51,j61, \
-        j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
-
-    # returns non-flipped
-    return (j1, j2, j3, j4, j5, j6),\
-           (j1, j2, j3, j41, j51, j61), \
-           (j1, j2, j3, j42, j52, j62)
-
-def inverse_kinematics_elbow_down(dh_table, T44, flipped=False):
+def inverse_kinematics_elbow_down(dh_table, T44, flipped = False):
     if not flipped:
         return elbow_down(dh_table, T44)
     else:
         return elbow_down_flipped(dh_table, T44)
-    #Geometrical paramaters
-    wcp = calc_wcp(T44, 0.065)
-
-    #First angle - j1, used to adjust a point-position
-    j1 = atan2(wcp[1],wcp[0])
-    if flipped is True:
-        ### elbow-down (actually inverse, upside-down) ###
-        if j1 > 0:
-            j1 = j1 - 180
-        elif j1 < 0:
-            j1 = j1 + 180
-
-    p0 = mat([70e-3, 0, 352e-3])
-    p0 = homogenous_rotation_z(j1)[0:3,0:3].dot(p0)
-
-    x0 = norm(wcp[0:2] - p0[0:2])
-    h1 = 0.352
-    h2 = wcp[2]
-    s = abs(h2 - h1)
-    x1 = norm(p0 - wcp)
-    beta = 380e-3
-    alpha = 360e-3
-    m = atan(70e-3/352e-3)
-    if not flipped:
-        ### elbow-down ###
-        # Third angle - j3
-        th3 = ang_sats2(x1, alpha, beta)
-        j3 = -(th3 + 90)
-        # Second angle - j2
-        th21 = atan2(s, x0)
-        th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-        if h2-h1 < 0:
-            if norm(wcp[:2]) < norm(p0[:2]):
-                th2 =  -(th21 - th22)
-                j2 = -(90 - th2)
-            else:
-                th2 = -(th21 + th22)
-        else:
-            if norm(wcp[:2]) < norm(p0[:2]):
-                th2 = th21 + th22
-                j2 = -(90 - th2)
-            else:
-                th2 =  th21 - th22
-        if not 'j2' in locals():
-            j2 = 90 - th2
-    else:
-        ### elbow-down (actually inverse, upside-down) ###
-        # Third angle - j3
-        th3 = ang_sats2(x1, alpha, beta)
-        j3 = -(th3 + 90)
-        # Second angle - j2
-        th21 = atan2(s, x0)
-        th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
-        if h2-h1 < 0:
-            th2 =  -(th21 - th22)
-        else:
-            th2 =  th21 + th22
-        j2 = -(90 - th2)
-
-    j4, j5, j6,\
-        j41,j51,j61, \
-        j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
-
-    # returns non-flipped
-    return (j1, j2, j3, j4, j5, j6),\
-           (j1, j2, j3, j41, j51, j61), \
-           (j1, j2, j3, j42, j52, j62)
-    
+#----------------------------------------------------------------------------------------------------------#    
 def check_range(x, _min, _max, inclusive=True):
     #swap if needed
     if _max < _min:
@@ -346,20 +210,6 @@ def check_range(x, _min, _max, inclusive=True):
         return _min <= x <= _max
     else:
         return _min < x < _max
-
-##def adjust_range(x, _min, _max, inclusive=True, adjust_value = 360.0):
-##    #swap if needed
-##    if _max < _min:
-##        _max, _min = _min, _max
-##
-##    if check_range(x, _min, _max, inclusive) == False:
-##        if x < _min:
-##            ret = x + adjust_value
-##        else:
-##            ret = x - adjust_value
-##        return ret
-##    else:
-##        return x
 
 def check_solution(j1,j2,j3,j4,j5,j6, inclusive=True):
     sol  = check_range(j1, -180, 180, inclusive)
