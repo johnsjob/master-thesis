@@ -103,6 +103,7 @@ def homogenous_matrix(*args):
     l_args = len(args)
     valid_types  = [tuple, list, numpy.array]
     
+    ## TODO: separate into subcase-functions
     if  l_args == 2: #case 4
         R,t = args
     elif l_args == 4:
