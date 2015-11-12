@@ -94,6 +94,7 @@ def homogenous_matrix(*args):
     """
     Creates a homogenous matrix ( 4x4 matrix of type [[R,t],[0,1]] ),
     allows input on the forms:
+    0:    R                                       (3x, 3x)
     1:    (rot, tilt, skew, x,y,z)                (3x, 3x)
     2:    (rot, tilt, skew, t)                    (3x, 1x)
     3:    (angles, x,y,z)                         (1x, 3x)
@@ -101,10 +102,21 @@ def homogenous_matrix(*args):
     4:    (R, t), where R is list or numpy.array  (1x, 1x)
     """
     l_args = len(args)
-    valid_types  = [tuple, list, numpy.array]
+    valid_types  = [tuple, list, numpy.ndarray]
     
-    ## TODO: separate into subcase-functions
-    if  l_args == 2: #case 4
+    ## TODO: separate into subcase-functions (!!!)
+    if  l_args == 1: #case 0
+        if type(args[0]) in [list, tuple]:
+            R = mat(args[0])
+        else:
+            R = args[0]
+        m,n = R.shape
+        if m == n:
+            R = expand_matrix(R)
+            return R
+        else:
+            return R
+    elif  l_args == 2: #case 4
         R,t = args
     elif l_args == 4:
         if type(args[0]) in valid_types:
@@ -117,7 +129,6 @@ def homogenous_matrix(*args):
     elif l_args == 6: #case 1
         (rot, tilt, skew), t = args[:3], args[3:]
     
-
     if not type(t) in valid_types:
         raise ArithmeticError('translation part can not be a scalar.')
     elif len(t) < 3:
@@ -125,10 +136,12 @@ def homogenous_matrix(*args):
 
     if not 'R' in locals():
         R = rotation_matrix_rot_tilt_skew(rot, tilt, skew)
-        
+
     T = zeros((4,4))
-    T[:3, :3] = R
-    T[:3, 3] = t
+    m,n = R.shape
+
+    T[:m, :n] = R
+    T[:3, 3] = t[:3]
     T[3, :] = [0, 0, 0, 1]
     return T
 #----------------------------------------------------------------------------------------------------------#
@@ -164,7 +177,7 @@ def homogenous_rotation_z( ang ):
 #----------------------------------------#
 def expand_matrix(matrix, k=1,l=1):
     if k < 0 or l < 0:
-        raise ArithmeticError('Only positive values allowed for changing the dimension of the matrix.')
+        raise ArithmeticError('Only positive values (or zero) allowed for changing the dimension of the matrix.')
     m,n = matrix.shape
     res = numpy.eye(m+k,n+l)
     res[0:m, 0:n] = matrix
