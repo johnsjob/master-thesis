@@ -134,8 +134,8 @@ def inverse_kinematics_joints(*joint_values, **DH_TABLE):
 def inverse_kinematics_point(*args, **DH_TABLE):
     if len(args) == 1:
         input_type = type(args[0])
-        if not  input_type in [list, numpy.array]:
-            except ArithmeticError('one argument, assuming matrix - only list or numpy.array accepted for the T44 matrix.')
+        if not  (input_type in [list, numpy.array]):
+            raise ArithmeticError('one argument, assuming matrix - only list or numpy.array accepted for the T44 matrix.')
         elif input_type == list:
             T44_point = mat(list)
         
