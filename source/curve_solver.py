@@ -123,24 +123,39 @@ def get_solutions_from_node_ids(all_solutions, *node_ids):
 ####            all_solutions[k] = mat(all_solutions[k])
 
 
-def inverse_kinematics_joints(*joint_values, **DH_TABLE):
-    # get forward kinematics i.e. last global robot-frame
-    T44, geometry_info = forward_kinematics(*joint_values, **DH_TABLE)
-    ik_angles = inverse_kinematics_irb140(DH_TABLE, T44)
 
-    # sanity check of forward kinematics
+def __inverse_kinematics_sanity_check(T44_point, ik_angles):
+    """
+    sanity check of forward kinematics, just making sure
+    that all solutions are valid.
+    """
     for angles in ik_angles.T:
         t44, _ = forward_kinematics(*angles, **DH_TABLE)
-        assert(norm(T44 - t44) < 1e-7)
-    return T44, geometry_info
+        try:
+            norm_value = norm(T44_point - t44)
+            if not numpy.isnan(norm_value):
+                assert(norm_value < 1e-10)
+        except AssertionError:
+            ##TODO: move this into utils for pretty printing matrices
+            st = ''
+            for row in T44_point:
+                st += '\t'+str(row)+'\n'
+            raise Exception('\n\tInverse-kinematics failed for point-frame: \n{0}\n\tNorm: {1}'.format(st, norm_value))
+    return
+
+def inverse_kinematics_joints(*joint_values, **DH_TABLE):
+    # get forward kinematics i.e. last global robot-frame
+    T44_point, geometry_info = forward_kinematics(*joint_values, **DH_TABLE)
+
+    # get forward kinematics i.e. last global robot-frame
+    ik_angles = inverse_kinematics_irb140(DH_TABLE, T44_point)
+
+    # perform solution check of end-effector
+    __inverse_kinematics_sanity_check(T44_point,ik_angles)
+
+    return T44_point, geometry_info
 
 def inverse_kinematics_point(*args, **DH_TABLE):
-##    if len(args) == 1:
-##        input_type = type(args[0])
-##        if not  (input_type in [list, numpy.array]):
-##            raise ArithmeticError('one argument, assuming matrix - only list or numpy.array accepted for the T44 matrix.')
-##        elif input_type == list:
-##            T44_point = mat(list)
     """
     Input is a point-frame ( 4x4 matrix of type [[R,t],[0,1]] ),
     the function allows input on the forms:
@@ -151,26 +166,18 @@ def inverse_kinematics_point(*args, **DH_TABLE):
     4:    (R, t), where R is list or numpy.array  (1x, 1x)
     """
     T44_point = homogenous_matrix(*args)
-    # get forward kinematics i.e. last global robot-frame
+
+    # get inverse kinematics i.e. valid joint-value configurations
     ik_angles = inverse_kinematics_irb140(DH_TABLE, T44_point)
 
-    # sanity check of forward kinematics, just making sure
-    # that all solutions are valid
-    for angles in ik_angles.T:
-        t44, _ = forward_kinematics(*angles, **DH_TABLE)
-        try:
-            assert(norm(T44_point - t44) < 1e-7)
-        except AssertionError:
-            ##TODO: move this into utils for pretty printing matrices
-            st = ''
-            for row in T44_point:
-                st += '\t'+str(row)+'\n'
-            raise Exception('\n\tInverse-kinematics failed for point-frame: \n{0}'.format(st))
+    # perform solution check of end-effector
+    __inverse_kinematics_sanity_check(T44_point,ik_angles)
+
     return ik_angles
 
 
 if __name__ == '__main__':
-    for count in xrange(1000):
+    for count in xrange(1):
         ax, fig = init_plot()
         fig.clear()
         j1 =  rand_range(-120,120)
@@ -180,7 +187,7 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  180
+        j1 =  0
         j2 =  0
         j3 =  0
         j4 =  0
@@ -188,15 +195,32 @@ if __name__ == '__main__':
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,j6
-        break
- 
 
-            
-####        # generate a curve in the last global robot-frame
-####        num_p = 50
-####        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
-####        point_matrix_tf = get_transformed_points(T44, point_matrix)
-####
+        T44, robot_geometry = forward_kinematics(j1,j2,j3,j4,j5,j6, **DH_TABLE)
+        T442 = define_plane_relative_from_angles(T44, [0,0,0],
+                                          0,45,00,'local')
+
+    # generate a curve in the last global robot-frame
+        homogenous_matrix(0,0,0,0,0,0)
+        num_p = 50
+        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
+        point_matrix_tf = get_transformed_points(T44, point_matrix)
+
+        # generate angles
+        rot  = numpy.linspace(0,0)
+        tilt = numpy.linspace(-10,10)
+        skew = numpy.linspace(-45,45)
+
+        R = mat(map(lambda x: homogenous_matrix( rotation_matrix_rot_tilt_skew(*x) ), zip(rot, tilt, skew)))
+        frames = zip(R, point_matrix[:,:])
+        homs = mat(map(lambda x: homogenous_matrix(*x), frames))
+
+        #paper -> robot
+        trans_frames = mat(map(lambda x: matmul(T442, x), homs))
+
+
+
+######################################################################
 ####        # plot robot frames
 ####        ax = fig.add_subplot(1,2,1, projection='3d')
 ####        plot_robot_geometry(ax, global_robot_frames,'b--')
