@@ -10,6 +10,9 @@ import itertools as it
 import sys
 sys.path.append('../int/djikstra/')
 
+numpy.set_printoptions(precision=2)
+numpy.set_printoptions(suppress=True)
+
 
 def apply_along_axis(M, func, axis=1):
     return n.apply_along_axis(func, axis, arr=M)
@@ -132,21 +135,37 @@ def inverse_kinematics_joints(*joint_values, **DH_TABLE):
     return T44, geometry_info
 
 def inverse_kinematics_point(*args, **DH_TABLE):
-    if len(args) == 1:
-        input_type = type(args[0])
-        if not  (input_type in [list, numpy.array]):
-            raise ArithmeticError('one argument, assuming matrix - only list or numpy.array accepted for the T44 matrix.')
-        elif input_type == list:
-            T44_point = mat(list)
-        
-    import pdb; pdb.set_trace()
+##    if len(args) == 1:
+##        input_type = type(args[0])
+##        if not  (input_type in [list, numpy.array]):
+##            raise ArithmeticError('one argument, assuming matrix - only list or numpy.array accepted for the T44 matrix.')
+##        elif input_type == list:
+##            T44_point = mat(list)
+    """
+    Input is a point-frame ( 4x4 matrix of type [[R,t],[0,1]] ),
+    the function allows input on the forms:
+    1:    (rot, tilt, skew, x,y,z)                (3x, 3x)
+    2:    (rot, tilt, skew, t)                    (3x, 1x)
+    3:    (angles, x,y,z)                         (1x, 3x)
+    3.1:  (R, x,y,z)                              (1x, 3x)
+    4:    (R, t), where R is list or numpy.array  (1x, 1x)
+    """
+    T44_point = homogenous_matrix(*args)
     # get forward kinematics i.e. last global robot-frame
     ik_angles = inverse_kinematics_irb140(DH_TABLE, T44_point)
 
-    # sanity check of forward kinematics
+    # sanity check of forward kinematics, just making sure
+    # that all solutions are valid
     for angles in ik_angles.T:
         t44, _ = forward_kinematics(*angles, **DH_TABLE)
-        assert(norm(T44_point - t44) < 1e-7)
+        try:
+            assert(norm(T44_point - t44) < 1e-7)
+        except AssertionError:
+            ##TODO: move this into utils for pretty printing matrices
+            st = ''
+            for row in T44_point:
+                st += '\t'+str(row)+'\n'
+            raise Exception('\n\tInverse-kinematics failed for point-frame: \n{0}'.format(st))
     return ik_angles
 
 
