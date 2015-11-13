@@ -193,7 +193,7 @@ if __name__ == '__main__':
         j2 =  45
         j3 =  0
         j4 =  0
-        j5 =  90
+        j5 =  -90
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,6j
@@ -229,7 +229,6 @@ if __name__ == '__main__':
 
         #plot.draw_curve(point_matrix_tf[:,:3], width=2, col='gr')
         plot.draw_robot(robot_frames)
-        #plot.draw_frames(trans_frames)
         plot.draw_trajectory(trans_frames)
 
         plot.show()
