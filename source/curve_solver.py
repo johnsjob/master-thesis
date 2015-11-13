@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
         j1 =  0
         j2 =  45
-        j3 =  -45
+        j3 =  0
         j4 =  0
         j5 =  90
         j6 =  0
@@ -200,7 +200,7 @@ if __name__ == '__main__':
 
         robot_info = forward_kinematics(j1,j2,j3,j4,j5,j6, **DH_TABLE)
         T44 = robot_info['T44']
-        robot_geometry = robot_info['robot_geometry_global']
+        robot_frames = robot_info['robot_geometry_global']
 
         T442 = define_plane_relative_from_angles(T44, [0,0,0],
                                           0,45,00,'local')
@@ -213,21 +213,24 @@ if __name__ == '__main__':
 
         # generate angles
         rot  = numpy.linspace(0,0)
-        tilt = numpy.linspace(-10,10)
-        skew = numpy.linspace(-45,45)
-
-        R = mat(map(lambda x: homogenous_matrix( rotation_matrix_rot_tilt_skew(*x) ), zip(rot, tilt, skew)))
-        frames = zip(R, point_matrix[:,:])
+        tilt = numpy.linspace(-90,90)
+        skew = numpy.linspace(0,0)
+        angles = zip(rot, tilt, skew)
+        
+        R = mat(map(lambda x: homogenous_matrix( rotation_matrix_rot_tilt_skew(*x) ), angles))
+        frames = zip(R, point_matrix)
         homs = mat(map(lambda x: homogenous_matrix(*x), frames))
 
         #paper -> robot
-        trans_frames = mat(map(lambda x: matmul(T442, x), homs))
+        trans_frames = mat(map(lambda x: matmul(T44, x), homs))
 
         # plotting
         plot = QtPlot()
 
-        plot.draw_curve(point_matrix_tf[:,:3], width=2, col='gr')
-        plot.draw_robot(robot_geometry)
+        #plot.draw_curve(point_matrix_tf[:,:3], width=2, col='gr')
+        plot.draw_robot(robot_frames)
+        #plot.draw_frames(trans_frames)
+        plot.draw_trajectory(trans_frames)
 
         plot.show()
 
