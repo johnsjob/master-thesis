@@ -213,7 +213,7 @@ if __name__ == '__main__':
 
         # generate angles
         rot  = numpy.linspace(0,0)
-        tilt = numpy.linspace(-90,90)
+        tilt = numpy.linspace(0,0)
         skew = numpy.linspace(0,0)
         angles = zip(rot, tilt, skew)
         
