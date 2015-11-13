@@ -5,6 +5,8 @@ from pylab import axhline
 from plane_relative import *
 from denavit_hartenberg140 import *
 
+from pyqtplot import QtPlot
+
 import itertools as it
 
 import sys
@@ -188,15 +190,18 @@ if __name__ == '__main__':
         j6 =  rand_range(-400, 400)
 
         j1 =  0
-        j2 =  0
-        j3 =  0
+        j2 =  45
+        j3 =  -45
         j4 =  0
-        j5 =  0
+        j5 =  90
         j6 =  0
 
-        joint_values = j1,j2,j3,j4,j5,j6
+        joint_values = j1,j2,j3,j4,j5,6j
 
-        T44, robot_geometry = forward_kinematics(j1,j2,j3,j4,j5,j6, **DH_TABLE)
+        robot_info = forward_kinematics(j1,j2,j3,j4,j5,j6, **DH_TABLE)
+        T44 = robot_info['T44']
+        robot_geometry = robot_info['robot_geometry_global']
+
         T442 = define_plane_relative_from_angles(T44, [0,0,0],
                                           0,45,00,'local')
 
@@ -218,6 +223,13 @@ if __name__ == '__main__':
         #paper -> robot
         trans_frames = mat(map(lambda x: matmul(T442, x), homs))
 
+        # plotting
+        plot = QtPlot()
+
+        plot.draw_curve(point_matrix_tf[:,:3], width=2, col='gr')
+        plot.draw_robot(robot_geometry)
+
+        plot.show()
 
 
 ######################################################################
