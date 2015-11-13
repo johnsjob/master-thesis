@@ -111,13 +111,24 @@ def forward_kinematics(*joint_values,**kwargs):
 
     # collect information about the Denivit-Hartenberg table
     dh_table = {
-    'table' : kwargs['table'],
-    'unit': kwargs['unit'],
+    'table' :    kwargs['table'],
+    'unit':      kwargs['unit'],
     'convention':kwargs['convention'],
-    'order': kwargs['order'],
-    }    
+    'order':     kwargs['order'],
+    }
+
+    global_geometry = matmul_series(*matrices)
+    global_geometry.insert(0, homogenous_matrix(0,0,0,0,0,0))
+    
+    result = {
+        'T44': matmul(*matrices),
+        'robot_geometry_local': matrices,
+        'robot_geometry_global': global_geometry,
+        'dh_table': dh_table
+        }
+
     # perform matrix chain-multiplication / serial-multiplication with matrix product
-    return matmul(*matrices), matrices
+    return result
 #----------------------------------------------------------------------------------------------------------#
 def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]
