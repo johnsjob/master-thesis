@@ -178,6 +178,21 @@ def inverse_kinematics_point(*args, **DH_TABLE):
 
     return ik_angles
 
+def inverse_kinematics_curve(trans_frames):
+    # perform inverse kinematics over a curve and collect all solutions
+    all_solutions = []
+    for point_frame in trans_frames:
+        angle_solutions = inverse_kinematics_irb140(DH_TABLE, point_frame)
+
+        extra = [angle_solutions]
+        for index in xrange(6):
+            extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+            extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+            pass
+        angle_solutions = merge_solutions(*extra)
+        angle_solutions = filter_solutions(angle_solutions)
+        all_solutions.append(angle_solutions.T)
+    return mat(all_solutions)
 
 if __name__ == '__main__':
     for count in xrange(1):
@@ -229,25 +244,7 @@ if __name__ == '__main__':
 ##        plot.draw_robot(robot_frames)
 ##        plot.draw_trajectory(trans_frames)
 ##        plot.show()
-
-        # perform inverse kinematics over a curve and collect all solutions
-        all_solutions = []
-        for point_frame in trans_frames:
-            angle_solutions = inverse_kinematics_irb140(DH_TABLE, point_frame)
-####            print angle_solutions.shape
-####            print '???'
-
-            extra = [angle_solutions]
-####            for index in xrange(3,6):
-            for index in xrange(6):
-                extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
-                extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-            angle_solutions = merge_solutions(*extra)
-####            print angle_solutions.shape
-####            print '!!!'
-            angle_solutions = filter_solutions(angle_solutions)
-            all_solutions.append(angle_solutions.T)
-        all_solutions = mat(all_solutions)
+        all_solutions = inverse_kinematics_curve(trans_frames)
 
         print all_solutions.shape
         print mat(all_solutions[0]).shape
