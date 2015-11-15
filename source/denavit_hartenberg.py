@@ -135,9 +135,9 @@ def calc_wcp(T44, L=None):
 #----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     #Calculate last angles
-    R = T44[0:3,0:3]    
-    H3, _ = forward_kinematics(j1, j2, j3, **dh_table)
-    R3 = H3[0:3, 0:3]
+    R = T44[0:3,0:3]
+    robot_info = forward_kinematics(j1, j2, j3, **dh_table)
+    R3 = robot_info['T44'][:3,:3]
 
     R36 = R3.T.dot(R)
     X = R36[:,0]
