@@ -112,7 +112,6 @@ class StPlot:
 
 
     def show(self):
-        plt.figure(2,figsize=plt.figaspect(0.5))
         plt.show()
         return
 
