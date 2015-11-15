@@ -238,8 +238,8 @@ if __name__ == '__main__':
 
         # perform inverse kinematics over a curve and collect all solutions
         all_solutions = []
-        for point in global_plane_curve:
-            fk_p = homogenous_matrix(plane[:3,:3], point[:3])
+        for point in trans_frames:
+            fk_p = point
             angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
             extra = [angle_solutions]
             for index in xrange(3,6):
@@ -258,10 +258,7 @@ if __name__ == '__main__':
         for i in xrange(len(res)):
             res_i = res[i]
             map_edge_connections(i, res_i, d)
-###        for k in sorted(d.keys()):
-###            print k+':'
-###            for l in sorted(d[k].keys()):
-###                print '\t'+l+' = '+str(d[k][l])
+
         print '#2'
         #fix the ends that are not connected to anything
         glob_ends = ['p('+str(len(res))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
