@@ -11,7 +11,11 @@ from standardplot import StPlot
 import itertools as it
 
 import sys
+import time
+
 sys.path.append('../int/djikstra/')
+from graph import shortestPath as shortest_path
+
 
 numpy.set_printoptions(precision=2)
 numpy.set_printoptions(suppress=True)
@@ -198,15 +202,13 @@ def inverse_kinematics_curve(trans_frames):
         all_solutions.append(angle_solutions.T)
     return mat(all_solutions)
 
-def generate_colutions_graph(all_solutions):
+def generate_solutions_graph(all_solutions):
     point_norms = map_point_norms(all_solutions)
-    print '#1'
     node_edges = {}
     for i in xrange( len(point_norms) ):
         norms_i = point_norms[i]
         map_edge_connections(i, norms_i, node_edges)
 
-    print '#2'
     #fix the ends that are not connected to anything
     glob_ends = ['p('+str(len(point_norms))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
     for k in glob_ends:
@@ -215,28 +217,33 @@ def generate_colutions_graph(all_solutions):
     graph = node_edges
     return graph
 
-def map_solution_paths(solution_graph):
-    from graph import shortestPath as sp
+def map_solution_paths(solution_graph, all_solutions):
     num_starts = len(all_solutions[0])
     num_ends = len(all_solutions[-1])
-    chosen_solutions = []
-    print '#3'
-    import time
-    _start = time.time()
+    solution_paths = []
+
     for s in xrange(num_starts):
-        print s
         for e in xrange(num_ends):
-            #R = sp(graph, 'p(0,'+str(s)+')','p(49,'+str(e)+')')
-            R = sp(solution_graph,
+            path = shortest_path(solution_graph,
                    'p(0,{0})'.format(str(s)),
                    'p({0},{1})'.format( str(len(all_solutions) - 1), str(e)))
-            S = get_solutions_from_node_ids(all_solutions, *R)
-            S = mat(S)
-            chosen_solutions.append(S)
-    _stop = time.time()
-    print 'time: ' + str(_stop-_start)
-    print '#4'
-    return chosen_solutions
+            S = get_solutions_from_node_ids(all_solutions, *path)
+            solution_paths.append( mat(S) )
+    return solution_paths
+
+def find_inverse_kinematics_paths_from_curve(trans_frames):
+    all_solutions = inverse_kinematics_curve(trans_frames)
+    solution_graph = generate_solutions_graph(all_solutions)
+    solution_paths = map_solution_paths(solution_graph, all_solutions)
+    all_solution_distances = apply_along_axis(apply_along_axis(solution_paths, func=diff, axis=1),func=norm, axis=2)
+
+    result = {
+        'solutions_per_point' : all_solutions,
+        'solution_graph' : solution_graph,
+        'solution_paths': solution_paths,
+        'solution_path_nodes_differences' : all_solution_distances
+        }
+    return result
 
 
 if __name__ == '__main__':
@@ -263,8 +270,6 @@ if __name__ == '__main__':
         T44 = robot_info['T44']
         robot_frames = robot_info['robot_geometry_global']
 
-        T442 = define_plane_relative_from_angles(T44, [0,0,0],
-                                          0,45,00,'local')
 
         # generate a curve in the last global robot-frame
         num_p = 50
@@ -284,28 +289,32 @@ if __name__ == '__main__':
         #paper -> robot
         trans_frames = mat(map(lambda x: matmul(T44, x), homs))
 
-##        # plotting
-##        plot = StPlot()
-##        plot.draw_robot(robot_frames)
-##        plot.draw_trajectory(trans_frames)
-##        plot.show()
-        all_solutions = inverse_kinematics_curve(trans_frames)
+        start = time.time()
+        result = find_inverse_kinematics_paths_from_curve(trans_frames)
+        stop = time.time()
+        
+        print 'Time: {0}'.format(stop - start)
+        print '\n'
 
-        solution_graph = generate_colutions_graph(all_solutions)
-
-        chosen_solutions = map_solution_paths(solution_graph)
-
-        all_solution_distances = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=1),func=norm, axis=2)
-####        ax = fig.add_subplot(1,2,2)
-        for solution_distance in all_solution_distances:
-            plot(solution_distance)
-        print 'total paths available:' + str(len(chosen_solutions))
+        print result.keys()
+        print '\n'
+        
+        print 'total paths available:' + str( len(result['solution_paths']) )
         count = 0
-        for i,k in enumerate(all_solution_distances):
+        for i,k in enumerate( result['solution_path_nodes_differences'] ):
             if n.max(abs(k)) < 20:
                 count = count + 1
                 print 'max-err: ' + str(n.max(abs(k)))
                 print 'index: ' + str(i)
         print 'valid paths: ' + str(count)
+
+
+        for solution_distance in result['solution_path_nodes_differences']:
+            plot(solution_distance)
         show()
+##        # plotting
+##        plot = StPlot()
+##        plot.draw_robot(robot_frames)
+##        plot.draw_trajectory(trans_frames)
+##        plot.show()
         break
