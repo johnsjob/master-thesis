@@ -230,22 +230,21 @@ if __name__ == '__main__':
 ##        plot.draw_trajectory(trans_frames)
 ##        plot.show()
 
-
-
-        # rename some variables for convenience
-        plane = T44
-        global_plane_curve = point_matrix_tf
-
         # perform inverse kinematics over a curve and collect all solutions
         all_solutions = []
-        for point in trans_frames:
-            fk_p = point
-            angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
+        for point_frame in trans_frames:
+            angle_solutions = inverse_kinematics_irb140(DH_TABLE, point_frame)
+####            print angle_solutions.shape
+####            print '???'
+
             extra = [angle_solutions]
-            for index in xrange(3,6):
+####            for index in xrange(3,6):
+            for index in xrange(6):
                 extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
                 extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
             angle_solutions = merge_solutions(*extra)
+####            print angle_solutions.shape
+####            print '!!!'
             angle_solutions = filter_solutions(angle_solutions)
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
