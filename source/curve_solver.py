@@ -66,27 +66,31 @@ def my_norm(x, **kwargs):
     factors = mat([max_num-k for k in xrange(max_num)])
     return norm(factors*x)
 
-def calc_pair_norms(p0, p1):
-    res = []
-    for s0 in p0:
-        tmp = []
-        for s1 in p1:
-            N = norm(s0 - s1)
-###            print N
-            tmp.append(N)
-        res.append(tmp)
-###    print ''
-    return res
+def calc_pair_norms(pi, pj):
+    """
+    Calculate all the norms for all the solutions
+    between points pi and pj.
+    """
+    norms_i = []
+    for si in pi:
+        norm_ij = []
+        for sj in pj:
+            norm_ij.append( norm(si - sj) )
+        norms_i.append( norm_ij )
+    return norms_i
     
-def map_norms(solutions):
+def map_point_norms(point_solutions):
+    """
+    Calculate all the norms for all the solutions
+    between points pi and pj, for all points.
+    """
     res = []
-    num_solutions = len(solutions)
+    num_solutions = len(point_solutions)
     for i in xrange(num_solutions-1):
-        p_i = solutions[i]
-        p_j = solutions[i+1]
-        pair_norms = calc_pair_norms(p_i, p_j)
-        res.append(pair_norms)
-##        break
+        p_i = point_solutions[i]
+        p_j = point_solutions[i+1]
+        pair_norms_ij = calc_pair_norms(p_i, p_j)
+        res.append(pair_norms_ij)
     return res
 
 def map_edge_connections(i,res_i, dict_res):
@@ -248,7 +252,7 @@ if __name__ == '__main__':
 
         print all_solutions.shape
         print mat(all_solutions[0]).shape
-        res = map_norms(all_solutions)
+        res = map_point_norms(all_solutions)
         print '#1'
         d = {}
         for i in xrange(len(res)):
