@@ -190,11 +190,11 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  45
-        j2 =  -45
+        j1 =  0
+        j2 =  90
         j3 =  0
         j4 =  0
-        j5 =  25
+        j5 =  0
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,6j
@@ -206,7 +206,7 @@ if __name__ == '__main__':
         T442 = define_plane_relative_from_angles(T44, [0,0,0],
                                           0,45,00,'local')
 
-    # generate a curve in the last global robot-frame
+        # generate a curve in the last global robot-frame
         num_p = 50
         point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
@@ -239,8 +239,7 @@ if __name__ == '__main__':
         # perform inverse kinematics over a curve and collect all solutions
         all_solutions = []
         for point in global_plane_curve:
-            fk_p = homogenous_matrix(plane[:3,:3],
-                                     point[:3])
+            fk_p = homogenous_matrix(plane[:3,:3], point[:3])
             angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
             extra = [angle_solutions]
             for index in xrange(3,6):
@@ -251,69 +250,54 @@ if __name__ == '__main__':
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
 
-####
-####
-####        all_solutions = mat(all_solutions)
-####        print all_solutions.shape
-####        print mat(all_solutions[0]).shape
-####        res = map_norms(all_solutions)
-####        print '#1'
-####        d = {}
-####        for i in xrange(len(res)):
-####            res_i = res[i]
-####            map_edge_connections(i, res_i, d)
-#######        for k in sorted(d.keys()):
-#######            print k+':'
-#######            for l in sorted(d[k].keys()):
-#######                print '\t'+l+' = '+str(d[k][l])
-####        print '#2'
-####        #fix the ends that are not connected to anything
-####        glob_ends = ['p('+str(len(res))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
-####        for k in glob_ends:
-####            d[k] = {}
-####        graph = d
-####        #graph['p(2,2)'] = {}
-####        from graph import shortestPath as sp
-####        num_starts = len(all_solutions[0])
-####        num_ends = len(all_solutions[-1])
-####        chosen_solutions = []
-####        print '#3'
-####        import time
-####        _start = time.time()
-####        for s in xrange(num_starts):
-####            print s
-####            for e in xrange(num_ends):
-####                #R = sp(graph, 'p(0,'+str(s)+')','p(49,'+str(e)+')')
-####                R = sp(graph, 'p(0,'+str(s)+')','p('+str(len(all_solutions) - 1)+','+str(e)+')')
-####                S = get_solutions_from_node_ids(all_solutions, *R)
-####                S = mat(S)
-####                chosen_solutions.append(S)
-####        _stop = time.time()
-####        print 'time: ' + str(_stop-_start)
-####        print '#4'
-####        all_solution_distances = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=1),func=norm, axis=2)
+        print all_solutions.shape
+        print mat(all_solutions[0]).shape
+        res = map_norms(all_solutions)
+        print '#1'
+        d = {}
+        for i in xrange(len(res)):
+            res_i = res[i]
+            map_edge_connections(i, res_i, d)
+###        for k in sorted(d.keys()):
+###            print k+':'
+###            for l in sorted(d[k].keys()):
+###                print '\t'+l+' = '+str(d[k][l])
+        print '#2'
+        #fix the ends that are not connected to anything
+        glob_ends = ['p('+str(len(res))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
+        for k in glob_ends:
+            d[k] = {}
+        graph = d
+        #graph['p(2,2)'] = {}
+        from graph import shortestPath as sp
+        num_starts = len(all_solutions[0])
+        num_ends = len(all_solutions[-1])
+        chosen_solutions = []
+        print '#3'
+        import time
+        _start = time.time()
+        for s in xrange(num_starts):
+            print s
+            for e in xrange(num_ends):
+                #R = sp(graph, 'p(0,'+str(s)+')','p(49,'+str(e)+')')
+                R = sp(graph, 'p(0,'+str(s)+')','p('+str(len(all_solutions) - 1)+','+str(e)+')')
+                S = get_solutions_from_node_ids(all_solutions, *R)
+                S = mat(S)
+                chosen_solutions.append(S)
+        _stop = time.time()
+        print 'time: ' + str(_stop-_start)
+        print '#4'
+        all_solution_distances = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=1),func=norm, axis=2)
 ####        ax = fig.add_subplot(1,2,2)
-####        for solution_distance in all_solution_distances:
-####            plot(solution_distance)
-####        print 'total paths available:' + str(len(chosen_solutions))
-####        count = 0
-####        for i,k in enumerate(all_solution_distances):
-####            if n.max(abs(k)) < 20:
-####                count = count + 1
-####                print 'max-err: ' + str(n.max(abs(k)))
-####                print 'index: ' + str(i)
-####        print 'valid paths: ' + str(count)
-##########        ax = fig.add_subplot(1,3,3, projection='3d')
-##########        for k in chosen_solutions:
-##########            for l in k:
-##########                #print len(l)
-##########                t44, deb = forward_kinematics(*l, **DH_TABLE)
-##########                frames = construct_robot_geometry(deb)
-##########                plot_robot_geometry(ax, frames)
-##########                assert(norm(T44[:3,:3] - t44[:3,:3]) < 1e-7)
-##########            show()
-####        show()
-####        print mat(chosen_solutions)[175,10,:]
-####        plot(mat(chosen_solutions)[175,:,:3]); show()
-####        show()
-####        break
+        for solution_distance in all_solution_distances:
+            plot(solution_distance)
+        print 'total paths available:' + str(len(chosen_solutions))
+        count = 0
+        for i,k in enumerate(all_solution_distances):
+            if n.max(abs(k)) < 20:
+                count = count + 1
+                print 'max-err: ' + str(n.max(abs(k)))
+                print 'index: ' + str(i)
+        print 'valid paths: ' + str(count)
+        show()
+        break

@@ -44,6 +44,10 @@ class StPlot:
                 self.draw_line2(a, b, color = c, linewidth = 4)
         return
 
+    def draw_solution(self, points):
+        ax = self.plots[1]
+        ax.plot(*points.T)
+
     def draw_curve(self, points, **kwargs):
         ax = self.plots[0]
         ax.plot(*points.T, color='0.75', **kwargs)
