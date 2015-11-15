@@ -291,12 +291,9 @@ if __name__ == '__main__':
 ##        plot.show()
         all_solutions = inverse_kinematics_curve(trans_frames)
 
-        print all_solutions.shape
-        print mat(all_solutions[0]).shape
+        solution_graph = generate_colutions_graph(all_solutions)
 
-        graph = generate_colutions_graph(all_solutions)
-
-        chosen_solutions = map_solution_paths(graph)
+        chosen_solutions = map_solution_paths(solution_graph)
 
         all_solution_distances = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=1),func=norm, axis=2)
 ####        ax = fig.add_subplot(1,2,2)
