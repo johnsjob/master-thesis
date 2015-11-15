@@ -207,7 +207,6 @@ if __name__ == '__main__':
                                           0,45,00,'local')
 
     # generate a curve in the last global robot-frame
-        homogenous_matrix(0,0,0,0,0,0)
         num_p = 50
         point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
@@ -225,45 +224,33 @@ if __name__ == '__main__':
         #paper -> robot
         trans_frames = mat(map(lambda x: matmul(T44, x), homs))
 
-        # plotting
-        plot = StPlot()
-
-        #plot.draw_curve(point_matrix_tf[:,:3], width=2, col='gr')
-        plot.draw_robot(robot_frames)
-        plot.draw_trajectory(trans_frames)
-
-        plot.show()
+##        # plotting
+##        plot = StPlot()
+##        plot.draw_robot(robot_frames)
+##        plot.draw_trajectory(trans_frames)
+##        plot.show()
 
 
-######################################################################
-####        # plot robot frames
-####        ax = fig.add_subplot(1,2,1, projection='3d')
-####        plot_robot_geometry(ax, global_robot_frames,'b--')
-####        plot_curve(ax, point_matrix_tf)
-####        plot_equal_perspective(ax,
-####                               [-0.5,0.5],
-####                               [-0.5,0.5],
-####                               [0,1])
-####        #show()
-####
-####        # rename some variables for convenience
-####        plane = global_robot_frames[-1]
-####        global_plane_curve = point_matrix_tf
-####
-####        # perform inverse kinematics over a curve and collect all solutions
-####        all_solutions = []
-####        for point in global_plane_curve:
-####            fk_p = homogenous_matrix(plane[:3,:3],
-####                                     point[:3])
-####            angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
-####            extra = [angle_solutions]
-####            for index in xrange(3,6):
-####                extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
-####                extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-####            angle_solutions = merge_solutions(*extra)
-####            angle_solutions = filter_solutions(angle_solutions)
-####            all_solutions.append(angle_solutions.T)
-####        all_solutions = mat(all_solutions)
+
+        # rename some variables for convenience
+        plane = T44
+        global_plane_curve = point_matrix_tf
+
+        # perform inverse kinematics over a curve and collect all solutions
+        all_solutions = []
+        for point in global_plane_curve:
+            fk_p = homogenous_matrix(plane[:3,:3],
+                                     point[:3])
+            angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
+            extra = [angle_solutions]
+            for index in xrange(3,6):
+                extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+                extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+            angle_solutions = merge_solutions(*extra)
+            angle_solutions = filter_solutions(angle_solutions)
+            all_solutions.append(angle_solutions.T)
+        all_solutions = mat(all_solutions)
+
 ####
 ####
 ####        all_solutions = mat(all_solutions)
