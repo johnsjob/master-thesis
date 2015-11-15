@@ -119,8 +119,8 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  180
-        j2 =  0
+        j1 =  0
+        j2 =  90
         j3 =  0
         j4 =  0
         j5 =  0
