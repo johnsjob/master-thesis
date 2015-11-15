@@ -6,6 +6,7 @@ from plane_relative import *
 from denavit_hartenberg140 import *
 
 from pyqtplot import QtPlot
+from standardplot import StPlot
 
 import itertools as it
 
@@ -189,11 +190,11 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  0
-        j2 =  45
+        j1 =  45
+        j2 =  -45
         j3 =  0
         j4 =  0
-        j5 =  -90
+        j5 =  25
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,6j
@@ -225,7 +226,7 @@ if __name__ == '__main__':
         trans_frames = mat(map(lambda x: matmul(T44, x), homs))
 
         # plotting
-        plot = QtPlot()
+        plot = StPlot()
 
         #plot.draw_curve(point_matrix_tf[:,:3], width=2, col='gr')
         plot.draw_robot(robot_frames)
