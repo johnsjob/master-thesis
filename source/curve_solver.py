@@ -198,6 +198,47 @@ def inverse_kinematics_curve(trans_frames):
         all_solutions.append(angle_solutions.T)
     return mat(all_solutions)
 
+def generate_colutions_graph(all_solutions):
+    point_norms = map_point_norms(all_solutions)
+    print '#1'
+    node_edges = {}
+    for i in xrange( len(point_norms) ):
+        norms_i = point_norms[i]
+        map_edge_connections(i, norms_i, node_edges)
+
+    print '#2'
+    #fix the ends that are not connected to anything
+    glob_ends = ['p('+str(len(point_norms))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
+    for k in glob_ends:
+        node_edges[k] = {}
+
+    graph = node_edges
+    return graph
+
+def map_solution_paths(solution_graph):
+    from graph import shortestPath as sp
+    num_starts = len(all_solutions[0])
+    num_ends = len(all_solutions[-1])
+    chosen_solutions = []
+    print '#3'
+    import time
+    _start = time.time()
+    for s in xrange(num_starts):
+        print s
+        for e in xrange(num_ends):
+            #R = sp(graph, 'p(0,'+str(s)+')','p(49,'+str(e)+')')
+            R = sp(solution_graph,
+                   'p(0,{0})'.format(str(s)),
+                   'p({0},{1})'.format( str(len(all_solutions) - 1), str(e)))
+            S = get_solutions_from_node_ids(all_solutions, *R)
+            S = mat(S)
+            chosen_solutions.append(S)
+    _stop = time.time()
+    print 'time: ' + str(_stop-_start)
+    print '#4'
+    return chosen_solutions
+
+
 if __name__ == '__main__':
     for count in xrange(1):
         ax, fig = init_plot()
@@ -252,38 +293,11 @@ if __name__ == '__main__':
 
         print all_solutions.shape
         print mat(all_solutions[0]).shape
-        res = map_point_norms(all_solutions)
-        print '#1'
-        d = {}
-        for i in xrange(len(res)):
-            res_i = res[i]
-            map_edge_connections(i, res_i, d)
 
-        print '#2'
-        #fix the ends that are not connected to anything
-        glob_ends = ['p('+str(len(res))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
-        for k in glob_ends:
-            d[k] = {}
-        graph = d
-        #graph['p(2,2)'] = {}
-        from graph import shortestPath as sp
-        num_starts = len(all_solutions[0])
-        num_ends = len(all_solutions[-1])
-        chosen_solutions = []
-        print '#3'
-        import time
-        _start = time.time()
-        for s in xrange(num_starts):
-            print s
-            for e in xrange(num_ends):
-                #R = sp(graph, 'p(0,'+str(s)+')','p(49,'+str(e)+')')
-                R = sp(graph, 'p(0,'+str(s)+')','p('+str(len(all_solutions) - 1)+','+str(e)+')')
-                S = get_solutions_from_node_ids(all_solutions, *R)
-                S = mat(S)
-                chosen_solutions.append(S)
-        _stop = time.time()
-        print 'time: ' + str(_stop-_start)
-        print '#4'
+        graph = generate_colutions_graph(all_solutions)
+
+        chosen_solutions = map_solution_paths(graph)
+
         all_solution_distances = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=1),func=norm, axis=2)
 ####        ax = fig.add_subplot(1,2,2)
         for solution_distance in all_solution_distances:
