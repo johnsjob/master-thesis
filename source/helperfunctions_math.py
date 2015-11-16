@@ -94,7 +94,7 @@ def homogenous_matrix(*args):
     """
     Creates a homogenous matrix ( 4x4 matrix of type [[R,t],[0,1]] ),
     allows input on the forms:
-    0:    R                                       (3x, 3x)
+    0:    R                                       (1x)
     1:    (rot, tilt, skew, x,y,z)                (3x, 3x)
     2:    (rot, tilt, skew, t)                    (3x, 1x)
     3:    (angles, x,y,z)                         (1x, 3x)
@@ -144,6 +144,22 @@ def homogenous_matrix(*args):
     T[:3, 3] = t[:3]
     T[3, :] = [0, 0, 0, 1]
     return T
+#----------------------------------------------------------------------------------------------------------#
+def homogenous_matrices(frames):
+    """
+    Creates a matrix of homogenous matrices( 4x4 matrix of type [[R,t],[0,1]] ),
+    each frame in the input 'frames' can have one of following descriptions:
+    0:    R                                       (1x)
+    1:    (rot, tilt, skew, x,y,z)                (3x, 3x)
+    2:    (rot, tilt, skew, t)                    (3x, 1x)
+    3:    (angles, x,y,z)                         (1x, 3x)
+    3.1:  (R, x,y,z)                              (1x, 3x)
+    4:    (R, t), where R is list or numpy.array  (1x, 1x)
+    """
+    return mat( map(lambda x: homogenous_matrix(*x), frames) )
+#----------------------------------------------------------------------------------------------------------#
+def apply_transform_on_frames(T44, frames):
+    return mat( map(lambda x: matmul(T44, x), frames) )
 #----------------------------------------------------------------------------------------------------------#
 def homogenous_translation_x( tx ):
     return mat([[1,        0,      0,     tx],
@@ -219,7 +235,7 @@ def rotation_matrix_rot_tilt_skew(rot, tilt, skew):
         using euler angles in degrees (extrinsic mapping)
 
         (!) Note - rot is rotated counter-clockwise compared to ordinary euler z-rotation.
-    '''
+    '''    
     return matmul(rotation_matrix_z(-rot), rotation_matrix_x(tilt), rotation_matrix_z(skew))
 #----------------------------------------#
 def rotation_matrix_skew_tilt_rot(rot, tilt, skew):
@@ -230,6 +246,16 @@ def rotation_matrix_skew_tilt_rot(rot, tilt, skew):
         (!) Note - rot is rotated counter-clockwise compared to ordinary euler z-rotation.
     '''
     return matmul(rotation_matrix_z(skew), rotation_matrix_x(tilt), rotation_matrix_z(-rot))
+#----------------------------------------#
+def rotation_matrices(rts):
+    '''
+        creates a rotation ZXZ-mapping from subspace to worldspace
+        using euler angles in degrees (intrinsic mapping)
+
+        (!) Note - rot is rotated counter-clockwise compared to ordinary euler z-rotation.
+    '''
+    M = lambda x: homogenous_matrix(rotation_matrix_rot_tilt_skew(*x))
+    return mat( map(M, rts) )
 #----------------------------------------#
 def coordinate_system_from_two_directions(dirz, diry):
     '''

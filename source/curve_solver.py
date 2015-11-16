@@ -280,19 +280,23 @@ if __name__ == '__main__':
         rot  = numpy.linspace(0,0)
         tilt = numpy.linspace(0,0)
         skew = numpy.linspace(0,0)
+
+        # generate frames
         angles = zip(rot, tilt, skew)
+        R = rotation_matrices(angles)
         
-        R = mat(map(lambda x: homogenous_matrix( rotation_matrix_rot_tilt_skew(*x) ), angles))
-        frames = zip(R, point_matrix)
-        homs = mat(map(lambda x: homogenous_matrix(*x), frames))
+        pre_frames = zip(R, point_matrix)
+        frames = homogenous_matrices(pre_frames)
 
-        #paper -> robot
-        trans_frames = mat(map(lambda x: matmul(T44, x), homs))
+        # tansform frames - paper -> robot
+        transf_frames = apply_transform_on_frames(T44, frames)
 
+        # inverse knematics over curve
         start = time.time()
-        result = find_inverse_kinematics_paths_from_curve(trans_frames)
+        result = find_inverse_kinematics_paths_from_curve(transf_frames)
         stop = time.time()
         
+        # results
         print 'Time: {0}'.format(stop - start)
         print '\n'
 
@@ -307,7 +311,6 @@ if __name__ == '__main__':
                 print 'max-err: ' + str(n.max(abs(k)))
                 print 'index: ' + str(i)
         print 'valid paths: ' + str(count)
-
 
         for solution_distance in result['solution_path_nodes_differences']:
             plot(solution_distance)
