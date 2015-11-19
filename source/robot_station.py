@@ -102,12 +102,12 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  0
-        j2 =  90
-        j3 =  0
-        j4 =  0
-        j5 =  0
-        j6 =  0
+        j1 =  10
+        j2 =  20
+        j3 =  30
+        j4 =  40
+        j5 =  50
+        j6 =  60
 
         joint_values = j1,j2,j3,j4,j5,j6
 

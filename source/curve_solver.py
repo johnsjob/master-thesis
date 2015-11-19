@@ -5,10 +5,21 @@ from pylab import axhline
 from plane_relative import *
 from denavit_hartenberg140 import *
 
+from pyqtplot import QtPlot
+from standardplot import StPlot
+import pylab as plt
+
 import itertools as it
 
 import sys
+import time
+
 sys.path.append('../int/djikstra/')
+from graph import shortestPath as shortest_path
+
+
+numpy.set_printoptions(precision=2)
+numpy.set_printoptions(suppress=True)
 
 
 def apply_along_axis(M, func, axis=1):
@@ -60,27 +71,31 @@ def my_norm(x, **kwargs):
     factors = mat([max_num-k for k in xrange(max_num)])
     return norm(factors*x)
 
-def calc_pair_norms(p0, p1):
-    res = []
-    for s0 in p0:
-        tmp = []
-        for s1 in p1:
-            N = norm(s0 - s1)
-###            print N
-            tmp.append(N)
-        res.append(tmp)
-###    print ''
-    return res
+def calc_pair_norms(pi, pj):
+    """
+    Calculate all the norms for all the solutions
+    between points pi and pj.
+    """
+    norms_i = []
+    for si in pi:
+        norm_ij = []
+        for sj in pj:
+            norm_ij.append( norm(si - sj) )
+        norms_i.append( norm_ij )
+    return norms_i
     
-def map_norms(solutions):
+def map_point_norms(point_solutions):
+    """
+    Calculate all the norms for all the solutions
+    between points pi and pj, for all points.
+    """
     res = []
-    num_solutions = len(solutions)
+    num_solutions = len(point_solutions)
     for i in xrange(num_solutions-1):
-        p_i = solutions[i]
-        p_j = solutions[i+1]
-        pair_norms = calc_pair_norms(p_i, p_j)
-        res.append(pair_norms)
-##        break
+        p_i = point_solutions[i]
+        p_j = point_solutions[i+1]
+        pair_norms_ij = calc_pair_norms(p_i, p_j)
+        res.append(pair_norms_ij)
     return res
 
 def map_edge_connections(i,res_i, dict_res):
@@ -108,8 +123,144 @@ def get_solutions_from_node_ids(all_solutions, *node_ids):
         res.append( extract_solution_from_node_id(node_id, all_solutions) )
     return res
 
+
+#### code saved for test-case
+####        all_solutions = [
+####            [[0],[0],[0]],
+####            [[2],[1]],
+####            [[3],[4],[5]]
+####            ]
+####        all_solutions = mat(all_solutions)
+####        for k in xrange(len(all_solutions)):
+####            all_solutions[k] = mat(all_solutions[k])
+
+
+
+def __inverse_kinematics_sanity_check(T44_point, ik_angles):
+    """
+    sanity check of forward kinematics, just making sure
+    that all solutions are valid.
+    """
+    for angles in ik_angles.T:
+        t44, _ = forward_kinematics(*angles, **DH_TABLE)
+        try:
+            norm_value = norm(T44_point - t44)
+            if not numpy.isnan(norm_value):
+                assert(norm_value < 1e-10)
+        except AssertionError:
+            ##TODO: move this into utils for pretty printing matrices
+            st = ''
+            for row in T44_point:
+                st += '\t'+str(row)+'\n'
+            raise Exception('\n\tInverse-kinematics failed for point-frame: \n{0}\n\tNorm: {1}'.format(st, norm_value))
+    return
+
+def inverse_kinematics_joints(*joint_values, **DH_TABLE):
+    # get forward kinematics i.e. last global robot-frame
+    T44_point, geometry_info = forward_kinematics(*joint_values, **DH_TABLE)
+
+    # get forward kinematics i.e. last global robot-frame
+    ik_angles = inverse_kinematics_irb140(DH_TABLE, T44_point)
+
+    # perform solution check of end-effector
+    __inverse_kinematics_sanity_check(T44_point,ik_angles)
+
+    return T44_point, geometry_info
+
+def inverse_kinematics_point(*args, **DH_TABLE):
+    """
+    Input is a point-frame ( 4x4 matrix of type [[R,t],[0,1]] ),
+    the function allows input on the forms:
+    1:    (rot, tilt, skew, x,y,z)                (3x, 3x)
+    2:    (rot, tilt, skew, t)                    (3x, 1x)
+    3:    (angles, x,y,z)                         (1x, 3x)
+    3.1:  (R, x,y,z)                              (1x, 3x)
+    4:    (R, t), where R is list or numpy.array  (1x, 1x)
+    """
+    T44_point = homogenous_matrix(*args)
+
+    # get inverse kinematics i.e. valid joint-value configurations
+    ik_angles = inverse_kinematics_irb140(DH_TABLE, T44_point)
+
+    # perform solution check of end-effector
+    __inverse_kinematics_sanity_check(T44_point,ik_angles)
+
+    return ik_angles
+
+def inverse_kinematics_curve(trans_frames):
+    # perform inverse kinematics over a curve and collect all solutions
+    all_solutions = []
+    for point_frame in trans_frames:
+        angle_solutions = inverse_kinematics_irb140(DH_TABLE, point_frame)
+
+        extra = [angle_solutions]
+        for index in xrange(6):
+            extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+            extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+            pass
+        angle_solutions = merge_solutions(*extra)
+        angle_solutions = filter_solutions(angle_solutions)
+        all_solutions.append(angle_solutions.T)
+    return mat(all_solutions)
+
+def generate_solutions_graph(all_solutions):
+    point_norms = map_point_norms(all_solutions)
+    node_edges = {}
+    for i in xrange( len(point_norms) ):
+        norms_i = point_norms[i]
+        map_edge_connections(i, norms_i, node_edges)
+
+    #fix the ends that are not connected to anything
+    glob_ends = ['p('+str(len(point_norms))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
+    for k in glob_ends:
+        node_edges[k] = {}
+
+    graph = node_edges
+    return graph
+
+def map_solution_paths(solution_graph, all_solutions):
+    num_starts = len(all_solutions[0])
+    num_ends = len(all_solutions[-1])
+    solution_paths = []
+
+    for s in xrange(num_starts):
+        for e in xrange(num_ends):
+            path = shortest_path(solution_graph,
+                   'p(0,{0})'.format(str(s)),
+                   'p({0},{1})'.format( str(len(all_solutions) - 1), str(e)))
+            S = get_solutions_from_node_ids(all_solutions, *path)
+            solution_paths.append( mat(S) )
+    return solution_paths
+
+def find_inverse_kinematics_paths_from_curve(trans_frames):
+    all_solutions = inverse_kinematics_curve(trans_frames)
+    solution_graph = generate_solutions_graph(all_solutions)
+    solution_paths = map_solution_paths(solution_graph, all_solutions)
+    all_solution_distances = apply_along_axis(apply_along_axis(solution_paths, func=diff, axis=1),func=norm, axis=2)
+
+    result = {
+        'solutions_per_point' : all_solutions,
+        'solution_graph' : solution_graph,
+        'solution_paths': solution_paths,
+        'solution_path_nodes_differences' : all_solution_distances
+        }
+    return result
+
+def plot_robot_from_angles(plot, *args):
+    s = forward_kinematics(*args, **DH_TABLE)
+    plot.draw_robot(s['robot_geometry_global'])
+    return
+
+def plot_path(plot, paths, index):
+    for i in xrange(6):
+        plot.add_subplot(6,1,i+1, title='j'+str(i+1))
+        plot.plot(paths[index,:,i])
+        #plt.legend(['j{0}'.format(i+1)])
+    #fig.show()
+    
+
 if __name__ == '__main__':
-    for count in xrange(1000):
+    for count in xrange(1):
         ax, fig = init_plot()
         fig.clear()
         j1 =  rand_range(-120,120)
@@ -120,129 +271,77 @@ if __name__ == '__main__':
         j6 =  rand_range(-400, 400)
 
         j1 =  0
-        j2 =  90
+        j2 =  0
         j3 =  0
         j4 =  0
-        j5 =  0
+        j5 =  90
         j6 =  0
 
-        joint_values = j1,j2,j3,j4,j5,j6
- 
-        # get forward kinematics i.e. last global robot-frame
-        T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
-        IK_angles = inverse_kinematics_irb140(DH_TABLE, T44)
+        joint_values = j1,j2,j3,j4,j5,6j
 
-        # sanity check of forward kinematics
-        for angles in IK_angles.T:
-            t44, _ = forward_kinematics(*joint_values, **DH_TABLE)
-            assert(norm(T44 - t44) < 1e-7)
+        robot_info = forward_kinematics(j1,j2,j3,j4,j5,j6, **DH_TABLE)
+        T44 = robot_info['T44']
+        robot_frames = robot_info['robot_geometry_global']
 
-        # list of global-robot-frames
-        global_robot_frames = construct_robot_geometry(debug)
-            
+
         # generate a curve in the last global robot-frame
         num_p = 50
         point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
-        # plot robot frames
-        ax = fig.add_subplot(1,2,1, projection='3d')
-        plot_robot_geometry(ax, global_robot_frames,'b--')
-        plot_curve(ax, point_matrix_tf)
-        plot_equal_perspective(ax,
-                               [-0.5,0.5],
-                               [-0.5,0.5],
-                               [0,1])
-        #show()
+        # generate angles
+        rot  = numpy.linspace(0,0)
+        tilt = numpy.linspace(0,0)
+        skew = numpy.linspace(0,0)
 
-        # rename some variables for convenience
-        plane = global_robot_frames[-1]
-        global_plane_curve = point_matrix_tf
+        # generate frames
+        angles = zip(rot, tilt, skew)
+        R = rotation_matrices(angles)
+        
+        pre_frames = zip(R, point_matrix)
+        frames = homogenous_matrices(pre_frames)
 
-        # perform inverse kinematics over a curve and collect all solutions
-        all_solutions = []
-        for point in global_plane_curve:
-            fk_p = homogenous_matrix(plane[:3,:3],
-                                     point[:3])
-            angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
-            extra = [angle_solutions]
-            for index in xrange(3,6):
-                extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
-                extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-            angle_solutions = merge_solutions(*extra)
-            angle_solutions = filter_solutions(angle_solutions)
-            all_solutions.append(angle_solutions.T)
-        all_solutions = mat(all_solutions)
-####        all_solutions = [
-####            [[0],[0],[0]],
-####            [[2],[1]],
-####            [[3],[4],[5]]
-####            ]
-####        all_solutions = mat(all_solutions)
-####        for k in xrange(len(all_solutions)):
-####            all_solutions[k] = mat(all_solutions[k])
-########        #1/0
-        all_solutions = mat(all_solutions)
-        print all_solutions.shape
-        print mat(all_solutions[0]).shape
-        res = map_norms(all_solutions)
-        print '#1'
-        d = {}
-        for i in xrange(len(res)):
-            res_i = res[i]
-            map_edge_connections(i, res_i, d)
-###        for k in sorted(d.keys()):
-###            print k+':'
-###            for l in sorted(d[k].keys()):
-###                print '\t'+l+' = '+str(d[k][l])
-        print '#2'
-        #fix the ends that are not connected to anything
-        glob_ends = ['p('+str(len(res))+','+str(i)+')' for i in xrange(len(all_solutions[-1]))]
-        for k in glob_ends:
-            d[k] = {}
-        graph = d
-        #graph['p(2,2)'] = {}
-        from graph import shortestPath as sp
-        num_starts = len(all_solutions[0])
-        num_ends = len(all_solutions[-1])
-        chosen_solutions = []
-        print '#3'
-        import time
-        _start = time.time()
-        for s in xrange(num_starts):
-            print s
-            for e in xrange(num_ends):
-                #R = sp(graph, 'p(0,'+str(s)+')','p(49,'+str(e)+')')
-                R = sp(graph, 'p(0,'+str(s)+')','p('+str(len(all_solutions) - 1)+','+str(e)+')')
-                S = get_solutions_from_node_ids(all_solutions, *R)
-                S = mat(S)
-                chosen_solutions.append(S)
-        _stop = time.time()
-        print 'time: ' + str(_stop-_start)
-        print '#4'
-        all_solution_distances = apply_along_axis(apply_along_axis(chosen_solutions, func=diff, axis=1),func=norm, axis=2)
-        ax = fig.add_subplot(1,2,2)
-        for solution_distance in all_solution_distances:
-            plot(solution_distance)
-        print 'total paths available:' + str(len(chosen_solutions))
+        # tansform frames - paper -> robot
+        transf_frames = apply_transform_on_frames(T44, frames)
+
+        # inverse knematics over curve
+        start = time.time()
+        result = find_inverse_kinematics_paths_from_curve(transf_frames)
+        stop = time.time()
+        
+        # results
+        print 'Time: {0}'.format(stop - start)
+        print '\n'
+
+        print result.keys()
+        print '\n'
+        
+        print 'total paths available:' + str( len(result['solution_paths']) )
         count = 0
-        for i,k in enumerate(all_solution_distances):
+
+        valid = []
+        for i,k in enumerate( result['solution_path_nodes_differences'] ):
             if n.max(abs(k)) < 20:
                 count = count + 1
                 print 'max-err: ' + str(n.max(abs(k)))
                 print 'index: ' + str(i)
+                valid.append( i )
         print 'valid paths: ' + str(count)
-######        ax = fig.add_subplot(1,3,3, projection='3d')
-######        for k in chosen_solutions:
-######            for l in k:
-######                #print len(l)
-######                t44, deb = forward_kinematics(*l, **DH_TABLE)
-######                frames = construct_robot_geometry(deb)
-######                plot_robot_geometry(ax, frames)
-######                assert(norm(T44[:3,:3] - t44[:3,:3]) < 1e-7)
-######            show()
-        show()
-        print mat(chosen_solutions)[175,10,:]
-        plot(mat(chosen_solutions)[175,:,:3]); show()
-        show()
+
+##        for solution_distance in result['solution_path_nodes_differences']:
+##            plot(solution_distance)
+##        show()
+        paths = mat(result['solution_paths'])
+
+        k = 0#valid[-1]
+        path = result['solution_paths'][k]
+
+        # plotting
+        plot = QtPlot()
+        plot_path(plot, paths, k)
+        #plot.draw_robot(robot_frames)
+        for i in xrange(0,len(path),len(path)/5):
+            plot_robot_from_angles(plot, *path[i])
+        plot.draw_trajectory(transf_frames)
+        plot.show()
         break

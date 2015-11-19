@@ -111,22 +111,33 @@ def forward_kinematics(*joint_values,**kwargs):
 
     # collect information about the Denivit-Hartenberg table
     dh_table = {
-    'table' : kwargs['table'],
-    'unit': kwargs['unit'],
+    'table' :    kwargs['table'],
+    'unit':      kwargs['unit'],
     'convention':kwargs['convention'],
-    'order': kwargs['order'],
-    }    
+    'order':     kwargs['order'],
+    }
+
+    global_geometry = matmul_series(*matrices)
+    global_geometry.insert(0, homogenous_matrix(0,0,0,0,0,0))
+    
+    result = {
+        'T44': matmul(*matrices),
+        'robot_geometry_local': matrices,
+        'robot_geometry_global': global_geometry,
+        'dh_table': dh_table
+        }
+
     # perform matrix chain-multiplication / serial-multiplication with matrix product
-    return matmul(*matrices), matrices
+    return result
 #----------------------------------------------------------------------------------------------------------#
 def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]
 #----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     #Calculate last angles
-    R = T44[0:3,0:3]    
-    H3, _ = forward_kinematics(j1, j2, j3, **dh_table)
-    R3 = H3[0:3, 0:3]
+    R = T44[0:3,0:3]
+    robot_info = forward_kinematics(j1, j2, j3, **dh_table)
+    R3 = robot_info['T44'][:3,:3]
 
     R36 = R3.T.dot(R)
     X = R36[:,0]
@@ -149,6 +160,8 @@ def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     j52 = j51
     j62 = j6 + n.sign(j6-j61)*180
 
+    ##import pdb; pdb.set_trace()
+    
     return j4, j5, j6, j41, j51, j61, j42, j52, j62
 #----------------------------------------------------------------------------------------------------------#
 
