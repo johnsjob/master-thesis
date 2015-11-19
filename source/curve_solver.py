@@ -245,6 +245,20 @@ def find_inverse_kinematics_paths_from_curve(trans_frames):
         }
     return result
 
+def plot_robot_from_angles(plot, *args):
+    s = forward_kinematics(*args, **DH_TABLE)
+    plot.draw_robot(s['robot_geometry_global'])
+    return
+
+import pylab as plt
+def plot_path(paths, index):
+    fig = plt.figure()
+    for i in xrange(6):
+        fig.add_subplot(6,1,i+1)
+        plt.plot(paths[index,:,i])
+        plt.legend(['j{0}'.format(i+1)])
+    fig.show()
+    
 
 if __name__ == '__main__':
     for count in xrange(1):
@@ -312,12 +326,18 @@ if __name__ == '__main__':
                 print 'index: ' + str(i)
         print 'valid paths: ' + str(count)
 
-        for solution_distance in result['solution_path_nodes_differences']:
-            plot(solution_distance)
-        show()
-##        # plotting
-##        plot = StPlot()
-##        plot.draw_robot(robot_frames)
-##        plot.draw_trajectory(trans_frames)
-##        plot.show()
+##        for solution_distance in result['solution_path_nodes_differences']:
+##            plot(solution_distance)
+##        show()
+        paths = mat(result['solution_paths'])
+        path = result['solution_paths'][0]
+
+        plot_path(paths,0)
+        # plotting
+        plot = StPlot()
+        #plot.draw_robot(robot_frames)
+        for i in xrange(0,len(path),len(path)/5):
+            plot_robot_from_angles(plot, *path[i])
+        plot.draw_trajectory(transf_frames)
+        plot.show()
         break
