@@ -23,31 +23,21 @@ class QtPlot:
 
         self.app = QtGui.QApplication([])
         self.window = self.__initWindow()
-
         self.__setupEnvironment(self.window)
 
+        win = pg.GraphicsWindow(title="Basic plotting examples")
+        win.setWindowTitle('pyqtgraph example: Plotting')
+        self.win = win
+        # Enable antialiasing for prettier plots
+        pg.setConfigOptions(antialias=True)
 
+        self.plots = []
 
-###       sudplots seperate window
-##        win = pg.GraphicsWindow(title="Basic plotting examples")
-##        win.resize(1000,600)
-##        win.setWindowTitle('pyqtgraph example: Plotting')
-##
-##        # Enable antialiasing for prettier plots
-##        pg.setConfigOptions(antialias=True)
-##
-##        p1 = win.addPlot(title="Basic array plotting", y=np.random.normal(size=100), pen=(0,255,0))
-##
-##        p2 = win.addPlot(title="Multiple curves")
-##        p2.plot(np.random.normal(size=100), pen=(255,0,0), name="Red curve")
-##        win.nextRow()
-##
-##        p3 = win.addPlot(title="Drawing with points")
-##        p3.plot(np.random.normal(size=100), pen=(200,200,200), symbolBrush=(255,0,0), symbolPen='w')
-##        p3 = win.addPlot(title="Drawing with points")
-##        p3.plot(np.random.normal(size=100), pen=(200,200,200), symbolBrush=(255,0,0), symbolPen='w')
-
-
+##        self.add_subplot(2,2,1)
+##        self.plot([4,5,6])
+##        self.add_subplot(2,2,4)
+##        self.plot([6,5,4])
+        #self.plot(2,2,0)
         return
 
     def draw_frames(self, frames, size=1.0, **kwargs):
@@ -128,6 +118,27 @@ class QtPlot:
                        y + dy,
                        z + dz, **kwargs)
         return
+
+    def add_subplot(self, row, col, index, title=''):
+    ###       sudplots seperate window
+        index = index - 1
+        num = row*col
+        tmp = title
+
+        index = index % num
+            
+        n = index / row
+        m = index / col
+        ##import pdb; pdb.set_trace()
+
+        p = self.win.addPlot(title=tmp, row=m, col=n)
+        self.plots.append(p)
+
+
+    def plot(self, y_values):
+        curve = self.plots[-1].plot(pen='y')
+        curve.setData(y_values)
+
         
     def __initWindow(self):
         w = gl.GLViewWidget()
@@ -161,5 +172,12 @@ class QtPlot:
 
 
 if __name__ == '__main__':
+##    from pylab import *
+##    f = figure()
+##    f.add_subplot(2,2,0)
+##    x = [1,2,3]
+##    y = [4,5,6]
+##    plot(x,y)
+##    show()
     plot = QtPlot()
     plot.show()
