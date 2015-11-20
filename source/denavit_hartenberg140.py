@@ -330,7 +330,7 @@ class TestIRB140(unittest.TestCase):
             # check if they are stored in the right order i.e.
             # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
             sols = inverse_kinematics_irb140(DH_TABLE, A)
-            for i in xrange(1,20,4):
+            for i in xrange(1, len(sols.T), 4):
                 a,b,c = sols[:,i][:3]
                 self.assertAlmostEqual(a, j1)
                 self.assertAlmostEqual(b, j2)
@@ -374,7 +374,7 @@ class TestIRB140(unittest.TestCase):
             # check if they are stored in the right order i.e.
             # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
             sols = inverse_kinematics_irb140(DH_TABLE, A)
-            for i in xrange(0,20,4):
+            for i in xrange(0, len(sols.T), 4):
                 a,b,c = sols[:,i][:3]
                 self.assertAlmostEqual(a, j1)
                 self.assertAlmostEqual(b, j2)
@@ -418,7 +418,7 @@ class TestIRB140(unittest.TestCase):
             # check if they are stored in the right order i.e.
             # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
             sols = inverse_kinematics_irb140(DH_TABLE, A)
-            for i in xrange(2,20,4):
+            for i in xrange(2, len(sols.T), 4):
                 a,b,c = sols[:,i][:3]
                 self.assertAlmostEqual(a, j1)
                 self.assertAlmostEqual(b, j2)
@@ -462,7 +462,7 @@ class TestIRB140(unittest.TestCase):
             # check if they are stored in the right order i.e.
             # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
             sols = inverse_kinematics_irb140(DH_TABLE, A)
-            for i in xrange(3,20,4):
+            for i in xrange(3, len(sols.T), 4):
                 a,b,c = sols[:,i][:3]
                 self.assertAlmostEqual(a, j1)
                 self.assertAlmostEqual(b, j2)
