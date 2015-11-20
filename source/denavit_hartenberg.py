@@ -151,17 +151,16 @@ def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     X = R36[:,0]
     Y = R36[:,1]
     Z = R36[:,2]
-    # for order of parameters check numpy.info(numpy.arctan2)
-    j41 = -(atan2(X[2], Y[2]) + 90)
-    j51 = -atan2(norm(Z[0:2]), Z[2])
-    j61 = -(atan2(Z[1],Z[0]))
 
-    j42 = j4 + n.sign(j4-j41)*180
-    j52 = j51
-    j62 = j6 + n.sign(j6-j61)*180
+    result = j4,      j5,     j6, \
+             j4+180, -j5, j6+180, \
+             j4+180, -j5, j6-180, \
+             j4-180, -j5, j6+180, \
+             j4-180, -j5, j6-180
+    
 
     ##import pdb; pdb.set_trace()
-    return j4, j5, j6, j41, j51, j61, j42, j52, j62
+    return result
 #----------------------------------------------------------------------------------------------------------#
 def pack_elbow_and_wrists(dh_table, j1,j2,j3, T44):
     wrist_angles = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)

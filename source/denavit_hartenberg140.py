@@ -239,28 +239,22 @@ def inverse_kinematics_irb140(dh_table, T44):
     if dim[0] != 4:
         raise ArithmeticError('Forward-kinematics must have dimension of 4!')
 
-    sol_elbup1,\
-    sol_elbup2,\
-    sol_elbup3      = inverse_kinematics_elbow_up(dh_table, T44)
-    
-    sol_elbdown1,\
-    sol_elbdown2,\
-    sol_elbdown3    = inverse_kinematics_elbow_down(dh_table, T44)
-    
-    sol_elbup1_fl,\
-    sol_elbup2_fl,\
-    sol_elbup3_fl   = inverse_kinematics_elbow_up(dh_table, T44, flipped = True)
-    
-    sol_elbdown1_fl,\
-    sol_elbdown2_fl,\
-    sol_elbdown3_fl = inverse_kinematics_elbow_down(dh_table, T44, flipped = True)
+    # x5 for each elb_x
+    sol_elbup      = inverse_kinematics_elbow_up(dh_table, T44)
+    sol_elbdown    = inverse_kinematics_elbow_down(dh_table, T44)
+    sol_elbup_fl   = inverse_kinematics_elbow_up(dh_table, T44, flipped = True)
+    sol_elbdown_fl = inverse_kinematics_elbow_down(dh_table, T44, flipped = True)
 
-    ret = mat(zip(sol_elbup1, sol_elbdown1, sol_elbup1_fl, sol_elbdown1_fl,
-                  sol_elbup2, sol_elbdown2, sol_elbup2_fl, sol_elbdown2_fl,
-                  sol_elbup3, sol_elbdown3, sol_elbup3_fl, sol_elbdown3_fl))
-    
     #first columnt is first solution and so forth
-    return ret
+##    ret = mat(zip(sol_elbup1, sol_elbdown1, sol_elbup1_fl, sol_elbdown1_fl,
+##                  sol_elbup2, sol_elbdown2, sol_elbup2_fl, sol_elbdown2_fl,
+##                  sol_elbup3, sol_elbdown3, sol_elbup3_fl, sol_elbdown3_fl))
+
+    #first columnt is first solution and so forth
+    ret = mat( zip( sol_elbup, sol_elbdown, sol_elbup_fl, sol_elbdown_fl ) )
+    k,m,n = ret.shape
+    ret = ret.reshape(k*m,n)
+    return ret.T
 
 def filter_solutions(solutions, filter_function = check_solution):
     result = []
@@ -268,7 +262,6 @@ def filter_solutions(solutions, filter_function = check_solution):
         if filter_function(*s) == True:
             result.append( s )
     # returns non-flipped, flipped
-    #import pdb; pdb.set_trace()
     return mat(zip(*result))
 
 def calc_valid_inv_kin_IRB140(dh_table, T44):
@@ -335,6 +328,15 @@ class TestIRB140(unittest.TestCase):
             self.assertNotAlmostEqual(b, j2)
             self.assertNotAlmostEqual(c, j3)
 
+            # check if they are stored in the right order i.e.
+            # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
+            sols = inverse_kinematics_irb140(DH_TABLE, A)
+            for i in xrange(1,20,4):
+                a,b,c = sols[:,i][:3]
+                self.assertAlmostEqual(a, j1)
+                self.assertAlmostEqual(b, j2)
+                self.assertAlmostEqual(c, j3)
+
 
     def test_elbow_up(self):
         print '\ntest_elbow_up'
@@ -370,6 +372,16 @@ class TestIRB140(unittest.TestCase):
             self.assertNotAlmostEqual(b, j2)
             self.assertNotAlmostEqual(c, j3)
 
+            # check if they are stored in the right order i.e.
+            # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
+            sols = inverse_kinematics_irb140(DH_TABLE, A)
+            for i in xrange(0,20,4):
+                a,b,c = sols[:,i][:3]
+                self.assertAlmostEqual(a, j1)
+                self.assertAlmostEqual(b, j2)
+                self.assertAlmostEqual(c, j3)
+
+
     def test_elbow_up_flipped(self):
         print '\ntest_elbow_up_flipped'
         for _ in xrange(100):
@@ -403,6 +415,15 @@ class TestIRB140(unittest.TestCase):
             self.assertAlmostEqual(a, j1)
             self.assertNotAlmostEqual(b, j2)
             self.assertNotAlmostEqual(c, j3)
+
+            # check if they are stored in the right order i.e.
+            # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
+            sols = inverse_kinematics_irb140(DH_TABLE, A)
+            for i in xrange(2,20,4):
+                a,b,c = sols[:,i][:3]
+                self.assertAlmostEqual(a, j1)
+                self.assertAlmostEqual(b, j2)
+                self.assertAlmostEqual(c, j3)
 
     def test_elbow_down_flipped(self):
         print '\ntest_elbow_down_flipped'
@@ -438,6 +459,15 @@ class TestIRB140(unittest.TestCase):
             self.assertAlmostEqual(a, j1)
             self.assertNotAlmostEqual(b, j2)
             self.assertNotAlmostEqual(c, j3)
+
+            # check if they are stored in the right order i.e.
+            # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
+            sols = inverse_kinematics_irb140(DH_TABLE, A)
+            for i in xrange(3,20,4):
+                a,b,c = sols[:,i][:3]
+                self.assertAlmostEqual(a, j1)
+                self.assertAlmostEqual(b, j2)
+                self.assertAlmostEqual(c, j3)
 
     def test_non_reach_config(self):
             print '\ntest_non_reach_configs'
@@ -512,7 +542,6 @@ class TestIRB140(unittest.TestCase):
                 T44, debug1  = forward_kinematics(j1, j2, j3, j4, j5, j6, **DH_TABLE)
             
             sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
-
             num_valid_solutions = 0
             for s in sol.T:
                 robot_info = forward_kinematics(*s, **DH_TABLE)
@@ -540,109 +569,6 @@ class TestIRB140(unittest.TestCase):
             L = mat(L).T
             self.assertTrue(norm(calc_valid_inv_kin_IRB140(DH_TABLE, T44) - L) == 0.0)
             
-##    def test_forward_kinematics_from_file(self):
-##        data = parse.parse_file("C:\\robot-studio-output.txt")
-##        num_joint_conf = len(data['Joint_1_T'])
-##
-##        self.data = data
-##        self.num_joint_conf = num_joint_conf
-##        self.T44 = mat(data['T44'][:]).reshape((num_joint_conf,4,4))
-##
-##        a,b,c,d,e,f = data['Joint_1'][:], data['Joint_2'][:],\
-##                      data['Joint_3'][:], data['Joint_4'][:],\
-##                      data['Joint_5'][:], data['Joint_6'][:]
-##        self.joint_values = zip(a,b,c,d,e,f)
-##
-##        data = self.data
-##        num_joint_conf = self.num_joint_conf
-##        for index in xrange(num_joint_conf):
-##            #T44 = mat(data['T44'][index]).reshape((4,4))
-##            T44 = self.T44[index]
-##
-####            for key in data:
-####                if 'T' in key:
-####                    data[key] = mat(data[key]).reshape(num_joint_conf,4,4)
-##
-##            a,b,c,d,e,f = self.joint_values[index]
-##            A, debug  = forward_kinematics(a,b,c,d,e,f, **DH_TABLE)
-##
-##            print "T44 sanity check-norm: " + str(norm(T44 - A))
-##            self.assertLess(norm(T44 - A), 1e-7)
-
-##    def test_inverse_kinematics_from_file(self):
-##        print '\ntest_inverse_kinematics'
-##        data = parse.parse_file("C:\\robot-studio-output.txt")
-##        num_joint_conf = len(data['Joint_1_T'])
-##
-##        self.data = data
-##        self.num_joint_conf = num_joint_conf
-##        self.T44 = mat(data['T44'][:]).reshape((num_joint_conf,4,4))
-##        print "\nNumber of configurations: " + str(self.num_joint_conf) + "\n"
-##
-##        a,b,c,d,e,f = data['Joint_1'][:], data['Joint_2'][:],\
-##                      data['Joint_3'][:], data['Joint_4'][:],\
-##                      data['Joint_5'][:], data['Joint_6'][:]
-##        self.joint_values = zip(a,b,c,d,e,f)
-##
-##        print '### TEST-inverse-kinematics-from-file'
-##        nans = 0
-##        total_valid_sols = 0
-##        num_zeroed_angles = 0
-##        for index in xrange(self.num_joint_conf):
-##            T44 = self.T44[index]
-##            sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
-##
-##            a,b,c,d,e,f = self.joint_values[index]
-##            s0 = mat([a,b,c,d,e,f])
-##            print "\n[ IK %s ]" % str(index)
-##
-##            num_zeroed_angle_norms = 0
-##            num_valid_solutions = 0
-##            for i in xrange(0, 8):
-##                solution_names = ['sol_elbup1', 'sol_elbdown1', 'sol_elbup1_fl', 'sol_elbdown1_fl',
-##                                  'sol_elbup2', 'sol_elbdown2', 'sol_elbup2_fl', 'sol_elbdown2_fl']
-##                s = sol[:,i]
-##                is_valid_solution = check_solution(*s)
-##                num_valid_solutions += is_valid_solution
-##                
-##                gamma0,gamma1,gamma2,gamma3,gamma4,gamma5 = s
-##                A, debug = forward_kinematics(gamma0, gamma1, gamma2,
-##                                                 gamma3, gamma4, gamma5, **DH_TABLE)
-##                p0 = debug[0][:,3]
-##                p1 = matmul(debug[0],debug[1])[:,3]
-##                p2 = matmul(debug[0],debug[1],debug[2])[:,3]
-##                p3 = matmul(debug[0],debug[1],debug[2], debug[3])[:,3]
-##                p4 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4])[:,3]
-##                p5 = matmul(debug[0],debug[1],debug[2], debug[3], debug[4], debug[5])[:,3]
-##                fk_norm = norm(A - T44)
-##                angle_norm = norm(s - s0)
-##
-##                print "\n\tSolution: %s" % solution_names[i]
-##                print "\tFK-norm: " + str(fk_norm)
-##                if not n.isnan(fk_norm):
-##                    self.assertLess(fk_norm, 1e-14)
-##                else:
-##                    nans += 1
-##                    
-##                print "\tangle-norm: %s" % str(angle_norm)
-##                if not n.isnan(fk_norm):
-##                    if angle_norm < 1e-8:
-##                        num_zeroed_angle_norms += 1
-##                    elif int(angle_norm*1000) == 360000:
-##                        num_zeroed_angle_norms += 1
-##                    elif angle_norm < 1:
-##                        print str(s - s0)
-##            self.assertGreater(num_zeroed_angle_norms, 0)
-##
-##            print "\n\tnum valid solutions: %s" % str(num_valid_solutions)
-##            print "\tnum angle norms ~0: %s" % str(num_zeroed_angle_norms)
-##            num_zeroed_angles += num_zeroed_angle_norms
-##            total_valid_sols += num_valid_solutions
-##            self.assertGreater(num_valid_solutions, 0)
-##        print 'nans = '+str(nans)
-##        print 'total_valid = '+str(total_valid_sols)
-##        print 'total_possible = '+str(self.num_joint_conf*8)
-##        print 'total_zeroed_angles = '+str(num_zeroed_angles)                
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
     unittest.main()
