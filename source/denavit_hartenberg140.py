@@ -30,12 +30,12 @@ atan2 = lambda y,x: deg(n.arctan2(y,x))
 
 up_to = lambda i: custom_round(matmul(*[debug[x] for x in range(i)]))
 #----------------------------------------------------------------------------------------------------------#
-DH_TABLE = {  'table':[-70, 90, 352, 180,'R',
-                     360, 0, 0, 90,'R',
-                       0, 90, 0, 180,'R',
-                       0, 90, 380, 180,'R',
-                       0, 90, 0, 180,'R',
-                       0,  0,65,  0,'R'],
+DH_TABLE = {  'table':[-70, 90, 352, 180, 'R',
+                       360,  0,   0,  90, 'R',
+                         0, 90,   0, 180, 'R',
+                         0, 90, 380, 180, 'R',
+                         0, 90,   0, 180, 'R',
+                         0,  0,  65,   0, 'R'],
              'unit': 'mm',
              'order': ['A','alpha','D','theta'],
              'convention': 'standard'
@@ -74,15 +74,17 @@ def elbow_up_flipped(dh_table, T44):
     th21 = atan2(s, x0)
     th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
     j2 = -90 + th21 - th22
-    #import pdb; pdb.set_trace()
             
-    j4, j5, j6,\
-    j41,j51,j61, \
-    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
-
-    return (j1, j2, j3, j4, j5, j6),\
-           (j1, j2, j3, j41, j51, j61), \
-           (j1, j2, j3, j42, j52, j62)
+    #packing the solutions in a dynamic way
+##    j4, j5, j6,\
+##    j41,j51,j61, \
+##    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+##
+##    return (j1, j2, j3, j4, j5, j6),\
+##           (j1, j2, j3, j41, j51, j61), \
+##           (j1, j2, j3, j42, j52, j62)
+    result = pack_elbow_and_wrists(dh_table, j1, j2, j3, T44)
+    return result
 #----------------------------------------------------------------------------------------------------------#
 def elbow_down_flipped(dh_table, T44):
     #Geometrical paramaters
@@ -109,13 +111,15 @@ def elbow_down_flipped(dh_table, T44):
     th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
     j2 = -90 + (th21 + th22)
 
-    j4, j5, j6,\
-    j41,j51,j61, \
-    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
-
-    return (j1, j2, j3, j4, j5, j6),\
-           (j1, j2, j3, j41, j51, j61), \
-           (j1, j2, j3, j42, j52, j62)
+##    j4, j5, j6,\
+##    j41,j51,j61, \
+##    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+##
+##    return (j1, j2, j3, j4, j5, j6),\
+##           (j1, j2, j3, j41, j51, j61), \
+##           (j1, j2, j3, j42, j52, j62)
+    result = pack_elbow_and_wrists(dh_table, j1, j2, j3, T44)
+    return result
 #----------------------------------------------------------------------------------------------------------#
 def elbow_up(dh_table, T44):
     #Geometrical paramaters
@@ -145,13 +149,15 @@ def elbow_up(dh_table, T44):
         j2 = -90 + (th21 - th22)
 ##        j3 = -90-th3
             
-    j4, j5, j6,\
-    j41,j51,j61, \
-    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
-##    import pdb; pdb.set_trace()
-    return (j1, j2, j3, j4, j5, j6),\
-           (j1, j2, j3, j41, j51, j61), \
-           (j1, j2, j3, j42, j52, j62)
+##    j4, j5, j6,\
+##    j41,j51,j61, \
+##    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+####    import pdb; pdb.set_trace()
+##    return (j1, j2, j3, j4, j5, j6),\
+##           (j1, j2, j3, j41, j51, j61), \
+##           (j1, j2, j3, j42, j52, j62)
+    result = pack_elbow_and_wrists(dh_table, j1, j2, j3, T44)
+    return result
 #----------------------------------------------------------------------------------------------------------#
 def elbow_down(dh_table, T44):
     #Geometrical paramaters
@@ -181,13 +187,15 @@ def elbow_down(dh_table, T44):
         j2 = -90 + (th21+th22)
 ##        j3 = -90-th3
     
-    j4, j5, j6,\
-    j41,j51,j61, \
-    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
-
-    return (j1, j2, j3, j4, j5, j6),\
-           (j1, j2, j3, j41, j51, j61), \
-           (j1, j2, j3, j42, j52, j62)
+##    j4, j5, j6,\
+##    j41,j51,j61, \
+##    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
+##
+##    return (j1, j2, j3, j4, j5, j6),\
+##           (j1, j2, j3, j41, j51, j61), \
+##           (j1, j2, j3, j42, j52, j62)
+    result = pack_elbow_and_wrists(dh_table, j1, j2, j3, T44)
+    return result
 #----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_elbow_up(dh_table, T44, flipped = False):
     if not flipped:
