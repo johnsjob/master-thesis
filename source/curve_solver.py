@@ -233,17 +233,29 @@ def map_solution_paths(solution_graph, all_solutions):
     return solution_paths
 
 def find_inverse_kinematics_paths_from_curve(trans_frames):
+    start = time.time()
     all_solutions = inverse_kinematics_curve(trans_frames)
-    solution_graph = generate_solutions_graph(all_solutions)
-    solution_paths = map_solution_paths(solution_graph, all_solutions)
-    all_solution_distances = apply_along_axis(apply_along_axis(solution_paths, func=diff, axis=1),func=norm, axis=2)
+    print 'inverse-kinematics, curve: {0}s'.format(time.time() - start)
 
+    start = time.time()
+    solution_graph = generate_solutions_graph(all_solutions)
+    print 'solution graph: {0}s'.format(time.time() - start)
+    
+    
+    start = time.time()
+    solution_paths = map_solution_paths(solution_graph, all_solutions)
+    print 'Djikstra: {0}s'.format(time.time() - start)
+    
+
+    start = time.time()
+    all_solution_distances = apply_along_axis(apply_along_axis(solution_paths, func=diff, axis=1),func=norm, axis=2)
     result = {
         'solutions_per_point' : all_solutions,
         'solution_graph' : solution_graph,
         'solution_paths': solution_paths,
         'solution_path_nodes_differences' : all_solution_distances
         }
+    print 'Collect result: {0}s'.format(time.time() - start)
     return result
 
 def plot_robot_from_angles(plot, *args):
@@ -270,11 +282,11 @@ if __name__ == '__main__':
         j5 =  rand_range(-115, 115)
         j6 =  rand_range(-400, 400)
 
-        j1 =  0
+        j1 =  180
         j2 =  0
         j3 =  0
         j4 =  0
-        j5 =  90
+        j5 =  0
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,6j
@@ -333,7 +345,7 @@ if __name__ == '__main__':
 ##        show()
         paths = mat(result['solution_paths'])
 
-        k = 0#valid[-1]
+        k = valid[-1]
         path = result['solution_paths'][k]
 
         # plotting
