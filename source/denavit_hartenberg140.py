@@ -10,7 +10,7 @@ from helperfunctions_math import *
 from denavit_hartenberg import *
 from denavit_hartenberg import inverse_kinematics_spherical_wrist as inv_wrist
 #=====================================================#
-sys.path.append("../int/misc-tools/")
+sys.path.append("../int/misc/")
 import parsingtools as  parse
 #----------------------------------------------------------------------------------------------------------#
 from numpy.linalg import norm
