@@ -1,6 +1,7 @@
-# ignore everything
+# ignore all files
 
 *
+int/
 
 # except ...
 
