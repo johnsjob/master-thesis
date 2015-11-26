@@ -283,10 +283,10 @@ if __name__ == '__main__':
         j6 =  rand_range(-400, 400)
 
         j1 =  0
-        j2 =  90
+        j2 =  0
         j3 =  0
         j4 =  0
-        j5 =  0
+        j5 =  90
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,j6
@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
         # generate a curve in the last global robot-frame
         num_p = 50
-        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.50)
+        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
         # generate angles
