@@ -144,13 +144,11 @@ def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     Y = R36[:,1]
     Z = R36[:,2]
     # for order of parameters check numpy.info(numpy.arctan2)
-    j4 = atan2(Z[1],Z[0])
+    # the last angles orient the end-effector by a ZYZ euler rotation
+    j4 = atan2(Z[1], Z[0])
     j5 = atan2(norm(Z[0:2]), Z[2])
-    j6 = atan2(X[2], Y[2]) + 90
-    R36 = R36.T
-    X = R36[:,0]
-    Y = R36[:,1]
-    Z = R36[:,2]
+    j6 = atan2(Y[2], -X[2]) 
+    ##j6 = atan2(X[2], Y[2]) + 90
 
     result = j4,      j5,     j6, \
              j4+180, -j5, j6+180, \
