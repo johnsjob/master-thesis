@@ -54,17 +54,17 @@ if __name__ == '__main__':
         fig.clear()
 
         j1 =  0
-        j2 =  90
+        j2 =  0
         j3 =  0
-        j4 =  0
-        j5 =  0
-        j6 =  0
+        j4 =  10
+        j5 =  20
+        j6 =  30
 
         joint_values = mat([j1,j2,j3,j4,j5,j6])
 
         # get forward kinematics i.e. last global robot-frame
-        T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
-        IK_angles = inverse_kinematics_irb140(DH_TABLE, T44)
+        info = forward_kinematics(*joint_values, **DH_TABLE)
+        IK_angles = inverse_kinematics_irb140(DH_TABLE, info['T44'])
 
         elbow_up = mat(zip(IK_angles[:,0],IK_angles[:,4],IK_angles[:,8]))
         elbow_down = mat(zip(IK_angles[:,0+1],IK_angles[:,4+1],IK_angles[:,8+1]))
