@@ -5,7 +5,7 @@ from pylab import axhline
 from plane_relative import *
 from denavit_hartenberg140 import *
 
-from pyqtplot import QtPlot
+#from pyqtplot import QtPlot
 from standardplot import StPlot
 import pylab as plt
 
@@ -267,7 +267,7 @@ def plot_robot_from_angles(plot, *args):
 
 def plot_path(plot, paths, index):
     for i in xrange(6):
-        plot.add_subplot(6,1,i+1, title='j'+str(i+1))
+        #plot.add_subplot(6,1,i+1, title='j'+str(i+1))
         plot.plot(paths[index,:,i])
         #plt.legend(['j{0}'.format(i+1)])
     #fig.show()
@@ -275,8 +275,6 @@ def plot_path(plot, paths, index):
 
 if __name__ == '__main__':
     for count in xrange(1):
-        ax, fig = init_plot()
-        fig.clear()
         j1 =  rand_range(-120,120)
         j2 =  rand_range(-90, 110)
         j3 =  rand_range(-230, 50)
@@ -288,7 +286,7 @@ if __name__ == '__main__':
         j2 =  0
         j3 =  0
         j4 =  0
-        j5 =  90
+        j5 =  0
         j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,j6
@@ -300,7 +298,8 @@ if __name__ == '__main__':
 
         # generate a curve in the last global robot-frame
         num_p = 50
-        point_matrix = generate_symmetric_curve(num_points=num_p, ampl_factor=0.30)
+        point_matrix = generate_symmetric_curve(num_points=num_p,
+                                                ampl_factor=0.50)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
         # generate angles
@@ -335,10 +334,10 @@ if __name__ == '__main__':
 
         valid = []
         for i,k in enumerate( result['solution_path_nodes_differences'] ):
-            if n.max(abs(k)) < 20:
+            if n.max(abs(k)) < 20.0:
                 count = count + 1
-                print 'max-err: ' + str(n.max(abs(k)))
-                print 'index: ' + str(i)
+##                print 'max-err: ' + str(n.max(abs(k)))
+##                print 'index: ' + str(i)
                 valid.append( i )
         print 'valid paths: ' + str(count)
 
@@ -349,13 +348,15 @@ if __name__ == '__main__':
 
         k = valid[-1]
         path = result['solution_paths'][k]
+        path_diff = result['solution_path_nodes_differences'][k]
+        plot(path_diff)
+        show()
 
         # plotting
-        plot = QtPlot()
+        plot = StPlot()
         plot_path(plot, paths, k)
-        #plot.draw_robot(robot_frames)
-        for i in xrange(0,len(path),len(path)/5):
-            plot_robot_from_angles(plot, *path[i])
+        plot.draw_robot(robot_frames)
+##        for i in xrange(0,len(path),len(path)/5):
+##            plot_robot_from_angles(plot, *path[i])
         plot.draw_trajectory(transf_frames)
         plot.show()
-        break

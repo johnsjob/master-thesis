@@ -21,7 +21,24 @@ class StPlot:
         self.plots = []        
         self.fig = self.__initWindow()
         self.__setupEnvironment(self.fig)
+        return
 
+    def __initWindow(self):
+        # Twice as wide as it is tall.
+        fig = plt.figure(1)#,figsize=plt.figaspect(0.5))
+        return fig
+
+    def __setupEnvironment(self, fig):
+        #---- First subplot
+        ax_3d = fig.add_subplot(1, 2, 1, projection='3d')
+        plot_equal_perspective(ax_3d,[-0.7, 0.7],
+                                     [-0.7, 0.7],
+                                     [-0.5, 1])
+        self.plots.append(ax_3d)
+
+        #---- Second subplot
+        ax_2d = fig.add_subplot(1, 2, 2)
+        self.plots.append(ax_2d)
         return
 
     def draw_frames(self, frames, size=1.0, **kwargs):
@@ -63,11 +80,26 @@ class StPlot:
         dirz = frame_matrix[:3,2] * size
         px, py, pz = frame_matrix[:3,3]
 
-        self.draw_direction(px, py, pz, *dirx, color='b', **kwargs)
+        self.draw_direction(px, py, pz, *dirx, color='r', **kwargs)
         self.draw_direction(px, py, pz, *diry, color='g', **kwargs)
-        self.draw_direction(px, py, pz, *dirz, color='r', **kwargs)
+        self.draw_direction(px, py, pz, *dirz, color='b', **kwargs)
         return
 
+        
+    def draw_tool_delta(self, robot_flange, tool_vector):
+        ax = self.plots[0]
+        ##tool_to_global = mat([[0,0,-1],[0,1,0],[1,0,0]]).T
+
+        x,y,z = robot_flange[:3,-1]
+        x2,y2,z2 = robot_flange.dot(mat(list(tool_vector[:3])+[1]))[:3]
+
+        self.draw_line(x,y,z,
+                       x2, y2, z2)
+        ax.plot([x],[y],[z],'bo')
+        ax.plot([x2],[y2],[z2],'ro')
+        return
+        
+    
     def draw_line(self, x0, y0, z0,
                   x01, y01, z01, **kwargs):
 
@@ -96,23 +128,11 @@ class StPlot:
                        z + dz, **kwargs)
         return
         
-    def __initWindow(self):
-        # Twice as wide as it is tall.
-        fig = plt.figure(1)#,figsize=plt.figaspect(0.5))
-        return fig
 
-    def __setupEnvironment(self, fig):
-        #---- First subplot
-        ax_3d = fig.add_subplot(1, 2, 1, projection='3d')
-        plot_equal_perspective(ax_3d,[-0.7, 0.7],
-                                     [-0.7, 0.7],
-                                     [-0.5, 1])
-        self.plots.append(ax_3d)
-
-        #---- Second subplot
-        ax_2d = fig.add_subplot(1, 2, 2)
-        self.plots.append(ax_2d)
-        return
+    def plot(self, y_values):
+##            def draw_curve(self, points, **kwargs):
+        ax = self.plots[-1]
+        ax.plot(*points.T, color='0.75', **kwargs)
 
 
     def show(self):

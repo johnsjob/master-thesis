@@ -140,6 +140,10 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44,
 
     X, Y, D = solve(L, R).reshape(3,3).T
     Z = cross(X, Y)
+
+    X = X / numpy.linalg.norm(X)
+    Y = Y / numpy.linalg.norm(Y)
+    Z = Z / numpy.linalg.norm(Z)
     result = mat([X,Y,Z,D]).T
     condition = cond(L)
 
@@ -202,13 +206,15 @@ def setup_geometry(current_plane, point_spread, num_points):
 
     return geometry_info
 #----------------------------------------
-def find_solution(geometry_info, included_solutions_from_start = -1):
+def find_solution_pen_tip(geometry_info, included_solutions_from_start = -1):
     start_time = time.clock()
-
+    
     result, cond_num = solve_tool0_tip_alt(geometry_info['data']['forward_kinematics'][:included_solutions_from_start],
                                       geometry_info['data']['pentip_2d'][:included_solutions_from_start],
                                       problem_formulation)
+    return result, cond_num
 
+def find_solution_pen_ori(geometry_info, included_solutions_from_start = -1):
     # solve for orientation s which should be same as local_tool_orientation
     l,m,n = geometry_info['data']['Xflange_orientation_relative_to_paper_plane'].shape
     flange_orientation_reshaped = geometry_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(l*m,n)
@@ -222,10 +228,11 @@ def find_solution(geometry_info, included_solutions_from_start = -1):
 
     solved_tool_orientation = linalg.solve(lhs, rhs)
 
-    stop_time = time.clock()
-    time_spent = stop_time - start_time
-
-    return result, solved_tool_orientation, cond_num, time_spent
+    #normalize result
+    solved_tool_orientation[:,0] = solved_tool_orientation[:,0] / norm(solved_tool_orientation[:,0])
+    solved_tool_orientation[:,1] = solved_tool_orientation[:,1] / norm(solved_tool_orientation[:,1])
+    solved_tool_orientation[:,2] = solved_tool_orientation[:,2] / norm(solved_tool_orientation[:,2])
+    return solved_tool_orientation, cond(lhs)
 #----------------------------------------
 def perform_solution_run(geometry_info):
     interval = range(3,num_points)

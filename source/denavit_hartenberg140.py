@@ -11,7 +11,7 @@ from denavit_hartenberg import *
 from denavit_hartenberg import inverse_kinematics_spherical_wrist as inv_wrist
 #=====================================================#
 sys.path.append("../int/misc/")
-import parsingtools as  parse
+#import parsingtools as  parse
 #----------------------------------------------------------------------------------------------------------#
 from numpy.linalg import norm
 from numpy import arctan2 as atan2, arccos as acos, arcsin as asin, sqrt, arctan as atan
