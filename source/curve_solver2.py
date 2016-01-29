@@ -162,9 +162,6 @@ def plot_robot_from_angles(plot, *args):
     return
     
 def do_it(res, result, curr_ind=0, tol=20.0):
-    print len(res)
-    print res
-    print '+ + +'
     p_curr = res.pop() #pop the solutions for current point
     solution = p_curr[curr_ind]
     if not res:
@@ -172,9 +169,7 @@ def do_it(res, result, curr_ind=0, tol=20.0):
         return 
     else:
         p_dest = res[-1]
-    print 'solution: \t {}'.format(solution)
     sol_diff = map(norm, solution - p_dest)
-    print 'diff: \t\t {}'.format(sol_diff)
     z = zip(p_dest, sol_diff, range(len(p_dest)))
     z_sorted = sorted(z, key=lambda x: x[1])
     z_sorted, _, index = zip(*z_sorted)
@@ -186,17 +181,7 @@ def do_it(res, result, curr_ind=0, tol=20.0):
         return
     else:
         result.append(solution)
-
-    print '- - -'
-    print z
-    print sol_diff
-    print z_sorted
-    print index
-    print '= = ='
-
     do_it(res, result, sel_ind)
-    
-    #import pdb; pdb.set_trace()
 
 if __name__ == '__main__':
     for count in xrange(1):
@@ -242,6 +227,7 @@ if __name__ == '__main__':
         transf_frames = apply_transform_on_frames(T44, frames)
 
         total = []
+        total_time = 0
         for index in xrange(31):
             # inverse knematics over curve
             with utils.timing.Timer() as t:
@@ -255,10 +241,14 @@ if __name__ == '__main__':
             res = list(res)
             res.reverse()
             result = []
-            do_it(res, result,curr_ind=index)
+            with utils.timing.Timer() as t:
+                do_it(res, result,curr_ind=index)
+            total_time = total_time + t.interval
+            print 'path-finding: \n\t{0}'.format(t)
             print 'position: {}'.format(index)
-            time.sleep(1)
+            print total_time
             if result:
+                print 'FOUND ONE!!'
                 total.append(list(result))
         print len(total)
 ######        
