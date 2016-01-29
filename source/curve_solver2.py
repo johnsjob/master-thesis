@@ -161,7 +161,7 @@ def plot_robot_from_angles(plot, *args):
     plot.draw_robot(s['robot_geometry_global'])
     return
     
-def do_it(res, result, curr_ind=0, tol=2):
+def do_it(res, result, curr_ind=0, tol=20.0):
     print len(res)
     print res
     print '+ + +'
@@ -173,7 +173,7 @@ def do_it(res, result, curr_ind=0, tol=2):
     else:
         p_dest = res[-1]
     print 'solution: \t {}'.format(solution)
-    sol_diff = abs(solution - p_dest)
+    sol_diff = map(norm, solution - p_dest)
     print 'diff: \t\t {}'.format(sol_diff)
     z = zip(p_dest, sol_diff, range(len(p_dest)))
     z_sorted = sorted(z, key=lambda x: x[1])
@@ -241,19 +241,26 @@ if __name__ == '__main__':
         # tansform frames - paper -> robot
         transf_frames = apply_transform_on_frames(T44, frames)
 
-        # inverse knematics over curve
-        with utils.timing.Timer() as t:
-            result = inverse_kinematics_curve(transf_frames)
-        print 'inverse-kinematics, curve: \n\t{0}'.format(t)
+        total = []
+        for index in xrange(31):
+            # inverse knematics over curve
+            with utils.timing.Timer() as t:
+                result = inverse_kinematics_curve(transf_frames)
+            print 'inverse-kinematics, curve: \n\t{0}'.format(t)
 
-        res = mat([rand() for k in xrange(9)]).reshape(3,3)
-        res = mat([[1,2,3],[6,5,4],[7,8,9]])
-        print res
-        res = list(res)
-        res.reverse()
-        result = []
-        do_it(res, result,curr_ind=1)
-        print result
+            res = mat([rand() for k in xrange(9)]).reshape(3,3)
+            res = mat([[1,2,3],[6,5,4],[7,8,9]])
+            res = result
+            #print res
+            res = list(res)
+            res.reverse()
+            result = []
+            do_it(res, result,curr_ind=index)
+            print 'position: {}'.format(index)
+            time.sleep(1)
+            if result:
+                total.append(list(result))
+        print len(total)
 ######        
 ######        # results
 ######        print 'Time: {0}'.format(stop - start)
