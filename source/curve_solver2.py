@@ -161,14 +161,14 @@ def plot_robot_from_angles(plot, *args):
     plot.draw_robot(s['robot_geometry_global'])
     return
     
-def do_it(res, result, curr_ind=0, tol=0):
+def do_it(res, result, curr_ind=0, tol=2):
     print len(res)
     print res
     print '+ + +'
     p_curr = res.pop() #pop the solutions for current point
     solution = p_curr[curr_ind]
-    result.append(solution)
     if not res:
+        result.append(solution)
         return 
     else:
         p_dest = res[-1]
@@ -182,7 +182,11 @@ def do_it(res, result, curr_ind=0, tol=0):
     sel_z = z_sorted[0]
     sel_ind = index[0]
     if sol_diff[sel_ind] > tol:
+        del result[:]
         return
+    else:
+        result.append(solution)
+
     print '- - -'
     print z
     print sol_diff
@@ -249,6 +253,7 @@ if __name__ == '__main__':
         res.reverse()
         result = []
         do_it(res, result,curr_ind=1)
+        print result
 ######        
 ######        # results
 ######        print 'Time: {0}'.format(stop - start)
