@@ -4,7 +4,7 @@ from __future__ import division
 import numpy
 import time
 
-from numpy.linalg import solve, det, inv, cond
+from numpy.linalg import solve, lstsq, det, inv, cond
 from numpy import array as mat, log10
 #----------------------------------------
 # custom imports
@@ -139,6 +139,7 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44,
     R = lhs.T.dot(rhs)
 
     X, Y, D = solve(L, R).reshape(3,3).T
+    X, Y, D = lstsq(lhs,rhs)[0].reshape(3,3).T
     Z = cross(X, Y)
 
     X = X / numpy.linalg.norm(X)
@@ -159,7 +160,7 @@ def generate_Xflange_orientation(plane,rot, tilt, skew):
     return plane_tools.define_plane_relative_from_angles(plane, (0,0,0),
                                                          rot, tilt, skew,'global')[:3,:3]
 #----------------------------------------
-def setup_geometry(current_plane, point_spread, num_points):
+def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
     global local_delta_vector, local_tool_orientation
 
     geometry_info = {'plane':current_plane}
@@ -199,6 +200,11 @@ def setup_geometry(current_plane, point_spread, num_points):
 
         info['forward_kinematics'] = homogenous_matrix( info['Xflange_orientation_relative_to_paper_plane'],
                                                         info['Xtcp0'] )
+        # perturbations
+        if type(perturbations) in [list, tuple]:
+            if 'tip' in perturbations:
+                r = lambda: (0.6*rand()-0.3)*(1-abs(info['angles']['tilt'])/50.0)
+                info['pentip_2d'] = [px + r(), py + r()]
         # ^OK
         collected_data.append(info)
     geometry_info['data'] = merge_dicts(*collected_data)
@@ -239,21 +245,48 @@ def perform_solution_run(geometry_info):
     list_of_solving = []
     for k in interval:
         solve_info = {}
-        solve_info['result'], solve_info['solved_tool_orientation'], solve_info['cond_num'], solve_info['time_spent'] = \
-                                find_solution(geometry_info, k)                    
-        solve_info['err'] = norm(geometry_info['correct_solution_geometry'] - solve_info['result']) + norm(geometry_info['local_tool_orientation'] - solve_info['solved_tool_orientation'])
+        tip_wobj_res = find_solution_pen_tip(geometry_info, k)
+        solve_info['tipwobj-result']   = tip_wobj_res[0]
+        solve_info['tip-result']       = tip_wobj_res[0][:,3]
+        solve_info['wobj-result']      = tip_wobj_res[0][:,:3]
+        solve_info['tip-cond_num']     = tip_wobj_res[1]
+        
+        solve_info['orientation-result'], solve_info['orientation-cond_num'] = find_solution_pen_ori(geometry_info, k)
+        solve_info['err-tipwobj'] = abs(geometry_info['correct_solution_geometry'] - solve_info['tipwobj-result'])
+        solve_info['err-tip']     = numpy.max(solve_info['err-tipwobj'][:,3])
+        solve_info['err-wobj']    = numpy.max(solve_info['err-tipwobj'][:,:3])
+        solve_info['err-ori']     = norm(geometry_info['local_tool_orientation'] - solve_info['orientation-result'])
         list_of_solving.append(solve_info)
     solving_data = merge_dicts(*list_of_solving)
     solving_data['interval'] = interval
-    print 'solution error = ' + str( solving_data['err'][-1] )
+    print 'solution error tip = {}'.format( numpy.max( abs( solving_data['err-tip'][1:]) ))
+    print 'solution error ori = {}'.format( numpy.max( abs( solving_data['err-ori'][1:]) ))
     return solving_data
 #----------------------------------------
 def make_plots(solving_data):
-    logcond = log10( solving_data['cond_num'] )
-    logerr  = log10( solving_data['err'] )
-    plot(solving_data['interval'], logcond, label='Condition number',       linewidth=2);
-    plot(solving_data['interval'], logerr,  label='Error (frobenious norm)',linewidth=2);
-    plot(solving_data['interval'], log10( solving_data['time_spent'] ),'r', label='time spent',linewidth=2)
+    logcond = log10( solving_data['tip-cond_num'] )
+    plot(solving_data['interval'], logcond,
+                       'b--',label='Condition number tip/wobj',
+                       linewidth=2)
+    
+    logcond = log10( solving_data['tip-cond_num'] )
+    plot(solving_data['interval'], logcond,
+                       'r-.',label='Condition number ori',
+                       linewidth=2);
+
+    logerr  = log10( solving_data['err-tip'] )
+    plot(solving_data['interval'], logerr,
+                      'b',label='Error tip (frobenious norm)',
+                      linewidth=2);
+    logerr  = log10( solving_data['err-wobj'] )
+    plot(solving_data['interval'], logerr,
+                      'g',label='Error wobj (frobenious norm)',
+                      linewidth=2);
+    logerr  = log10( solving_data['err-ori'] )
+    plot(solving_data['interval'], logerr,
+                      'r',label='Error ori (frobenious norm)',
+                      linewidth=2);
+    
     hlines(-1, solving_data['interval'][0], solving_data['interval'][-1], label='Tolerance = 10^-1')
     xlim(solving_data['interval'][0], solving_data['interval'][-1])
     xlabel('Number of points collected', fontsize=14)
@@ -273,18 +306,17 @@ def make_plots(solving_data):
 #----------------------------------------
 if __name__ == '__main__':
     print "Sampling points..."    
-    geometry_info = setup_geometry(plane, 300, num_points)
+    geometry_info = setup_geometry(plane, 47, num_points, perturbations=['tip'])
 
     print "Solving for dirx, diry, dirz and local_delta_vector..."
-    result, s, cond_num, time_spent = find_solution(geometry_info)
+##    result, s, cond_num, time_spent = find_solution(geometry_info)
 
     print
-    print 'Time spent solving '+str(num_points)+' points: ' + str(time_spent) +' seconds.'
+##    print 'Time spent solving '+str(num_points)+' points: ' + str(time_spent) +' seconds.'
 
     print
     print 'Collecting solving information...'
-    solving_data = perform_solution_run(geometry_info)
-
+    solving_data = perform_solution_run(geometry_info, )
     print
     print 'Preparing plots...'
     make_plots(solving_data)
