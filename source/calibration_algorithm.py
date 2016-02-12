@@ -178,7 +178,7 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
         info['angles'] = \
         {
             'rot':  rand_range(-180,180),
-            'tilt': rand_range(-60, 60),
+            'tilt': rand_range(-40, 40),
             'skew': rand_range(-180,180) 
         }
         # Xtcp (flange) orientation in global space, generated relative to the paper plane
@@ -203,8 +203,14 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
         # perturbations
         if type(perturbations) in [list, tuple]:
             if 'tip' in perturbations:
-                r = lambda: (0.6*rand()-0.3)*(1-abs(info['angles']['tilt'])/50.0)
-                info['pentip_2d'] = [px + r(), py + r()]
+                tilt = info['angles']['tilt']
+                r = lambda: 0.6*rand()-0.3
+                if tilt >= 0:
+                    r2 = lambda: (0.2*rand()-0.1)*(1-abs(info['angles']['tilt'])/30.0)
+                    info['pentip_2d'] = [px + r() + r2(), py + r() + r2()]
+                else:
+                    r2 = lambda: (0.2*rand()-0.1)
+                    info['pentip_2d'] = [px + r() + r2(), py + r() + r2()]
         # ^OK
         collected_data.append(info)
     geometry_info['data'] = merge_dicts(*collected_data)
@@ -253,26 +259,32 @@ def perform_solution_run(geometry_info):
         
         solve_info['orientation-result'], solve_info['orientation-cond_num'] = find_solution_pen_ori(geometry_info, k)
         solve_info['err-tipwobj'] = abs(geometry_info['correct_solution_geometry'] - solve_info['tipwobj-result'])
-        solve_info['err-tip']     = numpy.max(solve_info['err-tipwobj'][:,3])
-        solve_info['err-wobj']    = numpy.max(solve_info['err-tipwobj'][:,:3])
-        solve_info['err-ori']     = norm(geometry_info['local_tool_orientation'] - solve_info['orientation-result'])
+        solve_info['err-tip']     = numpy.linalg.norm(solve_info['err-tipwobj'][:,3])
+        solve_info['err-wobj']    = numpy.linalg.norm(solve_info['err-tipwobj'][:,:3])
+        solve_info['err-ori']     = numpy.linalg.norm(geometry_info['local_tool_orientation'] - solve_info['orientation-result'])
         list_of_solving.append(solve_info)
     solving_data = merge_dicts(*list_of_solving)
     solving_data['interval'] = interval
-    print 'solution error tip = {}'.format( numpy.max( abs( solving_data['err-tip'][1:]) ))
+    print 'solution max  error tip(1) = {}\n'.format( numpy.max( abs( solving_data['err-tip'][1:]) ))
+
+    print 'solution max  error tip(20) = {}'.format( numpy.max( abs( solving_data['err-tip'][20:]) ))
+    print 'solution mean error tip(20) = {}\n'.format( numpy.mean( abs( solving_data['err-tip'][1:21]) ))
+
+    print 'solution max  error tip(40) = {}'.format( numpy.max( abs( solving_data['err-tip'][40:]) ))
+    print 'solution mean error tip(40) = {}\n'.format( numpy.mean( abs( solving_data['err-tip'][1:41]) ))
     print 'solution error ori = {}'.format( numpy.max( abs( solving_data['err-ori'][1:]) ))
     return solving_data
 #----------------------------------------
 def make_plots(solving_data):
-    logcond = log10( solving_data['tip-cond_num'] )
-    plot(solving_data['interval'], logcond,
-                       'b--',label='Condition number tip/wobj',
-                       linewidth=2)
+##    logcond = log10( solving_data['tip-cond_num'] )
+##    plot(solving_data['interval'], logcond,
+##                       'b--',label='Condition number tip/wobj',
+##                       linewidth=2)
     
-    logcond = log10( solving_data['tip-cond_num'] )
-    plot(solving_data['interval'], logcond,
-                       'r-.',label='Condition number ori',
-                       linewidth=2);
+##    logcond = log10( solving_data['tip-cond_num'] )
+##    plot(solving_data['interval'], logcond,
+##                       'r-.',label='Condition number ori',
+##                       linewidth=2);
 
     logerr  = log10( solving_data['err-tip'] )
     plot(solving_data['interval'], logerr,
@@ -282,10 +294,10 @@ def make_plots(solving_data):
     plot(solving_data['interval'], logerr,
                       'g',label='Error wobj (frobenious norm)',
                       linewidth=2);
-    logerr  = log10( solving_data['err-ori'] )
-    plot(solving_data['interval'], logerr,
-                      'r',label='Error ori (frobenious norm)',
-                      linewidth=2);
+##    logerr  = log10( solving_data['err-ori'] )
+##    plot(solving_data['interval'], logerr,
+##                      'r',label='Error ori (frobenious norm)',
+##                      linewidth=2);
     
     hlines(-1, solving_data['interval'][0], solving_data['interval'][-1], label='Tolerance = 10^-1')
     xlim(solving_data['interval'][0], solving_data['interval'][-1])
@@ -305,18 +317,32 @@ def make_plots(solving_data):
     show()
 #----------------------------------------
 if __name__ == '__main__':
-    print "Sampling points..."    
-    geometry_info = setup_geometry(plane, 47, num_points, perturbations=['tip'])
+    res = []
+    for k in xrange(100):
+        try:
+            print "Sampling points..."    
+            geometry_info = setup_geometry(plane, 47, num_points, perturbations=['tip'])
 
-    print "Solving for dirx, diry, dirz and local_delta_vector..."
-##    result, s, cond_num, time_spent = find_solution(geometry_info)
+            print 'Collecting solving information...'
+            solving_data = perform_solution_run(geometry_info, )
+            res.append(solving_data)
+            print
+            print 'Preparing plots...'
+        except Exception as e:
+            print str(e)
+            continue
+##    make_plots(solving_data)
 
-    print
-##    print 'Time spent solving '+str(num_points)+' points: ' + str(time_spent) +' seconds.'
-
-    print
-    print 'Collecting solving information...'
-    solving_data = perform_solution_run(geometry_info, )
-    print
-    print 'Preparing plots...'
-    make_plots(solving_data)
+    for key in ['err-tip','err-wobj']:
+        val = mat( [x[key] for x in res] )
+        maxval = numpy.max(val, axis=0)
+        meanval = numpy.mean(val, axis=0)
+        plot(log10(maxval),'b', label = 'max'+key)
+        plot(log10(meanval),'g', label = 'mean'+key)
+        hlines(-1, solving_data['interval'][0], solving_data['interval'][-1], label='Tolerance = 10^-1')
+        legend()
+        xlim(solving_data['interval'][0], solving_data['interval'][-1])
+        xlabel('Number of points collected', fontsize=14)
+        ylabel('log10', fontsize=14)
+        show()
+    
