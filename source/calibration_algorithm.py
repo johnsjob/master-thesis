@@ -2,8 +2,9 @@
 from __future__ import division
 #----------------------------------------#
 import numpy
-import time
+import utils
 
+from pylab import xlim, ylim
 from numpy.linalg import solve, lstsq, det, inv, cond
 from numpy import array as mat, log10
 #----------------------------------------
@@ -13,7 +14,7 @@ from helperfunctions_plot import *
 import plane_relative as plane_tools
 #----------------------------------------#
 # num_points = 12 absolute minimum, actually 12+1
-num_points = 160
+num_points = 500
 #========================================#
 # placing paper origin
 o = mat([1000*rand(), 1000*rand(), 1000*rand()])
@@ -24,13 +25,38 @@ r,t,s = -rand_range(-180,180), rand_range(-180,180), rand_range(-180, 180)
 # define the paper-orientation in global (robot-system) directions
 # however, the paper uses "euclidean" orientation ('local' = euclidean)
 plane = plane_tools.define_plane_from_angles(o, r, t, s, 'local')
+
 #################################################
+# define the units so less mistakes are made
+chosen_unit = 'mm'
+
+unit_descriptor = {
+    'm' : 1.0,
+    'mm': 1000.0
+    }
+
+unit = unit_descriptor[chosen_unit]
+metre = unit
+millimetre = unit / 1000.0
+#----------------------------------------
 # define delta vector which we want to find (in tool-space / local space)
-L = 100
+# in unit lengths
+L = 100 * millimetre
 local_delta_vector = mat([1,2,3])
 local_delta_vector = (local_delta_vector / norm(local_delta_vector))*L #length L
+
 # Orientation of the tool in tool (local) coordinate system 
+
 local_tool_orientation = rotation_matrix_rot_tilt_skew(-10, 20, 30)
+#----------------------------------------
+# define the anoto point spread in unit lengths
+#plane_point_spread = 47 * millimetre
+plane_point_spread = 200 * millimetre
+
+# define max-tilt of pen
+pen_max_tilt = 40
+#pen_max_tilt = 10
+
 #----------------------------------------
 def merge_dicts(*list_of_dicts):
     # init
@@ -75,8 +101,32 @@ def merge_dicts(*list_of_dicts):
             ret[k] = mat(ret[k])
     return ret
 #----------------------------------------
+##>>> v = [1,2,3]
+##>>> rts(*ang).dot(v)
+##array([ 0.9277428 ,  1.92775024,  3.06970232])
+##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),1e-3).dot(v))
+##0.025717333764800787
+##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),1e-2).dot(v))
+##0.3032573574160719
+##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),1e-3).dot(v))
+##0.025717333764800787
+##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),2e-3).dot(v))
+##0.061674825648472743
+##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),1e-3).dot(v))
+##0.025717333764800787
+#----------------------------------------
 def rad_to_ang(v):
     return v*180/pi
+#----------------------------------------
+def vec_ang(v,w):
+    res = matmul(v,w) / (norm(v) * norm(w))
+    return numpy.arccos(res) * 180 / numpy.pi
+#----------------------------------------
+def vec_diff(v1, v2):
+    err = norm(v1 - v2)
+    norm_err = abs(norm(v1) - norm(v2))
+    angle_err = rad_to_ang(acos( (v1/norm(v1)).dot((v2/norm(v2))) ))
+    return err, norm_err, angle_err
 #----------------------------------------
 def problem_formulation(dx, dy, dR):
     r11,r12,r13,r21,r22,r23,r31,r32,r33 = (-dR).reshape(9)
@@ -87,15 +137,9 @@ def problem_formulation(dx, dy, dR):
     col_value = 9
     return mat([S1, S2, S3]),  row_value, col_value
 #----------------------------------------
-def vec_diff(v1, v2):
-    err = norm(v1 - v2)
-    norm_err = abs(norm(v1) - norm(v2))
-    angle_err = rad_to_ang(acos( (v1/norm(v1)).dot((v2/norm(v2))) ))
-    return err, norm_err, angle_err
-#----------------------------------------
 def generate_random_Anoto_Point(L):
-    px = L*rand()-L/2.0
-    py = L*rand()-L/2.0
+    px = L*rand()
+    py = L*rand()
     return px, py
 #----------------------------------------
 def solve_tool0_tip_alt(array_forward_kinematics_T44,
@@ -139,12 +183,11 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44,
     R = lhs.T.dot(rhs)
 
     X, Y, D = solve(L, R).reshape(3,3).T
-    X, Y, D = lstsq(lhs,rhs)[0].reshape(3,3).T
-    Z = cross(X, Y)
-
+    #X, Y, D = lstsq(lhs,rhs)[0].reshape(3,3).T
     X = X / numpy.linalg.norm(X)
     Y = Y / numpy.linalg.norm(Y)
-    Z = Z / numpy.linalg.norm(Z)
+    Z = cross(X, Y)
+#    Z = Z / numpy.linalg.norm(Z)
     result = mat([X,Y,Z,D]).T
     condition = cond(L)
 
@@ -161,7 +204,8 @@ def generate_Xflange_orientation(plane,rot, tilt, skew):
                                                          rot, tilt, skew,'global')[:3,:3]
 #----------------------------------------
 def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
-    global local_delta_vector, local_tool_orientation
+    global local_delta_vector, local_tool_orientation,\
+           millimetre, pen_max_tilt
 
     geometry_info = {'plane':current_plane}
     geometry_info['local_tool_orientation'] = local_tool_orientation
@@ -178,8 +222,8 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
         info['angles'] = \
         {
             'rot':  rand_range(-180,180),
-            'tilt': rand_range(-40, 40),
-            'skew': rand_range(-180,180) 
+            'tilt': rand_range(0, pen_max_tilt),
+            'skew': rand_range(-90, 180) 
         }
         # Xtcp (flange) orientation in global space, generated relative to the paper plane
         info['Xflange_orientation_relative_to_paper_plane'] = \
@@ -193,7 +237,7 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
                  matmul( info['Xflange_orientation_relative_to_paper_plane'], local_delta_vector[:3]) )
         # ^OK
 
-        # generate relative-tool-orientation in world coordinates
+        # generate relative-tool-orientation i n world coordinates
         info['global_tool_orientation'] = matmul( info['Xflange_orientation_relative_to_paper_plane'],
                                                   local_tool_orientation )
         # ^OK
@@ -204,12 +248,12 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
         if type(perturbations) in [list, tuple]:
             if 'tip' in perturbations:
                 tilt = info['angles']['tilt']
-                r = lambda: 0.6*rand()-0.3
+                r = lambda: (0.6*rand()-0.3) * millimetre
                 if tilt >= 0:
-                    r2 = lambda: (0.2*rand()-0.1)*(1-abs(info['angles']['tilt'])/30.0)
+                    r2 = lambda: (0.02*rand()-0.01)*(1-abs(info['angles']['tilt'])/numpy.max(abs(info['angles']['tilt']))) * millimetre
                     info['pentip_2d'] = [px + r() + r2(), py + r() + r2()]
                 else:
-                    r2 = lambda: (0.2*rand()-0.1)
+                    r2 = lambda: (0.02*rand()-0.01) * millimetre
                     info['pentip_2d'] = [px + r() + r2(), py + r() + r2()]
         # ^OK
         collected_data.append(info)
@@ -218,9 +262,7 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
 
     return geometry_info
 #----------------------------------------
-def find_solution_pen_tip(geometry_info, included_solutions_from_start = -1):
-    start_time = time.clock()
-    
+def find_solution_pen_tip(geometry_info, included_solutions_from_start = -1):    
     result, cond_num = solve_tool0_tip_alt(geometry_info['data']['forward_kinematics'][:included_solutions_from_start],
                                       geometry_info['data']['pentip_2d'][:included_solutions_from_start],
                                       problem_formulation)
@@ -252,6 +294,10 @@ def perform_solution_run(geometry_info):
     for k in interval:
         solve_info = {}
         tip_wobj_res = find_solution_pen_tip(geometry_info, k)
+
+##        solve_info['point_spread_x'] = numpy.std(geometry_info['data']['pentip_2d'][:k], axis=0)[0]
+##        solve_info['point_spread_y'] = numpy.std(geometry_info['data']['pentip_2d'][:k], axis=0)[1]
+        
         solve_info['tipwobj-result']   = tip_wobj_res[0]
         solve_info['tip-result']       = tip_wobj_res[0][:,3]
         solve_info['wobj-result']      = tip_wobj_res[0][:,:3]
@@ -276,33 +322,41 @@ def perform_solution_run(geometry_info):
     return solving_data
 #----------------------------------------
 def make_plots(solving_data):
-##    logcond = log10( solving_data['tip-cond_num'] )
-##    plot(solving_data['interval'], logcond,
-##                       'b--',label='Condition number tip/wobj',
-##                       linewidth=2)
+    global chosen_unit
     
-##    logcond = log10( solving_data['tip-cond_num'] )
-##    plot(solving_data['interval'], logcond,
-##                       'r-.',label='Condition number ori',
-##                       linewidth=2);
-
+    logcond = log10( solving_data['tip-cond_num'] )
+    plot(solving_data['interval'], logcond,
+                       'b--',label='Condition number tip/wobj',
+                       linewidth=2)
+    
     logerr  = log10( solving_data['err-tip'] )
     plot(solving_data['interval'], logerr,
                       'b',label='Error tip (frobenious norm)',
                       linewidth=2);
+
     logerr  = log10( solving_data['err-wobj'] )
     plot(solving_data['interval'], logerr,
                       'g',label='Error wobj (frobenious norm)',
                       linewidth=2);
+
 ##    logerr  = log10( solving_data['err-ori'] )
 ##    plot(solving_data['interval'], logerr,
 ##                      'r',label='Error ori (frobenious norm)',
 ##                      linewidth=2);
     
-    hlines(-1, solving_data['interval'][0], solving_data['interval'][-1], label='Tolerance = 10^-1')
+    if chosen_unit == 'mm':
+        tol = -1
+        hlines(tol, solving_data['interval'][0],
+                   solving_data['interval'][-1],
+                   label='Tolerance = 10^{}'.format(tol))
+    else:
+        tol = -4
+    hlines(-4, solving_data['interval'][0],
+               solving_data['interval'][-1])
+    
     xlim(solving_data['interval'][0], solving_data['interval'][-1])
     xlabel('Number of points collected', fontsize=14)
-    ylabel('log10', fontsize=14)
+    ylabel('log10'.format(chosen_unit), fontsize=14)
 
     index = 4-3
     plt.annotate("number of points = 4",
@@ -318,31 +372,58 @@ def make_plots(solving_data):
 #----------------------------------------
 if __name__ == '__main__':
     res = []
-    for k in xrange(100):
-        try:
-            print "Sampling points..."    
-            geometry_info = setup_geometry(plane, 47, num_points, perturbations=['tip'])
+    ks = range(1)
+    for k in ks:
+        print 'Run {} % complete!'.format(100* k / len(ks))
+        with utils.timing.Timer() as timer:
+            try:
+                print "Sampling points..."    
+                geometry_info = setup_geometry(plane, plane_point_spread,
+                                               num_points, perturbations=['tip'])
+                print 'Collecting solving information...'
+                solving_data = perform_solution_run(geometry_info, )
+                res.append(solving_data)
+                print
+                print 'Preparing plots...'
+            except Exception as e:
+                print str(e)
+                continue
 
-            print 'Collecting solving information...'
-            solving_data = perform_solution_run(geometry_info, )
-            res.append(solving_data)
-            print
-            print 'Preparing plots...'
-        except Exception as e:
-            print str(e)
-            continue
-##    make_plots(solving_data)
+    make_plots(solving_data)
+    if chosen_unit == 'mm':
+        length_tol = -1 # 1/10th millimetre
+    else:
+        length_tol = -4 # 1/10th millimetre (in meters)
 
-    for key in ['err-tip','err-wobj']:
+    for key,tol, un in zip(['err-tip', 'err-wobj'],
+                           [length_tol, -4],
+                           [chosen_unit, '']):
         val = mat( [x[key] for x in res] )
         maxval = numpy.max(val, axis=0)
+        minval = numpy.min(val, axis=0)
         meanval = numpy.mean(val, axis=0)
-        plot(log10(maxval),'b', label = 'max'+key)
-        plot(log10(meanval),'g', label = 'mean'+key)
-        hlines(-1, solving_data['interval'][0], solving_data['interval'][-1], label='Tolerance = 10^-1')
+        if un:
+            unit_str = '[{}]'.format(un)
+        else:
+            unit_str = ''
+        plot(log10(maxval),'b', label = 'max {} {}'.format(key, unit_str))
+        plot(log10(meanval),'g', label = 'mean {} {}'.format(key, unit_str))
+        plot(log10(minval),'r', label = 'min {} {}'.format(key, unit_str))
+##        sx = numpy.mean(mat( [x['point_spread_x'] for x in res] ), axis=0)
+##        sy = numpy.mean(mat( [x['point_spread_y'] for x in res] ), axis=0)
+##        plot(log10(sx),'k', label = 'sx')
+##        plot(log10(sy),'k', label = 'sy')
+        hlines(tol, solving_data['interval'][0],
+                    solving_data['interval'][-1],
+                    label='Tolerance = 10^{} {}'.format(tol, unit_str))
         legend()
         xlim(solving_data['interval'][0], solving_data['interval'][-1])
-        xlabel('Number of points collected', fontsize=14)
+        xlabel('Number of measured points', fontsize=14)
         ylabel('log10', fontsize=14)
+        if 'tip' in key:
+            ylim(-4, 4)
+        elif 'wobj' in key:
+            ylim(-6, 1)
+        title('Calibration algorithm verification with repetition using simulated geometry')
+        grid()
         show()
-    
