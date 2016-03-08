@@ -372,7 +372,7 @@ def make_plots(solving_data):
 #----------------------------------------
 if __name__ == '__main__':
     res = []
-    ks = range(1)
+    ks = range(100)
     for k in ks:
         print 'Run {} % complete!'.format(100* k / len(ks))
         with utils.timing.Timer() as timer:
