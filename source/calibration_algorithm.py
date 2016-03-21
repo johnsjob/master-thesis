@@ -2,10 +2,11 @@
 from __future__ import division
 #----------------------------------------#
 import numpy
+import numpy as n
 import utils
 
 from pylab import xlim, ylim
-from numpy.linalg import solve, lstsq, det, inv, cond
+from numpy.linalg import solve, lstsq, det, inv, cond, svd
 from numpy import array as mat, log10
 #----------------------------------------
 # custom imports
@@ -46,7 +47,6 @@ local_delta_vector = mat([1,2,3])
 local_delta_vector = (local_delta_vector / norm(local_delta_vector))*L #length L
 
 # Orientation of the tool in tool (local) coordinate system 
-
 local_tool_orientation = rotation_matrix_rot_tilt_skew(-10, 20, 30)
 #----------------------------------------
 # define the anoto point spread in unit lengths
@@ -237,7 +237,7 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
                  matmul( info['Xflange_orientation_relative_to_paper_plane'], local_delta_vector[:3]) )
         # ^OK
 
-        # generate relative-tool-orientation i n world coordinates
+        # generate relative-tool-orientation in world coordinates
         info['global_tool_orientation'] = matmul( info['Xflange_orientation_relative_to_paper_plane'],
                                                   local_tool_orientation )
         # ^OK
@@ -268,25 +268,59 @@ def find_solution_pen_tip(geometry_info, included_solutions_from_start = -1):
                                       problem_formulation)
     return result, cond_num
 
+##def find_solution_pen_ori(geometry_info, included_solutions_from_start = -1):
+##    # solve for orientation s which should be same as local_tool_orientation
+##    l,m,n = geometry_info['data']['Xflange_orientation_relative_to_paper_plane'].shape
+##    flange_orientation_reshaped = geometry_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(l*m,n)
+##
+##    lhs = matmul( flange_orientation_reshaped.T,
+##                  flange_orientation_reshaped)
+##
+##    l,m,n = geometry_info['data']['global_tool_orientation'].shape
+##    rhs = matmul( flange_orientation_reshaped.T,
+##                  geometry_info['data']['global_tool_orientation'].reshape(l*m,n))
+##
+##    solved_tool_orientation = linalg.solve(lhs, rhs)
+##
+##    #normalize result
+##    solved_tool_orientation[:,0] = solved_tool_orientation[:,0] / norm(solved_tool_orientation[:,0])
+##    solved_tool_orientation[:,1] = solved_tool_orientation[:,1] / norm(solved_tool_orientation[:,1])
+##    solved_tool_orientation[:,2] = solved_tool_orientation[:,2] / norm(solved_tool_orientation[:,2])
+##    return solved_tool_orientation, cond(lhs)
+
+def _solve_orientation(As, Bs):
+    Ac    = As - n.mean(As, axis=0)
+    Bec    = Bs - n.mean(Bs, axis=0)
+    h     = lop(n.outer, Ac, Bec)
+    H     = n.sum(h, axis=0)
+    U,S,V = svd(H)
+    # solve for solution tensor of order 9x9
+    # in this tensor the best solution resides in index 0,4,8 in the tensor form
+    # of 9x3x3 which corresponds to diagonal elements of the 3x3x3x3 solution tensor
+    solution_tensor = U.dot(V).reshape(3,3,3,3)
+    # best column-solutions resides in the diagonal of the 3x3x3x3 solution tensor
+    solution1 = nzip(solution_tensor[0,0,:,0],
+                    solution_tensor[1,1,:,1],
+                    solution_tensor[2,2,:,2])
+    solution2 = nzip(solution_tensor.T[0,0,:,0],
+                    solution_tensor.T[1,1,:,1],
+                    solution_tensor.T[2,2,:,2])
+    return solution1, solution2, solution_tensor, [U,S,V]
+
 def find_solution_pen_ori(geometry_info, included_solutions_from_start = -1):
     # solve for orientation s which should be same as local_tool_orientation
     l,m,n = geometry_info['data']['Xflange_orientation_relative_to_paper_plane'].shape
-    flange_orientation_reshaped = geometry_info['data']['Xflange_orientation_relative_to_paper_plane'].reshape(l*m,n)
 
-    lhs = matmul( flange_orientation_reshaped.T,
-                  flange_orientation_reshaped)
+    flange_orientation = geometry_info['data']['Xflange_orientation_relative_to_paper_plane']
+    pen_orientation = geometry_info['data']['global_tool_orientation']
 
-    l,m,n = geometry_info['data']['global_tool_orientation'].shape
-    rhs = matmul( flange_orientation_reshaped.T,
-                  geometry_info['data']['global_tool_orientation'].reshape(l*m,n))
+    solved_tool_orientation = _solve_orientation(flange_orientation, pen_orientation)
 
-    solved_tool_orientation = linalg.solve(lhs, rhs)
-
-    #normalize result
-    solved_tool_orientation[:,0] = solved_tool_orientation[:,0] / norm(solved_tool_orientation[:,0])
-    solved_tool_orientation[:,1] = solved_tool_orientation[:,1] / norm(solved_tool_orientation[:,1])
-    solved_tool_orientation[:,2] = solved_tool_orientation[:,2] / norm(solved_tool_orientation[:,2])
-    return solved_tool_orientation, cond(lhs)
+##    #normalize result
+##    solved_tool_orientation[:,0] = solved_tool_orientation[:,0] / norm(solved_tool_orientation[:,0])
+##    solved_tool_orientation[:,1] = solved_tool_orientation[:,1] / norm(solved_tool_orientation[:,1])
+##    solved_tool_orientation[:,2] = solved_tool_orientation[:,2] / norm(solved_tool_orientation[:,2])
+    return solved_tool_orientation, 0.0
 #----------------------------------------
 def perform_solution_run(geometry_info):
     interval = range(3,num_points)
@@ -304,11 +338,16 @@ def perform_solution_run(geometry_info):
         solve_info['tip-cond_num']     = tip_wobj_res[1]
         
         solve_info['orientation-result'], solve_info['orientation-cond_num'] = find_solution_pen_ori(geometry_info, k)
+        sol1, sol2, tens, (_u,_s,_v) = solve_info['orientation-result']
+        solve_info['orientation-result'] = sol2
+
         solve_info['err-tipwobj'] = abs(geometry_info['correct_solution_geometry'] - solve_info['tipwobj-result'])
         solve_info['err-tip']     = numpy.linalg.norm(solve_info['err-tipwobj'][:,3])
         solve_info['err-wobj']    = numpy.linalg.norm(solve_info['err-tipwobj'][:,:3])
-        solve_info['err-ori']     = numpy.linalg.norm(geometry_info['local_tool_orientation'] - solve_info['orientation-result'])
+        
+        solve_info['err-ori']     = numpy.linalg.norm(geometry_info['local_tool_orientation'] - sol2)
         list_of_solving.append(solve_info)
+
     solving_data = merge_dicts(*list_of_solving)
     solving_data['interval'] = interval
     print 'solution max  error tip(1) = {}\n'.format( numpy.max( abs( solving_data['err-tip'][1:]) ))
@@ -372,7 +411,7 @@ def make_plots(solving_data):
 #----------------------------------------
 if __name__ == '__main__':
     res = []
-    ks = range(100)
+    ks = range(1)
     for k in ks:
         print 'Run {} % complete!'.format(100* k / len(ks))
         with utils.timing.Timer() as timer:
@@ -381,13 +420,14 @@ if __name__ == '__main__':
                 geometry_info = setup_geometry(plane, plane_point_spread,
                                                num_points, perturbations=['tip'])
                 print 'Collecting solving information...'
-                solving_data = perform_solution_run(geometry_info, )
+                solving_data = perform_solution_run(geometry_info)
                 res.append(solving_data)
                 print
                 print 'Preparing plots...'
             except Exception as e:
                 print str(e)
-                continue
+                raise
+  #              continue
 
     make_plots(solving_data)
     if chosen_unit == 'mm':

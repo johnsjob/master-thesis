@@ -375,6 +375,15 @@ def rand_range(low, high):
                 low, high = high, low
         return low + rand()*(high-low)
 #----------------------------------------#
+def nmap(func, *seq):
+    return mat( map(func, *seq) )
+
+def nzip(*seq):
+    return mat( zip(*seq) )
+
+def lop(func, a,b):
+    return nmap( lambda x: reduce(func, x), zip(a,b))
+#----------------------------------------#
 def rot_tilt_skew(R):
     zs_vector = R[2,:] #matmul(R.T, numpy.array([0, 0,  1]) )
     zp_vector = -R[:,2] #matmul(R , numpy.array([0, 0, -1]) )
