@@ -7,7 +7,7 @@ import utils
 
 from pylab import xlim, ylim
 from numpy.linalg import solve, lstsq, det, inv, cond, svd
-from numpy import array as mat, log10
+from numpy import array as mat, log10, diag
 #----------------------------------------
 # custom imports
 from helperfunctions_math import *
@@ -297,14 +297,18 @@ def _solve_orientation(As, Bs):
     # solve for solution tensor of order 9x9
     # in this tensor the best solution resides in index 0,4,8 in the tensor form
     # of 9x3x3 which corresponds to diagonal elements of the 3x3x3x3 solution tensor
-    solution_tensor = U.dot(V).reshape(3,3,3,3)
+    solution_tensor = U.dot(V)
+    
     # best column-solutions resides in the diagonal of the 3x3x3x3 solution tensor
-    solution1 = nzip(solution_tensor[0,0,:,0],
-                    solution_tensor[1,1,:,1],
-                    solution_tensor[2,2,:,2])
-    solution2 = nzip(solution_tensor.T[0,0,:,0],
-                    solution_tensor.T[1,1,:,1],
-                    solution_tensor.T[2,2,:,2])
+    C1, C2, C3 = solution_tensor[0::3, 0::3],\
+                 solution_tensor[1::3, 1::3],\
+                 solution_tensor[2::3, 2::3]
+
+    D1, D2, D3 = solution_tensor[0:3,0:3],\
+                 solution_tensor[3:6,3:6],\
+                 solution_tensor[6:9,6:9]
+    solution1 = mat([C1.T, C2.T, C3.T])
+    solution2 = mat([D1, D2, D3])
     return solution1, solution2, solution_tensor, [U,S,V]
 
 def find_solution_pen_ori(geometry_info, included_solutions_from_start = -1):
