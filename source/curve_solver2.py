@@ -87,6 +87,18 @@ def inverse_kinematics_curve(trans_frames):
         all_solutions.append(angle_solutions.T)
     return mat(all_solutions)
 
+def _inverse_kinematics_pose(T44):
+    # perform inverse kinematics on a single frame
+    angle_solutions = inverse_kinematics_irb140(DH_TABLE, T44)
+    extra = [angle_solutions]
+    for index in xrange(6):
+        extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+        extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+        pass
+    angle_solutions = merge_solutions(*extra)
+    angle_solutions = filter_solutions(angle_solutions)
+    return mat(angle_solutions.T)
+
 
 def plot_robot_from_angles(plot, *args):
     s = forward_kinematics(*args, **DH_TABLE)
