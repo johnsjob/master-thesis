@@ -16,11 +16,10 @@ import time
 
 #test
 
-sys.path.append('../int/')
 import utils
 
-sys.path.append('../int/djikstra/')
-from graph import shortestPath as shortest_path
+##sys.path.append('../int/djikstra/')
+##from graph import shortestPath as shortest_path
 
 
 numpy.set_printoptions(precision=2)
@@ -72,58 +71,6 @@ def __modulo_solutions(solution_matrix, index, modulo=360.0):
 def generate_modulo_solutions(solution_matrix, index, modulo=360.0):
     return mat(zip(*__modulo_solutions(solution_matrix, index, modulo)))
 
-
-def __inverse_kinematics_sanity_check(T44_point, ik_angles):
-    """
-    sanity check of forward kinematics, just making sure
-    that all solutions are valid.
-    """
-    for angles in ik_angles.T:
-        t44, _ = forward_kinematics(*angles, **DH_TABLE)
-        try:
-            norm_value = norm(T44_point - t44)
-            if not numpy.isnan(norm_value):
-                assert(norm_value < 1e-10)
-        except AssertionError:
-            ##TODO: move this into utils for pretty printing matrices
-            st = ''
-            for row in T44_point:
-                st += '\t'+str(row)+'\n'
-            raise Exception('\n\tInverse-kinematics failed for point-frame: \n{0}\n\tNorm: {1}'.format(st, norm_value))
-    return
-
-def inverse_kinematics_joints(*joint_values, **DH_TABLE):
-    # get forward kinematics i.e. last global robot-frame
-    T44_point, geometry_info = forward_kinematics(*joint_values, **DH_TABLE)
-
-    # get forward kinematics i.e. last global robot-frame
-    ik_angles = inverse_kinematics_irb140(DH_TABLE, T44_point)
-
-    # perform solution check of end-effector
-    __inverse_kinematics_sanity_check(T44_point,ik_angles)
-
-    return T44_point, geometry_info
-
-def inverse_kinematics_point(*args, **DH_TABLE):
-    """
-    Input is a point-frame ( 4x4 matrix of type [[R,t],[0,1]] ),
-    the function allows input on the forms:
-    1:    (rot, tilt, skew, x,y,z)                (3x, 3x)
-    2:    (rot, tilt, skew, t)                    (3x, 1x)
-    3:    (angles, x,y,z)                         (1x, 3x)
-    3.1:  (R, x,y,z)                              (1x, 3x)
-    4:    (R, t), where R is list or numpy.array  (1x, 1x)
-    """
-    T44_point = homogenous_matrix(*args)
-
-    # get inverse kinematics i.e. valid joint-value configurations
-    ik_angles = inverse_kinematics_irb140(DH_TABLE, T44_point)
-
-    # perform solution check of end-effector
-    __inverse_kinematics_sanity_check(T44_point,ik_angles)
-
-    return ik_angles
-
 def inverse_kinematics_curve(trans_frames):
     # perform inverse kinematics over a curve and collect all solutions
     all_solutions = []
@@ -140,21 +87,6 @@ def inverse_kinematics_curve(trans_frames):
         all_solutions.append(angle_solutions.T)
     return mat(all_solutions)
 
-
-def find_inverse_kinematics_paths_from_curve(trans_frames):
-    start = time.time()
-    all_solutions = inverse_kinematics_curve(trans_frames)
-
-##    start = time.time()
-##    all_solution_distances = apply_along_axis(apply_along_axis(solution_paths, func=diff, axis=1),func=norm, axis=2)
-##    result = {
-##        'solutions_per_point' : all_solutions,
-##        'solution_graph' : solution_graph,
-##        'solution_paths': solution_paths,
-##        'solution_path_nodes_differences' : all_solution_distances
-##        }
-##    print 'Collect result: {0}s'.format(time.time() - start)
-##    return result
 
 def plot_robot_from_angles(plot, *args):
     s = forward_kinematics(*args, **DH_TABLE)
@@ -226,43 +158,22 @@ if __name__ == '__main__':
 
         # tansform frames - paper -> robot
         transf_frames = apply_transform_on_frames(T44, frames)
-
+        
         total = []
         total_time = 0
         for index in xrange(31):
             # inverse knematics over curve
             with utils.timing.Timer() as t:
                 result = inverse_kinematics_curve(transf_frames)
-            print 'inverse-kinematics, curve: \n\t{0}'.format(t)
-
-            res = mat([rand() for k in xrange(9)]).reshape(3,3)
-            res = mat([[1,2,3],[6,5,4],[7,8,9]])
+            print result[0].shape
             res = result
-            #print res
             res = list(res)
-            #res.reverse()
+
             result = []
             with utils.timing.Timer() as t:
                 do_it(res, result,curr_point = 0, curr_ind=index)
-            total_time = total_time + t.interval
-            print 'path-finding: \n\t{0}'.format(t)
-            print 'position: {}'.format(index)
-            print total_time
+
             if result:
                 print 'FOUND ONE!!'
                 total.append(list(result))
-        print len(total)
-######        
-######        # results
-######        print 'Time: {0}'.format(stop - start)
-######        print '\n'
-######
-######        print result.keys()
-######        print '\n'
-##        
-##        # plotting
-##        plot = StPlot()
-##        #plot_path(plot, paths, k)
-##        plot.draw_robot(robot_frames)
-##        plot.draw_trajectory(transf_frames)
-##        plot.show()
+        print 'total_paths: {}'.format(len(total))
