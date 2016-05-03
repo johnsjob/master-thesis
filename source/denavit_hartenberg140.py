@@ -10,10 +10,9 @@ import numpy
 from numpy import pi, arctan2 as atan2, arccos as acos,\
      arcsin as asin, sqrt, arctan as atan
 from numpy.linalg import norm
-from helperfunctions_math import rand_range, mat
+from helperfunctions_math import rand_range, mat, homogenous_rotation_z
 from denavit_hartenberg import inverse_kinematics_spherical_wrist as inv_wrist,\
-     forward_kinematics, calc_wcp, calc_j1, homogenous_rotation_z,\
-     pack_elbow_and_wrists
+     forward_kinematics, calc_wcp, calc_j1, pack_elbow_and_wrists
 #=====================================================#
 rad = lambda x: x * pi / 180.0
 deg = lambda x: x * 180.0 / pi
