@@ -199,7 +199,9 @@ def inverse_kinematics_elbow_down(dh_table, T44, flipped = False):
         return elbow_down(dh_table, T44)
     else:
         return elbow_down_flipped(dh_table, T44)
-#----------------------------------------------------------------------------------------------------------#    
+#----------------------------------------------------------------------------------------------------------#
+# INVERSE KINEMATICS - WRAPPERS
+#----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_irb140(dh_table, T44):
     if type(T44) is list:
         T44 = mat(T44)
@@ -228,8 +230,14 @@ def inverse_kinematics_irb140(dh_table, T44):
     ret = ret.reshape(k*m,n)
     return ret.T
 
-def calc_valid_invkin_IRB140(T44):
-    return __inverse_kinematics_pose(T44, filtering=True):
+def calc_valid_raw_invkin_irb140(T44):
+    return __inverse_kinematics_pose(T44, filtering=True, raw_solutions=True)
+
+def calc_valid_invkin_irb140(T44):
+    return __inverse_kinematics_pose(T44, filtering=True, raw_solutions=False)
+
+def calc_invkin_irb140(T44, filtering=False, raw_solutions=False):
+    return __inverse_kinematics_pose(T44, filtering, raw_solutions)
 #----------------------------------------------------------------------------------------------------------#
 # INVERSE KINEMATICS - SOLUTION HANDLING
 #----------------------------------------------------------------------------------------------------------#
@@ -275,15 +283,16 @@ def inverse_kinematics_curve(trans_frames):
         all_solutions.append(_inverse_kinematics_pose(point_frame))
     return mat(all_solutions)
 
-def __inverse_kinematics_pose(T44, filtering=False):
+def __inverse_kinematics_pose(T44, filtering=False, raw_solutions=False):
     # perform inverse kinematics on a single frame
     angle_solutions = inverse_kinematics_irb140(DH_TABLE, T44)
-    extra = [angle_solutions]
-    for index in xrange(6):
-        extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
-        extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-        pass
-    angle_solutions = merge_solutions(*extra)
+    if not raw_solutions:
+        extra = [angle_solutions]
+        for index in xrange(6):
+            extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+            extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+            pass
+        angle_solutions = merge_solutions(*extra)
     if filtering:
         angle_solutions = filter_solutions(angle_solutions)
     return mat(angle_solutions.T)
@@ -577,25 +586,16 @@ class TestIRB140(unittest.TestCase):
                 num_valid_solutions += check_solution(*s)
                 error = norm(A - T44)
                 if not n.isnan(error):
-                    try:
-                        self.assertAlmostEqual(error, 0)
-                    except Exception:
-                        import pdb; pdb.set_trace()
-            try:
-                self.assertGreaterEqual(num_valid_solutions, 1)
-            except Exception:
-                import pdb; pdb.set_trace()
-            try:
-                self.assertEqual(num_valid_solutions, calc_valid_inv_kin_IRB140(DH_TABLE, T44).shape[1])
-            except Exception:
-                import pdb; pdb.set_trace()
+                    self.assertAlmostEqual(error, 0)
+            self.assertGreaterEqual(num_valid_solutions, 1)
+            self.assertEqual(num_valid_solutions, calc_valid_raw_invkin_irb140(T44).shape[0])
 
             L = []
             for s in iterdim(sol,1):
                 if check_solution(*s) == True:
                     L.append(s)
-            L = mat(L).T
-            self.assertTrue(norm(calc_valid_inv_kin_IRB140(DH_TABLE, T44) - L) == 0.0)
+            L = mat(L)
+            self.assertTrue(norm(calc_valid_raw_invkin_irb140(T44) - L) == 0.0)
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
     unittest.main()
