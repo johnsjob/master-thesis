@@ -42,6 +42,13 @@ DH_TABLE = {  'table':[-70, 90, 352, 180, 'R',
             }
 #----------------------------------------------------------------------------------------------------------#
 def elbow_up_flipped(dh_table, T44):
+    '''
+    Calculates backward-facing elbow-down.
+
+    Note: This is in reality an elbow-down solution,
+          the name merely implies it is "flipped" up-side-down
+          due to the base have turned 180 degrees.
+    '''
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
@@ -78,6 +85,13 @@ def elbow_up_flipped(dh_table, T44):
     return result
 #----------------------------------------------------------------------------------------------------------#
 def elbow_down_flipped(dh_table, T44):
+    '''
+    Calculates backward-facing elbow-up.
+
+    Note: This is in reality an elbow-up solution,
+          the name merely implies it is "flipped" up-side-down
+          due to the base have turned 180 degrees.
+    '''
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
@@ -113,6 +127,9 @@ def elbow_down_flipped(dh_table, T44):
     return result
 #----------------------------------------------------------------------------------------------------------#
 def elbow_up(dh_table, T44):
+    '''
+    Calculates forward-facing elbow-up.
+    '''
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
@@ -151,6 +168,9 @@ def elbow_up(dh_table, T44):
     return result
 #----------------------------------------------------------------------------------------------------------#
 def elbow_down(dh_table, T44):
+    '''
+    Calculates forward-facing elbow-down.
+    '''
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
 
@@ -189,12 +209,20 @@ def elbow_down(dh_table, T44):
     return result
 #----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_elbow_up(dh_table, T44, flipped = False):
+    '''
+    Wrapper function for forward-facing elbow-up,
+    and backward-facing elbow-down
+    '''
     if not flipped:
         return elbow_up(dh_table, T44)
     else:
         return elbow_up_flipped(dh_table, T44)
 
 def inverse_kinematics_elbow_down(dh_table, T44, flipped = False):
+    '''
+    Wrapper function for forward-facing elbow-down,
+    and backward-facing elbow-up
+    '''
     if not flipped:
         return elbow_down(dh_table, T44)
     else:
@@ -203,6 +231,10 @@ def inverse_kinematics_elbow_down(dh_table, T44, flipped = False):
 # INVERSE KINEMATICS - WRAPPERS
 #----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_irb140(dh_table, T44):
+    '''
+    Wrapper function that calculates the 20 analytical solutions
+    to the IRB140 robot.
+    '''
     if type(T44) is list:
         T44 = mat(T44)
     dim = T44.shape
