@@ -1,14 +1,12 @@
 import random
 
 from pylab import axhline, plot, show, axes
-from plane_relative import *
+from helperfunctions_math import mat
 from denavit_hartenberg140 import forward_kinematics,\
      calc_valid_raw_invkin_irb140,\
      calc_valid_invkin_irb140,\
      calc_invkin_irb140,\
      DH_TABLE as dh_table
-
-import itertools as it
 
 def plot_robot_geometry(robot_info, color='k'):
         global_robot_frames = mat(robot_info['robot_geometry_global'])
