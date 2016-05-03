@@ -41,7 +41,7 @@ DH_TABLE = {  'table':[-70, 90, 352, 180, 'R',
              'convention': 'standard'
             }
 #----------------------------------------------------------------------------------------------------------#
-def elbow_up_flipped(dh_table, T44):
+def backward_facing_elbow_down(dh_table, T44):
     '''
     Calculates backward-facing elbow-down.
 
@@ -84,7 +84,7 @@ def elbow_up_flipped(dh_table, T44):
     result = pack_elbow_and_wrists(dh_table, j1, j2, j3, T44)
     return result
 #----------------------------------------------------------------------------------------------------------#
-def elbow_down_flipped(dh_table, T44):
+def backward_facing_elbow_up(dh_table, T44):
     '''
     Calculates backward-facing elbow-up.
 
@@ -211,22 +211,22 @@ def elbow_down(dh_table, T44):
 def inverse_kinematics_elbow_up(dh_table, T44, flipped = False):
     '''
     Wrapper function for forward-facing elbow-up,
-    and backward-facing elbow-down
+    and backward-facing elbow-dup
     '''
     if not flipped:
         return elbow_up(dh_table, T44)
     else:
-        return elbow_up_flipped(dh_table, T44)
+        return backward_facing_elbow_up(dh_table, T44)
 
 def inverse_kinematics_elbow_down(dh_table, T44, flipped = False):
     '''
     Wrapper function for forward-facing elbow-down,
-    and backward-facing elbow-up
+    and backward-facing elbow-down
     '''
     if not flipped:
         return elbow_down(dh_table, T44)
     else:
-        return elbow_down_flipped(dh_table, T44)
+        return backward_facing_elbow_down(dh_table, T44)
 #----------------------------------------------------------------------------------------------------------#
 # INVERSE KINEMATICS - WRAPPERS
 #----------------------------------------------------------------------------------------------------------#
@@ -248,8 +248,8 @@ def inverse_kinematics_irb140(dh_table, T44):
     # x5 for each elb_x
     sol_elbup      = inverse_kinematics_elbow_up(dh_table, T44)
     sol_elbdown    = inverse_kinematics_elbow_down(dh_table, T44)
-    sol_elbup_fl   = inverse_kinematics_elbow_up(dh_table, T44, flipped = True)
-    sol_elbdown_fl = inverse_kinematics_elbow_down(dh_table, T44, flipped = True)
+    sol_elbup_backward   = inverse_kinematics_elbow_up(dh_table, T44, flipped = True)
+    sol_elbdown_backward = inverse_kinematics_elbow_down(dh_table, T44, flipped = True)
 
     #first columnt is first solution and so forth
 ##    ret = mat(zip(sol_elbup1, sol_elbdown1, sol_elbup1_fl, sol_elbdown1_fl,
@@ -257,7 +257,7 @@ def inverse_kinematics_irb140(dh_table, T44):
 ##                  sol_elbup3, sol_elbdown3, sol_elbup3_fl, sol_elbdown3_fl))
 
     #first columnt is first solution and so forth
-    ret = mat( zip( sol_elbup, sol_elbdown, sol_elbup_fl, sol_elbdown_fl ) )
+    ret = mat( zip( sol_elbup, sol_elbdown, sol_elbup_backward, sol_elbdown_backward ) )
     k,m,n = ret.shape
     ret = ret.reshape(k*m,n)
     return ret.T
@@ -451,8 +451,8 @@ class TestIRB140(unittest.TestCase):
                 self.assertAlmostEqual(c, j3)
 
 
-    def test_elbow_up_flipped(self):
-        print '\ntest_elbow_up_flipped'
+    def test_elbow_down_backward_facing(self):
+        print '\ntest_elbow_down_backward'
         for _ in xrange(100):
             j1 =  rand_range(-180, 180)
             j2 = -90
@@ -464,50 +464,6 @@ class TestIRB140(unittest.TestCase):
             robot_info = forward_kinematics(j1,j2,j3,j4,j5,j6,**DH_TABLE)
             A, debug = robot_info['T44'], robot_info['robot_geometry_local']
 
-            s = inverse_kinematics_elbow_up(DH_TABLE, A, flipped = True)
-            self.assertNotEqual(n.isnan(n.sum(s)), True)
-            a,b,c = s[0][0:3]
-            self.assertAlmostEqual(a, j1)
-            self.assertAlmostEqual(b, j2)
-            self.assertAlmostEqual(c, j3)
-            a,b,c = s[1][0:3]
-            self.assertAlmostEqual(a, j1)
-            self.assertAlmostEqual(b, j2)
-            self.assertAlmostEqual(c, j3)
-
-            s = inverse_kinematics_elbow_down(DH_TABLE, A, flipped = True)
-            a,b,c = s[0][0:3]
-            self.assertAlmostEqual(a, j1)
-            self.assertNotAlmostEqual(b, j2)
-            self.assertNotAlmostEqual(c, j3)
-            a,b,c = s[1][0:3]
-            self.assertAlmostEqual(a, j1)
-            self.assertNotAlmostEqual(b, j2)
-            self.assertNotAlmostEqual(c, j3)
-
-            # check if they are stored in the right order i.e.
-            # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
-            sols = inverse_kinematics_irb140(DH_TABLE, A)
-            for i in xrange(2, len(sols.T), 4):
-                a,b,c = sols[:,i][:3]
-                self.assertAlmostEqual(a, j1)
-                self.assertAlmostEqual(b, j2)
-                self.assertAlmostEqual(c, j3)
-
-    def test_elbow_down_flipped(self):
-        print '\ntest_elbow_down_flipped'
-        for _ in xrange(100):
-            j1 =  rand_range(-180, 180)
-            j2 = -40
-            j3 = -100
-            j4 = rand_range(-200, 200)
-            j5 = rand_range(-115, 115)
-            j6 = rand_range(-400, 400)
-
-            robot_info = forward_kinematics(j1,j2,j3,j4,j5,j6,**DH_TABLE)
-            A, debug = robot_info['T44'], robot_info['robot_geometry_local']
-
-            sol = mat([j1,j2,j3,j4,j5,j6])
             s = inverse_kinematics_elbow_down(DH_TABLE, A, flipped = True)
             self.assertNotEqual(n.isnan(n.sum(s)), True)
             a,b,c = s[0][0:3]
@@ -533,6 +489,50 @@ class TestIRB140(unittest.TestCase):
             # elbow_up, elbow_down, elbow_up_fl, delbow_down_fl
             sols = inverse_kinematics_irb140(DH_TABLE, A)
             for i in xrange(3, len(sols.T), 4):
+                a,b,c = sols[:,i][:3]
+                self.assertAlmostEqual(a, j1)
+                self.assertAlmostEqual(b, j2)
+                self.assertAlmostEqual(c, j3)
+
+    def test_elbow_up_backward_facing(self):
+        print '\ntest_elbow_up_backward'
+        for _ in xrange(100):
+            j1 =  rand_range(-180, 180)
+            j2 = -40
+            j3 = -100
+            j4 = rand_range(-200, 200)
+            j5 = rand_range(-115, 115)
+            j6 = rand_range(-400, 400)
+
+            robot_info = forward_kinematics(j1,j2,j3,j4,j5,j6,**DH_TABLE)
+            A, debug = robot_info['T44'], robot_info['robot_geometry_local']
+
+            sol = mat([j1,j2,j3,j4,j5,j6])
+            s = inverse_kinematics_elbow_up(DH_TABLE, A, flipped = True)
+            self.assertNotEqual(n.isnan(n.sum(s)), True)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertAlmostEqual(b, j2)
+            self.assertAlmostEqual(c, j3)
+
+            s = inverse_kinematics_elbow_down(DH_TABLE, A, flipped = True)
+            a,b,c = s[0][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+            a,b,c = s[1][0:3]
+            self.assertAlmostEqual(a, j1)
+            self.assertNotAlmostEqual(b, j2)
+            self.assertNotAlmostEqual(c, j3)
+
+            # check if they are stored in the right order i.e.
+            # elbow_up, elbow_down, elbow_up_backward, delbow_down_backward
+            sols = inverse_kinematics_irb140(DH_TABLE, A)
+            for i in xrange(2, len(sols.T), 4):
                 a,b,c = sols[:,i][:3]
                 self.assertAlmostEqual(a, j1)
                 self.assertAlmostEqual(b, j2)

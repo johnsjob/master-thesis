@@ -36,8 +36,8 @@ if __name__ == '__main__':
         ik_downf = forward_kinematics(*s[15], **dh_table)
         
         plot_robot_geometry(info)
-        #plot_robot_geometry(ik_up,'b')
-        #plot_robot_geometry(ik_down,'r')
+        plot_robot_geometry(ik_up,'b')
+        plot_robot_geometry(ik_down,'r')
         plot_robot_geometry(ik_upf,'b--')
         plot_robot_geometry(ik_downf,'r--')
         axes().set_aspect('equal', 'datalim')
