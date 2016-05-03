@@ -134,6 +134,15 @@ def forward_kinematics(*joint_values,**kwargs):
 def calc_wcp(T44, L=None):
     return (T44[:,3] - T44[:,2]*L)[0:3]
 #----------------------------------------------------------------------------------------------------------#
+def calc_j1(wcp, flipped):
+    j1 = atan2(wcp[1], wcp[0])
+    if flipped is True:
+        if j1 >= 0:
+            j1 = j1 - 180
+        else:
+            j1 = j1 + 180
+    return j1
+#----------------------------------------------------------------------------------------------------------#
 def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     #Calculate last angles
     R = T44[0:3,0:3]
@@ -171,4 +180,3 @@ def pack_elbow_and_wrists(dh_table, j1,j2,j3, T44):
         result.append( elbow_angles[i*3 : i*3+3] + wrist_angles[i*3 : i*3+3] )
     return result
 #----------------------------------------------------------------------------------------------------------#
-

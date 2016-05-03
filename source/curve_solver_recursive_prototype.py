@@ -75,16 +75,7 @@ def inverse_kinematics_curve(trans_frames):
     # perform inverse kinematics over a curve and collect all solutions
     all_solutions = []
     for point_frame in trans_frames:
-        angle_solutions = inverse_kinematics_irb140(DH_TABLE, point_frame)
-
-        extra = [angle_solutions]
-        for index in xrange(6):
-            extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
-            extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-            pass
-        angle_solutions = merge_solutions(*extra)
-        angle_solutions = filter_solutions(angle_solutions)
-        all_solutions.append(angle_solutions.T)
+        all_solutions.append(_inverse_kinematics_pose(point_frame))
     return mat(all_solutions)
 
 def _inverse_kinematics_pose(T44):
@@ -140,9 +131,9 @@ if __name__ == '__main__':
         j1 =  0
         j2 =  0
         j3 =  0
-        j4 =  0
-        j5 =  0
-        j6 =  0
+        j4 =  10
+        j5 =  20
+        j6 =  30
 
         joint_values = j1,j2,j3,j4,j5,j6
 

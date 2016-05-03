@@ -41,15 +41,6 @@ DH_TABLE = {  'table':[-70, 90, 352, 180, 'R',
              'convention': 'standard'
             }
 #----------------------------------------------------------------------------------------------------------#
-def calc_j1(wcp, flipped):
-    j1 = atan2(wcp[1], wcp[0])
-    if flipped is True:
-        if j1 >= 0:
-            j1 = j1 - 180
-        else:
-            j1 = j1 + 180
-    return j1
-#----------------------------------------------------------------------------------------------------------#
 def elbow_up_flipped(dh_table, T44):
     #Geometrical paramaters
     wcp = calc_wcp(T44, 0.065)
@@ -209,25 +200,6 @@ def inverse_kinematics_elbow_down(dh_table, T44, flipped = False):
     else:
         return elbow_down_flipped(dh_table, T44)
 #----------------------------------------------------------------------------------------------------------#    
-def check_range(x, _min, _max, inclusive=True):
-    #swap if needed
-    if _max < _min:
-        _max, _min = _min, _max
-
-    if inclusive == True:
-        return _min <= x <= _max
-    else:
-        return _min < x < _max
-
-def check_solution(j1,j2,j3,j4,j5,j6, inclusive=True):
-    sol  = check_range(j1, -180, 180, inclusive)
-    sol &= check_range(j2, -90,  110, inclusive)
-    sol &= check_range(j3, -230, 50,  inclusive)
-    sol &= check_range(j4, -200, 200, inclusive)
-    sol &= check_range(j5, -115, 115, inclusive)
-    sol &= check_range(j6, -400, 400, inclusive)
-    return sol
-
 def inverse_kinematics_irb140(dh_table, T44):
     if type(T44) is list:
         T44 = mat(T44)
@@ -256,6 +228,20 @@ def inverse_kinematics_irb140(dh_table, T44):
     ret = ret.reshape(k*m,n)
     return ret.T
 
+def calc_valid_invkin_IRB140(T44):
+    return __inverse_kinematics_pose(T44, filtering=True):
+#----------------------------------------------------------------------------------------------------------#
+# INVERSE KINEMATICS - SOLUTION HANDLING
+#----------------------------------------------------------------------------------------------------------#
+def check_solution(j1,j2,j3,j4,j5,j6, inclusive=True):
+    sol  = check_range(j1, -180, 180, inclusive)
+    sol &= check_range(j2, -90,  110, inclusive)
+    sol &= check_range(j3, -230, 50,  inclusive)
+    sol &= check_range(j4, -200, 200, inclusive)
+    sol &= check_range(j5, -115, 115, inclusive)
+    sol &= check_range(j6, -400, 400, inclusive)
+    return sol
+
 def filter_solutions(solutions, filter_function = check_solution):
     result = []
     for s in solutions.T:
@@ -264,16 +250,56 @@ def filter_solutions(solutions, filter_function = check_solution):
     # returns non-flipped, flipped
     return mat(zip(*result))
 
-def calc_valid_inv_kin_IRB140(dh_table, T44):
-    return filter_solutions( inverse_kinematics_irb140(dh_table, T44) )
+def merge_solutions(*args):
+    result = []
+    for m in args:
+        result += zip(*m)
+    return mat(zip(*result))
 
-def create_T44(pos, orientation):
-    T44 = n.zeros((4,4))
-    T44[0:3,0:3] = orientation
-    T44[0:3,3] = pos
-    T44[3, :] = [0,0,0,1]
-    return T44
+def __modulo_solutions(solution_matrix, index, modulo=360.0):
+    for s in solution_matrix.T:
+        result = s.copy()
+        value = result[index]
+        result[index] = value + modulo
+        yield result
+
+def generate_modulo_solutions(solution_matrix, index, modulo=360.0):
+    return mat(zip(*__modulo_solutions(solution_matrix, index, modulo)))
 #----------------------------------------------------------------------------------------------------------#
+# INVERSE KINEMATICS - SOLUTION CURVE
+#----------------------------------------------------------------------------------------------------------#
+def inverse_kinematics_curve(trans_frames):
+    # perform inverse kinematics over a curve and collect all solutions
+    all_solutions = []
+    for point_frame in trans_frames:
+        all_solutions.append(_inverse_kinematics_pose(point_frame))
+    return mat(all_solutions)
+
+def __inverse_kinematics_pose(T44, filtering=False):
+    # perform inverse kinematics on a single frame
+    angle_solutions = inverse_kinematics_irb140(DH_TABLE, T44)
+    extra = [angle_solutions]
+    for index in xrange(6):
+        extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+        extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+        pass
+    angle_solutions = merge_solutions(*extra)
+    if filtering:
+        angle_solutions = filter_solutions(angle_solutions)
+    return mat(angle_solutions.T)
+#----------------------------------------------------------------------------------------------------------#
+# MISC
+#----------------------------------------------------------------------------------------------------------#
+def check_range(x, _min, _max, inclusive=True):
+    #swap if needed
+    if _max < _min:
+        _max, _min = _min, _max
+
+    if inclusive == True:
+        return _min <= x <= _max
+    else:
+        return _min < x < _max
+
 def custom_round(v, prec = 1e-8):
     coef = 1 / prec
     return n.round(v * coef) / coef
@@ -291,6 +317,8 @@ def iterdim(a, axis=0):
   leading_indices = (slice(None),)*axis
   for i in xrange(a.shape[axis]) :
     yield a[leading_indices+(i,)]
+#----------------------------------------------------------------------------------------------------------#
+# TEST-CASE IRB140
 #----------------------------------------------------------------------------------------------------------#
 class TestIRB140(unittest.TestCase):
         
@@ -568,7 +596,6 @@ class TestIRB140(unittest.TestCase):
                     L.append(s)
             L = mat(L).T
             self.assertTrue(norm(calc_valid_inv_kin_IRB140(DH_TABLE, T44) - L) == 0.0)
-            
 #----------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
     unittest.main()
