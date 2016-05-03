@@ -37,7 +37,7 @@ def cos(x, unit='rad'):
         return _cos(x)
     elif unit == 'deg':
         return _cos( deg_to_rad(x))
-#----------------------------------------------------------------------------------------------------------#
+#----------------------------------------#
 def sin(x, unit='rad'):
     if unit == 'rad':
         return _sin(x)
@@ -49,7 +49,7 @@ def acos(x, unit='rad'):
         return _acos(x)
     elif unit == 'deg':
         return rad_to_deg( _acos(x) )
-#----------------------------------------------------------------------------------------------------------#
+#----------------------------------------#
 def asin(x, unit='rad'):
     if unit == 'rad':
         return _asin(x)
@@ -317,6 +317,13 @@ def rotation_matrix_rot_tilt_skew(rot, tilt, skew):
     '''    
     return matmul(rotation_matrix_z(-rot), rotation_matrix_x(tilt), rotation_matrix_z(skew))
 #----------------------------------------#
+def rotation_matrix_x_y_z(rx,ry,rz):
+    '''
+        creates a rotation XYZ-mapping from subspace to worldspace
+        using euler angles in degrees (extrinsic mapping)
+    '''    
+    return matmul(rotation_matrix_x(rot), rotation_matrix_y(ry), rotation_matrix_z(rz))
+#----------------------------------------#
 def rotation_matrix_skew_tilt_rot(rot, tilt, skew):
     '''
         creates a rotation ZXZ-mapping from subspace to worldspace
@@ -368,7 +375,7 @@ def gram_schmith_step(a, b):
     '''
     return a - orthogonal_projection_vectors(a, b)
 #----------------------------------------#
-##########################################
+# MISC
 #----------------------------------------#
 def rand_range(low, high):
         if low > high:
