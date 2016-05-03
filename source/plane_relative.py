@@ -125,7 +125,10 @@ def generate_curve(xmin=-0.25, xmax=0.25, x_func=None, y_func=n.sin,
     le = len(x_func)
     y = y_func(x_func / n.abs(xmax) * curve_factor * freq)
     y = y / n.max( n.abs(y) )
-    point_matrix = mat(zip(x_func + offset, y * ampl_factor, n.zeros(le), n.ones(le)))
+    point_matrix = mat(zip(x_func + offset,
+                           y * ampl_factor,
+                           n.zeros(le),
+                           n.ones(le)))
     return point_matrix
 #----------------------------------------#
 def get_transformed_points(plane_transform, point_matrix):

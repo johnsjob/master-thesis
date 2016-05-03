@@ -285,8 +285,8 @@ def rotation_matrix_z(angle):
     '''
     angle = deg_to_rad(angle)
     return mat([[ cos(angle), -sin(angle), 0 ],
-                  [ sin(angle),  cos(angle), 0 ],
-                  [  0   ,    0  , 1 ]])
+                [ sin(angle),  cos(angle), 0 ],
+                [  0   ,    0  , 1 ]])
 #----------------------------------------#
 def rotation_matrix_x(angle):
     '''
@@ -374,3 +374,28 @@ def rand_range(low, high):
         if low > high:
                 low, high = high, low
         return low + rand()*(high-low)
+#----------------------------------------#
+def nmap(func, *seq):
+    return mat( map(func, *seq) )
+
+def nzip(*seq):
+    return mat( zip(*seq) )
+
+def lop(func, a,b):
+    return nmap( lambda x: reduce(func, x), zip(a,b))
+#----------------------------------------#
+def rot_tilt_skew(R):
+    zs_vector = R[2,:] #matmul(R.T, numpy.array([0, 0,  1]) )
+    zp_vector = -R[:,2] #matmul(R , numpy.array([0, 0, -1]) )
+
+    #angle between normal and zp_vector direction
+    #rot  = atan2( zp_vector[0], zp_vector[1] ) * 180 / pi
+    rot  = atan2( zp_vector[0], zp_vector[1]) * 180 / pi
+    tilt = -atan( norm(zp_vector[0:2]) / zp_vector[2] ) * 180 / pi
+    skew = -atan2( zs_vector[0], zs_vector[1] ) * 180 / pi
+
+    if tilt < 0.01:
+        x_vector = R[:,0]
+        z_vector = R[:,2]
+        rot = atan2(x_vector[0], x_vector[1]) * 180 / pi
+    return (rot, tilt, skew)
