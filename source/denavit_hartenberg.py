@@ -4,7 +4,8 @@ from numpy.linalg import norm
 from helperfunctions_math import homogenous_rotation_z,\
      homogenous_translation_z, homogenous_translation_x,\
      homogenous_rotation_x, matmul, matmul_series,\
-     homogenous_matrix
+     homogenous_matrix, mat
+     
 
 #----------------------------------------------------------------------------------------------------------#
 rad = lambda x: x * pi / 180.0
@@ -67,9 +68,15 @@ def forward_kinematics(*joint_values,**kwargs):
     # check so that only supported parameters
     # exist in kwargs and abort if any other parameter
     # had been created by mistake due to typos or similar
-    input_param_diff = set(kwargs) - set(['order','convention','unit','table'])
+    if not kwargs.has_key('tool'):
+        kwargs['tool'] = None
+        print 'NO TOOL'
+    tool = kwargs['tool']
+
+    input_param_diff = set(kwargs) - set(['order','convention','unit','table', 'tool'])
     if len(input_param_diff) > 0:
         raise Exception('Unsupported parameters: ' + str(*input_param_diff))
+
     # handle which unit is being used
     if not kwargs.has_key('unit'):
         kwargs['unit'] = 'metre'
@@ -81,6 +88,7 @@ def forward_kinematics(*joint_values,**kwargs):
     # supply a standard order
     if not kwargs.has_key('order'):
         kwargs['order'] = ['A','alpha','D','theta']
+
     # supply the standard denivit-hartenberg if no convention given
     if not kwargs.has_key('convention'):
         kwargs['convention'] = 'standard'
@@ -118,17 +126,25 @@ def forward_kinematics(*joint_values,**kwargs):
 
     # collect information about the Denivit-Hartenberg table
     dh_table = {
-    'table' :    kwargs['table'],
-    'unit':      kwargs['unit'],
-    'convention':kwargs['convention'],
-    'order':     kwargs['order'],
+    'table'      : kwargs['table'],
+    'unit'       : kwargs['unit'],
+    'convention' : kwargs['convention'],
+    'order'      : kwargs['order'],
+    'tool'       : kwargs['tool']
     }
 
     global_geometry = matmul_series(*matrices)
     global_geometry.insert(0, homogenous_matrix(0,0,0,0,0,0))
+
+    flange = matmul(*matrices)
+    if tool is None:
+        tcp = mat(flange)
+    else:
+        tcp = flange.dot(tool)
     
     result = {
-        'T44': matmul(*matrices),
+        'flange': flange,
+        'tcp': tcp,
         'robot_geometry_local': matrices,
         'robot_geometry_global': global_geometry,
         'dh_table': dh_table
@@ -153,7 +169,7 @@ def inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44):
     #Calculate last angles
     R = T44[0:3,0:3]
     robot_info = forward_kinematics(j1, j2, j3, **dh_table)
-    R3 = robot_info['T44'][:3,:3]
+    R3 = robot_info['flange'][:3,:3]
 
     R36 = R3.T.dot(R)
     X = R36[:,0]
