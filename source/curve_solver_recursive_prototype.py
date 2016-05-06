@@ -3,7 +3,8 @@ import random
 from helperfunctions_plot import *
 from pylab import axhline
 from plane_relative import *
-from denavit_hartenberg140 import *
+from denavit_hartenberg140 import forward_kinematics, DH_TABLE,\
+     inverse_kinematics_curve
 
 #from pyqtplot import QtPlot
 from standardplot import StPlot
@@ -25,40 +26,6 @@ import utils
 numpy.set_printoptions(precision=2)
 numpy.set_printoptions(suppress=True)
 
-
-def apply_along_axis(M, func, axis=1):
-    return n.apply_along_axis(func, axis, arr=M)
-
-def plot_robot_geometry(ax, global_robot_frames, color='k'):
-        for robot_frame in global_robot_frames:
-            plot_plane(ax,robot_frame, '--', scale_factor=0.1)
-        
-        ax.plot(global_robot_frames[:,0,3],
-                global_robot_frames[:,1,3],
-                global_robot_frames[:,2,3], color, linewidth=2)
-
-def plot_curve(ax, point_matrix):
-        ax.scatter(point_matrix[:,0],
-                   point_matrix[:,1],
-                   point_matrix[:,2])
-
-def plot_robot(ax, color='k', *joint_values):
-    T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
-    robot_frames = construct_robot_geometry(debug)
-    plot_robot_geometry(ax, robot_frames, color)
-
-def construct_robot_geometry(fk_debug_info):
-        plane0 = define_plane_from_angles([0,0,0],0, 0, 0)
-        global_robot_frames = matmul_series(*fk_debug_info)
-        global_robot_frames.insert(0, plane0)
-        global_robot_frames = mat( global_robot_frames )
-        return global_robot_frames
-
-
-def plot_robot_from_angles(plot, *args):
-    s = forward_kinematics(*args, **DH_TABLE)
-    plot.draw_robot(s['robot_geometry_global'])
-    return
     
 def do_it(res, result, curr_point=0, curr_ind=0, tol=20.0):
     p_curr = res[curr_point] #get the solutions for current point
@@ -95,20 +62,20 @@ if __name__ == '__main__':
         j1 =  0
         j2 =  0
         j3 =  0
-        j4 =  10
-        j5 =  20
-        j6 =  30
+        j4 =  0
+        j5 =  0
+        j6 =  0
 
         joint_values = j1,j2,j3,j4,j5,j6
 
         robot_info = forward_kinematics(j1,j2,j3,j4,j5,j6, **DH_TABLE)
-        T44 = robot_info['T44']
+        T44 = robot_info['tcp']
         robot_frames = robot_info['robot_geometry_global']
 
         # generate a curve in the last global robot-frame
         num_p = 50
         point_matrix = generate_symmetric_curve(num_points=num_p,
-                                                ampl_factor=0.50)
+                                                ampl_factor=0.05)
         point_matrix_tf = get_transformed_points(T44, point_matrix)
 
         # generate angles
@@ -125,22 +92,28 @@ if __name__ == '__main__':
 
         # tansform frames - paper -> robot
         transf_frames = apply_transform_on_frames(T44, frames)
-        
+
         total = []
         total_time = 0
-        for index in xrange(31):
-            # inverse knematics over curve
-            with utils.timing.Timer() as t:
-                result = inverse_kinematics_curve(transf_frames)
-            print result[0].shape
-            res = result
-            res = list(res)
+        # inverse knematics over curve
+        #with utils.timing.Timer() as t:
+        result = inverse_kinematics_curve(transf_frames)
 
-            result = []
-            with utils.timing.Timer() as t:
-                do_it(res, result,curr_point = 0, curr_ind=index)
+        with utils.timing.Timer() as t:
+            for index in xrange(len(result[0])):
+                _result = []
+                #res = list(result)
+                #res = result
+                ##with utils.timing.Timer() as t:
+                do_it(result, _result, curr_point=0, curr_ind=index)
 
-            if result:
-                print 'FOUND ONE!!'
-                total.append(list(result))
+                if _result:
+                    print 'FOUND ONE!!'
+                    total.append(list(_result))
+                    #break
+        total = mat(total)
         print 'total_paths: {}'.format(len(total))
+        pl = StPlot()
+        pl.draw_robot(robot_info['robot_geometry_global'])
+        pl.draw_trajectory(transf_frames)
+        pl.show()
