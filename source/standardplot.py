@@ -5,13 +5,14 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from helperfunctions_plot import plot_equal_perspective
 
-
 import numpy as np
 from numpy import array as mat
 from numpy import linalg as li
 
 import sys
 
+
+#debug
 
 class StPlot:
 
@@ -52,13 +53,13 @@ class StPlot:
 
     def draw_robot(self, robot_geometry):
         for i,robot_frame in enumerate(robot_geometry):
-            self.draw_frame(robot_frame, size=0.1)
+            self.draw_frame(robot_frame, size=0.02, linewidth=2)
             if i>0:
                 a = robot_geometry[i-1][:3,3]
                 b = robot_geometry[i][:3,3]
                 k = 1.0/7*(i+1)
                 c = (k, 0, k)
-                self.draw_line2(a, b, color = c, linewidth = 4)
+                self.draw_line2(a, b, color = c, linewidth = 2)
         return
 
     def draw_solution(self, points):
@@ -67,7 +68,9 @@ class StPlot:
 
     def draw_curve(self, points, **kwargs):
         ax = self.plots[0]
-        ax.plot(*points.T, color='0.75', **kwargs)
+        ax.plot(points[:,0],
+                points[:,1],
+                points[:,2], color='0.75', **kwargs)
         return
 
     def draw_frame(self, frame_matrix, size=1.0, **kwargs):
@@ -86,17 +89,15 @@ class StPlot:
         return
 
         
-    def draw_tool_delta(self, robot_flange, tool_vector):
+    def draw_tool(self, robot_flange, tool):
         ax = self.plots[0]
-        ##tool_to_global = mat([[0,0,-1],[0,1,0],[1,0,0]]).T
+        tcp = robot_flange.dot(tool)
 
-        x,y,z = robot_flange[:3,-1]
-        x2,y2,z2 = robot_flange.dot(mat(list(tool_vector[:3])+[1]))[:3]
-
-        self.draw_line(x,y,z,
-                       x2, y2, z2)
-        ax.plot([x],[y],[z],'bo')
-        ax.plot([x2],[y2],[z2],'ro')
+        self.draw_line2(robot_flange[:3,3],
+                        tcp[:3,3], linewidth=4)
+#        ax.plot([x],[y],[z],'bo')
+#        ax.plot([x2],[y2],[z2],'ro')
+        self.draw_frame(tcp, size=0.01, linewidth=2)
         return
         
     
