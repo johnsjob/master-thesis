@@ -1,7 +1,7 @@
 #numpy imports
 import numpy
 
-from numpy import zeros, diff, sqrt
+from numpy import zeros, diff, sqrt, eye
 from numpy import pi, cos as _cos, sin as _sin,\
                   arccos as _acos, arcsin as _asin,\
                   arctan2 as _atan2, arctan as _atan
@@ -95,6 +95,8 @@ def homogenous_matrix(*args):
     """
     Creates a homogenous matrix ( 4x4 matrix of type [[R,t],[0,1]] ),
     allows input on the forms:
+
+    -1:   No input
     0:    R                                       (1x)
     1:    (rot, tilt, skew, x,y,z)                (3x, 3x)
     2:    (rot, tilt, skew, t)                    (3x, 1x)
@@ -106,7 +108,10 @@ def homogenous_matrix(*args):
     valid_types  = [tuple, list, numpy.ndarray]
     
     ## TODO: separate into subcase-functions (!!!)
-    if  l_args == 1: #case 0
+    if  l_args == 0: #case -1: no input
+        R = eye(4)
+        t = [0,0,0]
+    elif  l_args == 1: #case 0
         if type(args[0]) in [list, tuple]:
             R = mat(args[0])
         else:
