@@ -36,7 +36,7 @@ if __name__ == '__main__':
         info = forward_kinematics(*joint_values, **dh_table)
         # multiplication from left: rotation in base to base
         # multiplication from right: rotation in tool to base
-        tcp = info['tcp'].dot(hom(ori(-90,90,0)))
+        tcp = info['tcp'].dot(hom(ori(-10,30,40)))
         pose = hom(tcp[:3,:3],[0.4, 0, 0.3])
 
         s = calc_invkin_irb140(pose, raw_solutions=True)
