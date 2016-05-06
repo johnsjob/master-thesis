@@ -27,7 +27,7 @@ numpy.set_printoptions(precision=2)
 numpy.set_printoptions(suppress=True)
 
     
-def do_it(res, result, curr_point=0, curr_ind=0, tol=20.0):
+def __find_solution_path(res, result, curr_point=0, curr_ind=0, tol=20.0):
     p_curr = res[curr_point] #get the solutions for current point
     solution = p_curr[curr_ind]
     if curr_point+1 >= len(res):
@@ -48,7 +48,7 @@ def do_it(res, result, curr_point=0, curr_ind=0, tol=20.0):
     else:
         result.append(solution)
     print curr_point
-    do_it(res, result, curr_point = curr_point+1,curr_ind=sel_ind)
+    __find_solution_path(res, result, curr_point = curr_point+1,curr_ind=sel_ind)
 
 if __name__ == '__main__':
     for count in xrange(1):
@@ -101,15 +101,12 @@ if __name__ == '__main__':
 
         with utils.timing.Timer() as t:
             for index in xrange(len(result[0])):
-                _result = []
-                #res = list(result)
-                #res = result
-                ##with utils.timing.Timer() as t:
-                do_it(result, _result, curr_point=0, curr_ind=index)
-
-                if _result:
+                _res = []
+                __find_solution_path(result, _res,
+                                     curr_point=0, curr_ind=index)
+                if _res:
                     print 'FOUND ONE!!'
-                    total.append(list(_result))
+                    total.append(list(_res))
                     #break
         total = mat(total)
         print 'total_paths: {}'.format(len(total))
