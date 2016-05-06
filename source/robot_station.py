@@ -3,7 +3,9 @@ import random
 from helperfunctions_plot import *
 from pylab import axhline
 from plane_relative import *
-from denavit_hartenberg140 import *
+from denavit_hartenberg140 import forward_kinematics,\
+     DH_TABLE, inverse_kinematics_irb140, generate_modulo_solutions,\
+     merge_solutions, filter_solutions
 
 import itertools as it
 
@@ -49,22 +51,6 @@ def get_closest_solutions_pair(s0, s1, norm_func,**kwargs):
 ####        print 'small: ' + str(n.linalg.norm(n.diff(pair, axis=0)))
         return pair
 
-def merge_solutions(*args):
-    result = []
-    for m in args:
-        result += zip(*m)
-    return mat(zip(*result))
-
-def __modulo_solutions(solution_matrix, index, modulo=360.0):
-    for s in solution_matrix.T:
-        result = s.copy()
-        value = result[index]
-        result[index] = value + modulo
-        yield result
-
-def generate_modulo_solutions(solution_matrix, index, modulo=360.0):
-    return mat(zip(*__modulo_solutions(solution_matrix, index, modulo)))
-
 def extract_closest_solutions(all_solutions, norm_func, **kwargs):
         # obtain closest solutions
         chosen_solutions = []
@@ -86,10 +72,6 @@ def extract_closest_solutions(all_solutions, norm_func, **kwargs):
 
         chosen_solutions = mat(chosen_solutions).reshape(num_solutions, 6)
         return chosen_solutions
-def my_norm(x, **kwargs):
-    max_num = len(x)
-    factors = mat([max_num-k for k in xrange(max_num)])
-    return norm(factors*x)
         
 if __name__ == '__main__':
     for count in xrange(1000):
@@ -112,16 +94,18 @@ if __name__ == '__main__':
         joint_values = j1,j2,j3,j4,j5,j6
 
         # get forward kinematics i.e. last global robot-frame
-        T44, debug = forward_kinematics(*joint_values, **DH_TABLE)
+        robot_info = forward_kinematics(*joint_values, **DH_TABLE)
+        T44 = robot_info['tcp']
         IK_angles = inverse_kinematics_irb140(DH_TABLE, T44)
 
         # sanity check of forward kinematics
         for angles in IK_angles.T:
-            t44, _ = forward_kinematics(*joint_values, **DH_TABLE)
+            info = forward_kinematics(*joint_values, **DH_TABLE)
+            t44 = info['tcp']
             assert(norm(T44 - t44) < 1e-7)
 
         # list of global-robot-frames
-        global_robot_frames = construct_robot_geometry(debug)
+        global_robot_frames = construct_robot_geometry(info['robot_geometry_local'])
             
         # generate a curve in the last global robot-frame
         num_p = 50
@@ -148,29 +132,16 @@ if __name__ == '__main__':
             fk_p = homogenous_matrix(plane[:3,:3],
                                      point[:3])
             angle_solutions = inverse_kinematics_irb140(DH_TABLE, fk_p)
-            #angle_solutions = filter_solutions(angle_solutions)
 
             extra = [angle_solutions]
             for index in xrange(3,6):
                 extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
                 extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-##                extra.append( generate_modulo_solutions(angle_solutions, index, 2*360.0))
-##                extra.append( generate_modulo_solutions(angle_solutions, index, -2*360.0))
             angle_solutions = merge_solutions(*extra)
             angle_solutions = filter_solutions(angle_solutions)
-####            print angle_solutions.shape
-
-#### This sanity check is very time-costly
-####            for k in angle_solutions.T:
-####                T44, debug = forward_kinematics(*k, **DH_TABLE)
-####                # sanity check
-####                err = norm(fk_p - T44)
-####                assert( err < 1e-10)
-####            print 'sanity checking solutions.....OK!'
 
             all_solutions.append(angle_solutions.T)
         all_solutions = mat(all_solutions)
-        #filter_solutions(all_solutions.T.reshape(6,156*50)).
         print all_solutions.shape
 
         #check so that all chosen solutions are within angle-ranges
