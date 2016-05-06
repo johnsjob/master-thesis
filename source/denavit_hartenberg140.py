@@ -274,7 +274,7 @@ def calc_valid_raw_invkin_irb140(T44):
 def calc_valid_invkin_irb140(T44):
     return __inverse_kinematics_pose(T44, filtering=True, raw_solutions=False)
 
-def calc_invkin_irb140(T44, filtering=False, raw_solutions=False, tool=None):
+def calc_invkin_irb140(T44, filtering=False, raw_solutions=False):
     return __inverse_kinematics_pose(T44, filtering, raw_solutions)
 #----------------------------------------------------------------------------------------------------------#
 # INVERSE KINEMATICS - SOLUTION HANDLING
@@ -318,7 +318,7 @@ def inverse_kinematics_curve(trans_frames):
     # perform inverse kinematics over a curve and collect all solutions
     all_solutions = []
     for point_frame in trans_frames:
-        all_solutions.append(_inverse_kinematics_pose(point_frame, filtering=True))
+        all_solutions.append(__inverse_kinematics_pose(point_frame, filtering=True))
     return mat(all_solutions)
 
 def __inverse_kinematics_pose(T44, filtering=False, raw_solutions=False):
