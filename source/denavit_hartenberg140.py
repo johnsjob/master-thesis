@@ -13,6 +13,7 @@ from numpy.linalg import norm, inv
 from helperfunctions_math import rand_range, mat, homogenous_rotation_z
 from denavit_hartenberg import inverse_kinematics_spherical_wrist as inv_wrist,\
      forward_kinematics, calc_wcp, calc_j1, pack_elbow_and_wrists
+import utils
 #=====================================================#
 rad = lambda x: x * pi / 180.0
 deg = lambda x: x * 180.0 / pi
@@ -268,6 +269,20 @@ def inverse_kinematics_irb140(dh_table, T44):
     ret = ret.reshape(k*m,n)
     return ret.T
 
+def __inverse_kinematics_pose(T44, filtering=False, raw_solutions=False):
+    # perform inverse kinematics on a single frame
+    angle_solutions = inverse_kinematics_irb140(DH_TABLE, T44)
+    if not raw_solutions:
+        extra = [angle_solutions]
+        for index in xrange(6):
+            extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
+            extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
+            pass
+        angle_solutions = merge_solutions(*extra)
+    if filtering:
+        angle_solutions = filter_solutions(angle_solutions)
+    return mat(angle_solutions.T)
+
 def calc_valid_raw_invkin_irb140(T44):
     return __inverse_kinematics_pose(T44, filtering=True, raw_solutions=True)
 
@@ -321,19 +336,57 @@ def inverse_kinematics_curve(trans_frames):
         all_solutions.append(__inverse_kinematics_pose(point_frame, filtering=True))
     return mat(all_solutions)
 
-def __inverse_kinematics_pose(T44, filtering=False, raw_solutions=False):
-    # perform inverse kinematics on a single frame
-    angle_solutions = inverse_kinematics_irb140(DH_TABLE, T44)
-    if not raw_solutions:
-        extra = [angle_solutions]
-        for index in xrange(6):
-            extra.append( generate_modulo_solutions(angle_solutions, index, 360.0))
-            extra.append( generate_modulo_solutions(angle_solutions, index, -360.0))
-            pass
-        angle_solutions = merge_solutions(*extra)
-    if filtering:
-        angle_solutions = filter_solutions(angle_solutions)
-    return mat(angle_solutions.T)
+def __find_solution_path(res, result, curr_point=0, curr_ind=0, tol=20.0):
+    p_curr = res[curr_point] #get the solutions for current point
+    solution = p_curr[curr_ind]
+    if curr_point+1 >= len(res):
+        result.append(solution)
+        return 
+    else:
+        p_dest = res[curr_point+1]
+    sol_diff = map(norm, solution - p_dest)
+    z = zip(p_dest, sol_diff, range(len(p_dest)))
+    z_sorted = sorted(z, key=lambda x: x[1])
+    z_sorted, _, index = zip(*z_sorted)
+    z, _, _ = zip(*z)
+    sel_z = z_sorted[0]
+    sel_ind = index[0]
+    if sol_diff[sel_ind] > tol:
+        del result[:]
+        return
+    else:
+        result.append(solution)
+    print curr_point
+    __find_solution_path(res, result,
+                         curr_point = curr_point+1,
+                         curr_ind = sel_ind)
+
+def __find_path(ik_curve, index):
+    path = []
+    __find_solution_path(ik_curve, path,
+                         curr_point=0, curr_ind=index)
+    return path
+
+def find_paths(ik_curve):
+    result = ik_curve
+    total = []
+    with utils.timing.Timer() as t:
+        for index in xrange(len(result[0])):
+            path = __find_path(result, index)
+            if path:
+                print 'FOUND ONE' 
+                total.append(list(path))
+        return mat(total)
+
+def find_single_path(ik_curve):
+    result = ik_curve
+    total = []
+    with utils.timing.Timer() as t:
+        for index in xrange(len(result[0])):
+            path = __find_path(result, index)
+            if path:
+                return mat(path)
+
 #----------------------------------------------------------------------------------------------------------#
 # MISC
 #----------------------------------------------------------------------------------------------------------#
