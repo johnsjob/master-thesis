@@ -242,9 +242,6 @@ def quat_to_rot(q):
     R = mat(zip(r1,r2,r3))
     return R
 #----------------------------------------------------------------------------------------------------------#
-def apply_transform_on_frames(T44, frames):
-    return mat( map(lambda x: matmul(T44, x), frames) )
-#----------------------------------------------------------------------------------------------------------#
 def homogenous_translation_x( tx ):
     return mat([[1,        0,      0,     tx],
                 [0,        1,      0,      0],
@@ -346,7 +343,7 @@ def rotation_matrices(rts):
         (!) Note - rot is rotated counter-clockwise compared to ordinary euler z-rotation.
     '''
     M = lambda x: homogenous_matrix(rotation_matrix_rot_tilt_skew(*x))
-    return mat( map(M, rts) )
+    return nmap(M, rts)
 #----------------------------------------#
 def coordinate_system_from_two_directions(dirz, diry):
     '''

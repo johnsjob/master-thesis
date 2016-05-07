@@ -3,12 +3,14 @@ import random
 import numpy
 from numpy.linalg import norm
 from helperfunctions_plot import *
-from helperfunctions_math import rand_range, rotation_matrices,\
+from helperfunctions_math import rand_range,\
                                  rotation_matrix_rot_tilt_skew as ori,\
-                                 homogenous_matrices
+                                 homogenous_matrices, nzip, nmap
 from pylab import axhline
 from plane_relative import generate_symmetric_curve,\
-                           get_transformed_points, apply_transform_on_frames
+                           get_transformed_points, attach_to_base_frame,\
+                           create_circle_curve, place_curve, attach_frames,\
+                           orientation_frames
 
 from denavit_hartenberg140 import forward_kinematics, DH_TABLE as dh_table,\
      inverse_kinematics_curve, find_single_path, \
@@ -36,44 +38,35 @@ import utils
 numpy.set_printoptions(precision=2)
 numpy.set_printoptions(suppress=True)
 
+# generate angles
+rot  = numpy.linspace(0,180)
+tilt = numpy.linspace(-40,40)
+skew = numpy.linspace(0,0)
+angles = nzip(rot, tilt, skew)
+
 if __name__ == '__main__':
+    dh_table['tool'] = hom(0,0,0,[0.0,0.0,0.1])
+    wobj = hom(-90,180,0,[0.3,0,0.5])
+
+    # generate a curve in the last global robot-frame
+    curve = create_circle_curve(diameter=0.3)
+
+    oris = orientation_frames(angles)
+    frames = attach_frames(oris, curve)
+
+    # tansform frames - paper -> robot
+    trajectory = attach_to_base_frame(wobj, *frames)
+    result = inverse_kinematics_curve(trajectory)
+    path = find_single_path(result)
+    print path
+
     for count in xrange(0,50,11):
-        dh_table['tool'] = hom(0,0,0,[0.0,0,0.1])
-        T44 = hom(-90,180,0,[0.3,0,0.5])
-
-        # generate a curve in the last global robot-frame
-        num_p = 50
-        point_matrix = generate_symmetric_curve(num_points=num_p,
-                                                ampl_factor=0.3)
-        point_matrix_tf = get_transformed_points(T44, point_matrix)
-
-        # generate angles
-        rot  = numpy.linspace(0,180)
-        tilt = numpy.linspace(-40,40)
-        skew = numpy.linspace(0,0)
-
-        # generate frames
-        angles = zip(rot, tilt, skew)
-        R = rotation_matrices(angles)
-        
-        pre_frames = zip(R, point_matrix)
-        frames = homogenous_matrices(pre_frames)
-
-     # tansform frames - paper -> robot
-        transf_frames = apply_transform_on_frames(T44, frames)
-
-        total = []
-        total_time = 0
-
-        result = inverse_kinematics_curve(transf_frames)
-        path = find_single_path(result)
-        print path
-        
-        robot_info = forward_kinematics(*path[count], **dh_table)
-
+        print count
         pl = StPlot()
+        robot_info = forward_kinematics(*path[count], **dh_table)
         pl.draw_robot(robot_info['robot_geometry_global'])
-        pl.draw_trajectory(transf_frames)
+        pl.draw_trajectory(trajectory)
         pl.draw_tool(robot_info['flange'],
                            dh_table['tool'])
         pl.show()
+    pl.draw_joint_paths(path)

@@ -4,7 +4,10 @@ import sys
 #--------------------------#
 import numpy as n
 from numpy import cos, sin, pi, array
-from helperfunctions_math import *
+from helperfunctions_math import mat, nmap, nzip,\
+     rotation_matrices as orientation_frames,\
+     homogenous_matrices, matmul
+
 from helperfunctions import convert_to_mat
 #=====================================================#
 #sys.path.append("../int/misc-tools/")
@@ -13,6 +16,9 @@ def get_relative_R(R0, R01):
     M = matmul(R0, R01)
     return M
 #--------------------------#
+def attach_to_base_frame(base_frame, *frames):
+    return nmap(lambda x: matmul(base_frame, x), frames)
+#----------------------------------------------------------------------------------------------------------#
 def define_plane_from_directions(origin, dirx, diry, system_type = 'local'):
     """
         This function returns a coordinate system frame (NxN matrix),
@@ -87,6 +93,18 @@ def get_plane_point(plane_transform,x,y):
     pos = plane_transform.dot([x,y,0,1])
     return pos
 #----------------------------------------#
+def attach_frames(*args):
+    return homogenous_matrices(zip(*args))
+    
+def place_curve(point_matrix, frame):
+    point_matrix_tf = get_transformed_points(frame, point_matrix)
+    return point_matrix_tf
+
+def create_circle_curve(diameter=0.3, num_p=50):
+    point_matrix = generate_symmetric_curve(num_points=num_p,
+                                            ampl_factor=diameter)
+    return point_matrix
+#----------------------------------------#
 def generate_symmetric_curve(t=None, x_func=n.cos, y_func=n.sin,
                    curve_factor = 2*n.pi, freq = 1, ampl_factor=0.1, num_points=50, offset=0):
     """
@@ -95,6 +113,12 @@ def generate_symmetric_curve(t=None, x_func=n.cos, y_func=n.sin,
          .....     ,
      [xn, yn, 0, 1}]
      in local (unransformed) plane-coordinates in metres.
+
+    parameters:
+                curve_factor : ...
+                freq         : ...
+                ampl_factor  : 'diameter' of the curve
+                num_points   : ...
     """
     if t is None:
         t = n.linspace(0, 1, num_points)
@@ -139,42 +163,6 @@ def get_transformed_points(plane_transform, point_matrix):
     transf_points = point_matrix.dot( plane_transform.T )
     return transf_points
 
-##def __apply_plane_relative_transform(plane, R):
-##    """
-##    Generates a from-left-applicable rotation matrix which will skew a given plane by
-##    rot, tilt, skew relative to its current configuration.
-##
-##    Local function used in get_plane_relative_R
-##    """
-##    orig, basis_x, basis_y, normal = plane
-##    transf_plane = mat([basis_x, basis_y, normal]).T
-##
-##    M = matmul(transf_plane,R.dot(mat_flip(1)),transf_plane.T)
-##    return M
-#--------------------------#
-##def get_plane_relative_R(plane, rot, tilt, skew, flipped_orientation_relative_to_plane = True):
-##    """
-##        Generates a from-left-applicable rotation matrix which will skew a given plane by
-##        rot, tilt, skew relative to its current configuration.
-##    """
-##
-##    if not flipped_orientation_relative_to_plane:
-##        R = rotation_matrix_rot_tilt_skew(-rot, tilt, skew)
-##    else:
-##        #rotates plane with tilt+180 degrees
-##        R = rotation_matrix_rot_tilt_skew(-rot, -tilt, skew).dot(mat_flip(1))
-##    M = __apply_plane_relative_transform(plane, R)
-##    return M
-#--------------------------#
-##def get_plane_relative_point(plane, px, py, rot, tilt, skew, L, flipped_orientation_relative_to_plane = True):
-##    orig, basis_x, basis_y, normal = plane
-##    M = get_plane_relative_R(plane, rot, tilt, skew, flipped_orientation_relative_to_plane)
-##    return get_plane_point(plane, px, py) + L*M.dot(normal)
-###--------------------------#
-##def get_plane_relative_skew_point(plane, px, py, rot, tilt, skew, skew_vector, flipped_orientation_relative_to_plane = True):
-##    orig, basis_x, basis_y, normal = plane
-##    M = get_plane_relative_R(plane, rot, tilt, skew, flipped_orientation_relative_to_plane)
-##    return get_plane_point(plane, px, py) - M.dot(skew_vector)
 #--------------------------#
 def mat_flip(M):
     transf_flip = mat([[1, 0, 0,  0],

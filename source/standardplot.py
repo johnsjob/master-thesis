@@ -39,6 +39,13 @@ class StPlot:
         self.plots.append(ax_3d)
         return
 
+    def draw_joint_paths(self, J):
+        fig = plt.figure(2)
+        for i in range(6):
+            ax = fig.add_subplot(6, 1, i+1)
+            ax.plot(J[:,i])
+        plt.show()
+        
     def draw_frames(self, frames, size=1.0, **kwargs):
         for frame in frames:
             self.draw_frame(frame, size, **kwargs)
