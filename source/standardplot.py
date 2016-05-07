@@ -2,6 +2,7 @@
 import matplotlib
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from pylab import axes
 
 from helperfunctions_plot import plot_equal_perspective
 
@@ -31,15 +32,11 @@ class StPlot:
 
     def __setupEnvironment(self, fig):
         #---- First subplot
-        ax_3d = fig.add_subplot(1, 2, 1, projection='3d')
+        ax_3d = fig.add_subplot(1, 1, 1, projection='3d')
         plot_equal_perspective(ax_3d,[-0.7, 0.7],
                                      [-0.7, 0.7],
-                                     [-0.5, 1])
+                                     [-0.0, 1])
         self.plots.append(ax_3d)
-
-        #---- Second subplot
-        ax_2d = fig.add_subplot(1, 2, 2)
-        self.plots.append(ax_2d)
         return
 
     def draw_frames(self, frames, size=1.0, **kwargs):
@@ -48,7 +45,7 @@ class StPlot:
         return
 
     def draw_trajectory(self, poses, **kwargs):
-        self.draw_frames(poses, size = 0.01, **kwargs)
+        self.draw_frames(poses, size = 0.005, **kwargs)
         self.draw_curve(poses[:,:3,3], linewidth = 2, **kwargs)
 
     def draw_robot(self, robot_geometry):
@@ -94,7 +91,7 @@ class StPlot:
         tcp = robot_flange.dot(tool)
 
         self.draw_line2(robot_flange[:3,3],
-                        tcp[:3,3], linewidth=4)
+                        tcp[:3,3], linewidth=2)
 #        ax.plot([x],[y],[z],'bo')
 #        ax.plot([x2],[y2],[z2],'ro')
         self.draw_frame(tcp, size=0.01, linewidth=2)
