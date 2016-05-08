@@ -6,7 +6,8 @@ import numpy as n
 from numpy import cos, sin, pi, array
 from helperfunctions_math import mat, nmap, nzip,\
      rotation_matrices as orientation_frames,\
-     homogenous_matrices, matmul
+     homogenous_matrices, matmul, rotation_matrix_rot_tilt_skew,\
+     expand_matrix
 
 from helperfunctions import convert_to_mat
 #=====================================================#
