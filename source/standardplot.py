@@ -44,6 +44,7 @@ class StPlot:
         for i in range(6):
             ax = fig.add_subplot(6, 1, i+1)
             ax.plot(J[:,i])
+            plt.legend(['j{}'.format(i+1)])
         plt.show()
         
     def draw_frames(self, frames, size=1.0, **kwargs):
