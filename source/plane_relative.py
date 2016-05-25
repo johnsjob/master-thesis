@@ -123,9 +123,11 @@ def generate_symmetric_curve(t=None, x_func=n.cos, y_func=n.sin,
     """
     if t is None:
         t = n.linspace(0, 1, num_points)
+
     le = len(t)
     y = y_func(t/t[-1]*curve_factor*freq)
     y = y / n.max( n.abs(y) )
+
     x = x_func(t/t[-1]*curve_factor*freq)
     x = x / n.max( n.abs(x) )
 
