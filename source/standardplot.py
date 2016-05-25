@@ -9,6 +9,7 @@ from helperfunctions_plot import plot_equal_perspective
 import numpy as np
 from numpy import array as mat
 from numpy import linalg as li
+from numpy.linalg import det
 
 import sys
 
@@ -35,7 +36,7 @@ class StPlot:
         ax_3d = fig.add_subplot(1, 1, 1, projection='3d')
         plot_equal_perspective(ax_3d,[-0.7, 0.7],
                                      [-0.7, 0.7],
-                                     [-0.0, 1])
+                                     [-0.2, 1])
         self.plots.append(ax_3d)
         return
 
@@ -45,7 +46,21 @@ class StPlot:
             ax = fig.add_subplot(6, 1, i+1)
             ax.plot(J[:,i])
             plt.legend(['j{}'.format(i+1)])
-        plt.show()
+
+    def draw_joint_velocities(self, Jvel):
+        fig = plt.figure(3)
+        for i in range(6):
+            ax = fig.add_subplot(6, 1, i+1)
+            ax.plot(Jvel[:,i])
+            plt.legend(['w{}'.format(i+1)])
+
+    def draw_jacobian_determinants(self, jacobs):
+        fig = plt.figure(4)
+        ax = fig.add_subplot(1, 1, 1)
+        D = map(det, jacobs)
+        ax.plot(D)
+        plt.legend(['det(J)'])
+        
         
     def draw_frames(self, frames, size=1.0, **kwargs):
         for frame in frames:
