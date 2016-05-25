@@ -324,7 +324,7 @@ def rotation_matrix_x_y_z(rx,ry,rz):
         creates a rotation XYZ-mapping from subspace to worldspace
         using euler angles in degrees (extrinsic mapping)
     '''    
-    return matmul(rotation_matrix_x(rot), rotation_matrix_y(ry), rotation_matrix_z(rz))
+    return matmul(rotation_matrix_x(rx), rotation_matrix_y(ry), rotation_matrix_z(rz))
 #----------------------------------------#
 def rotation_matrix_skew_tilt_rot(rot, tilt, skew):
     '''
