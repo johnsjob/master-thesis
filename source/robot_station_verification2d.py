@@ -1,6 +1,6 @@
 import random
 
-from pylab import axhline, plot, show, axes, grid
+from pylab import axhline, plot, show, axes, grid, xlabel, ylabel, title
 
 from helperfunctions_math import mat, homogenous_matrix as hom, nzip,\
      rotation_matrix_skew_tilt_rot as ori
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         # multiplication from left: rotation in base to base
         # multiplication from right: rotation in tool to base
         tcp = info['tcp'].dot(hom(ori(-10,30,40)))
-        pose = hom(tcp[:3,:3],[0.4, 0, 0.3])
+        pose = hom(tcp[:3,:3],[0.6, 0, 0.3])
 
         s = calc_invkin_irb140(pose, raw_solutions=True)
         ik_up = forward_kinematics(*s[0], **dh_table)
@@ -45,11 +45,13 @@ if __name__ == '__main__':
         ik_up_back = forward_kinematics(*s[10], **dh_table)
         ik_down_back = forward_kinematics(*s[15], **dh_table)
         
-        plot_robot_geometry(info)
+        #plot_robot_geometry(info)
         plot_robot_geometry(ik_up,'b')
         plot_robot_geometry(ik_up_back,'b--')
         plot_robot_geometry(ik_down,'r')
         plot_robot_geometry(ik_down_back,'r--')
+        xlabel('x-axis (meters)')
+        ylabel('z-axis (meters)')
         grid()
         axes().set_aspect('equal', 'datalim')
         show()
