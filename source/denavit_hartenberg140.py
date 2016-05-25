@@ -269,6 +269,15 @@ def inverse_kinematics_irb140(dh_table, T44):
     ret = ret.reshape(k*m,n)
     return ret.T
 
+def calc_valid_raw_invkin_irb140(T44):
+    return __inverse_kinematics_pose(T44, filtering=True, raw_solutions=True)
+
+def calc_valid_invkin_irb140(T44):
+    return __inverse_kinematics_pose(T44, filtering=True, raw_solutions=False)
+
+def calc_invkin_irb140(T44, filtering=False, raw_solutions=False):
+    return __inverse_kinematics_pose(T44, filtering, raw_solutions)
+
 def __inverse_kinematics_pose(T44, filtering=False, raw_solutions=False):
     # perform inverse kinematics on a single frame
     angle_solutions = inverse_kinematics_irb140(DH_TABLE, T44)
@@ -282,15 +291,6 @@ def __inverse_kinematics_pose(T44, filtering=False, raw_solutions=False):
     if filtering:
         angle_solutions = filter_solutions(angle_solutions)
     return mat(angle_solutions.T)
-
-def calc_valid_raw_invkin_irb140(T44):
-    return __inverse_kinematics_pose(T44, filtering=True, raw_solutions=True)
-
-def calc_valid_invkin_irb140(T44):
-    return __inverse_kinematics_pose(T44, filtering=True, raw_solutions=False)
-
-def calc_invkin_irb140(T44, filtering=False, raw_solutions=False):
-    return __inverse_kinematics_pose(T44, filtering, raw_solutions)
 #----------------------------------------------------------------------------------------------------------#
 # INVERSE KINEMATICS - SOLUTION HANDLING
 #----------------------------------------------------------------------------------------------------------#
