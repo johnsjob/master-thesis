@@ -109,6 +109,8 @@ class StPlot:
         Renders 4x4 homogenous matrices of the form [[R, t]
                                                      [0, 1]]
         """
+        size = size * self.length_factor
+
         dirx = frame_matrix[:3,0] * size
         diry = frame_matrix[:3,1] * size
         dirz = frame_matrix[:3,2] * size
