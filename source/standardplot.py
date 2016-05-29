@@ -17,10 +17,16 @@ import sys
 #debug
 
 class StPlot:
+    
+    def __init__(self, length_unit='m'):
+        self.length_factors = {
+            'm': 1.0,
+            'mm': 1000.0
+            }
+        self.length_unit = length_unit
+        self.length_factor = self.length_factors[self.length_unit]
 
-    def __init__(self):
         self.app = None
-
         self.plots = []        
         self.fig = self.__initWindow()
         self.__setupEnvironment(self.fig)
@@ -34,9 +40,14 @@ class StPlot:
     def __setupEnvironment(self, fig):
         #---- First subplot
         ax_3d = fig.add_subplot(1, 1, 1, projection='3d')
-        plot_equal_perspective(ax_3d,[-0.7, 0.7],
-                                     [-0.7, 0.7],
-                                     [-0.2, 1])
+
+        cube_limits = mat([[-0.7, 0.7],
+                          [-0.7, 0.7],
+                          [-0.2, 1]])*self.length_factor
+
+        plot_equal_perspective(ax_3d, cube_limits[0],
+                                      cube_limits[1],
+                                      cube_limits[2])
         self.plots.append(ax_3d)
         return
 
