@@ -313,10 +313,10 @@ def _solve_orientation(As, Bs):
 
 def find_solution_pen_ori(geometry_info, included_solutions_from_start = -1):
     # solve for orientation s which should be same as local_tool_orientation
-    l,m,n = geometry_info['data']['Xflange_orientation_relative_to_paper_plane'].shape
+    #l,m,n = geometry_info['data']['Xflange_orientation_relative_to_paper_plane'].shape
 
-    flange_orientation = geometry_info['data']['Xflange_orientation_relative_to_paper_plane']
-    pen_orientation = geometry_info['data']['global_tool_orientation']
+    flange_orientation = geometry_info['data']['forward_kinematics'][:,:3,:3]
+    pen_orientation = geometry_info['data']['global_tool_orientation'][:,:3,:3]
 
     solved_tool_orientation = _solve_orientation(flange_orientation, pen_orientation)
 
