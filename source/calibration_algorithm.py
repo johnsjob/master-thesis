@@ -14,6 +14,39 @@ from helperfunctions_math import *
 from helperfunctions_plot import *
 import plane_relative as plane_tools
 #----------------------------------------#
+##      --Refactoring information--
+##        geometry_info = {'plane':current_plane}
+##        geometry_info['local_tool_orientation']    : 3x3-dim numpy array
+##        geometry_info['local_delta_vector']        : 3-dim numpy array
+##        geometry_info['correct_solution_geometry'] : solution_tensor: 3x4-dim numpy array
+##
+##
+##        geometry_info['angles'] = list_of:
+##                                    {
+##                                        rot_val : float
+##                                        tilt_Val : float
+##                                        skew_val : float
+##                                    }
+##        # Xtcp (flange) orientation in global space, generated relative to the paper plane
+##        geometry_info['Xflange_orientation_relative_to_paper_plane']:
+##                list_of: hom
+##
+##        #generate pen-tip position in Anoto2d in mm
+##        geometry_info['pentip_2d']:
+##                list_of: 2d tuple
+##
+##        # generate global Xtcp position in mm
+##        geometry_info['Xtcp0']:
+##            list_of: 3-dim numpy array
+##
+##        # generate relative-tool-orientation in world coordinates
+##        geometry_info['global_tool_orientation']:
+##            list_of: 3x3-dim of numpy array
+##
+##        geometry_info['forward_kinematics']:
+##            list_of: hom
+##            from: global_tool_orientation, Xtcp0
+
 # num_points = 12 absolute minimum, actually 12+1
 num_points = 500
 #========================================#
@@ -100,20 +133,6 @@ def merge_dicts(*list_of_dicts):
             # turn remaining lists into numpy-arrays
             ret[k] = mat(ret[k])
     return ret
-#----------------------------------------
-##>>> v = [1,2,3]
-##>>> rts(*ang).dot(v)
-##array([ 0.9277428 ,  1.92775024,  3.06970232])
-##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),1e-3).dot(v))
-##0.025717333764800787
-##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),1e-2).dot(v))
-##0.3032573574160719
-##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),1e-3).dot(v))
-##0.025717333764800787
-##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),2e-3).dot(v))
-##0.061674825648472743
-##>>> vec_ang(rts(*ang).dot(v), r(rts(*ang),1e-3).dot(v))
-##0.025717333764800787
 #----------------------------------------
 def rad_to_ang(v):
     return v*180/pi
