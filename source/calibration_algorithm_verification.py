@@ -3,6 +3,7 @@ import random
 import numpy, numpy as n
 from numpy import pi, linspace, meshgrid as mesh, zeros,\
      arccos as acos, log10, array, array as mat, uint32
+
 from numpy.linalg import norm, det, inv
 from numpy.random import uniform, seed, set_state, get_state
 from helperfunctions_plot import *
@@ -37,108 +38,9 @@ import utils
 
 from collections import OrderedDict
 
-
+# settings
 numpy.set_printoptions(precision=4)
 numpy.set_printoptions(suppress=True)
-
-# functions
-normalize = lambda x: x / norm(x)
-
-def print_dict(d):
-    print json.dumps(d, indent=4)
-    
-def targets(xmin,xmax,ymin,ymax, num):
-    '''
-    Generates a ('num'X'num') rectangle grid of targets in the range of
-    [xmin, xmax], [ymin, ymax]. Depending on application these can either be
-    relative to a work boject or absolute.
-
-    return:
-        ndarray : (num**2, 4, 4)
-    '''
-    x = linspace(xmin,xmax,num)
-    y = linspace(ymin,ymax,num)
-    xy = mat(mesh(x,y)).T
-    res = nmap(lambda row: nmap(lambda pair: hom(0,0,0,[pair[0],pair[1],0]) ,row), xy)
-    a,b,c,d = res.shape
-    res = res.reshape((a*b,c,d))
-    return res
-
-def ik(pose):
-    return invkin(pose)[0]
-
-def flange(pose):
-    '''
-    Given a pose, calulate the forward-kinematics frame obtained
-    from reaching the point by inverse-kinematics.
-    '''
-    return forward_kinematics(*ik(pose), **dh_params)['flange']
-
-def pen_pos(pose, dim=2):
-    return pose[:dim,3]
-
-def pen_ori(pose):
-    return pose[:3,:3]
-
-
-def err(mag):
-    mag = mag * 1e-3 # millimeters to meters
-    return uniform(-mag, mag)
-
-def err_pen_pos(mag, dim=2):
-    mag = mag * 1e-3 # millimeters to meters
-    ret = mat([uniform(-mag, mag) for _ in range(dim)])
-    ret[2:] = 0
-    return 
-
-def err_pen_ori(mag):
-    return mat([uniform(-mag, mag) for _ in range(9)]).reshape(3,3)
-
-def err_flange(mag):
-    '''
-        noise function used to generate a homogenous matrix with(-mag, mag)
-        noise on the translation part.
-
-        unit of mag is in milimeters
-    '''
-    mag = mag*1e-3 # millimeters to meters
-    pos = mat([uniform(-mag, mag) for x in range(3)])
-    res = zeros((4,4))
-    res[:3,3] = pos
-    return res
-
-def solution_run(geometry_info):
-    num_meas = len(geometry_info['data']['forward_kinematics'])
-    res = [ cal.find_solution_pen_tip(geometry_info, k)
-            for k in range(3, num_meas) ]
-    return mat(res), [k for k in range(3, num_meas)]
-
-def solution_errors(solution, comparison):
-    c = solution[1]
-    solution = solution[0]
-    wobj = comparison[:,:3]
-    tool = comparison[:,3]
-
-    tool_err = abs(tool - solution[:,3]) * 1000
-    wobj_err = abs(wobj - solution[:,:3])
-    errors = {
-        'wobj': {
-            'norm': norm(wobj_err),
-            'x_ang': acos(wobj[:,0].dot(normalize(solution[:,0])))*180.0/pi,
-            'y_ang': acos(wobj[:,1].dot(normalize(solution[:,1])))*180.0/pi,
-            'n_ang': acos(wobj[:,2].dot(normalize(solution[:,2])))*180.0/pi,
-            'unit': 'deg'
-            },
-        'tool': {
-            'norm': norm(tool_err),
-            'x': tool_err[0],
-            'y': tool_err[1],
-            'z': tool_err[2],
-            'unit': 'mm'
-            },
-        'cond': c
-        }
-    return errors
 
 rand_state = ('MT19937', array([4272543851, 2552595568,  431289734,  494160517,   15621524,
        3365871479, 3691534276,  705774780, 1590143843, 3193439880,
@@ -265,6 +167,105 @@ rand_state = ('MT19937', array([4272543851, 2552595568,  431289734,  494160517, 
        3663695897,  893946809, 1639603531, 3105583879, 3520078117,
        2976634573, 2595753638,  837585180,  116712083, 1912073772,
        3936174162, 2493230111, 3725515935, 3170110637], dtype=uint32), 624, 0, 0.0)
+
+# functions
+normalize = lambda x: x / norm(x)
+
+def print_dict(d):
+    print json.dumps(d, indent=4)
+    
+def targets(xmin,xmax,ymin,ymax, num):
+    '''
+    Generates a ('num'X'num') rectangle grid of targets in the range of
+    [xmin, xmax], [ymin, ymax]. Depending on application these can either be
+    relative to a work boject or absolute.
+
+    return:
+        ndarray : (num**2, 4, 4)
+    '''
+    x = linspace(xmin,xmax,num)
+    y = linspace(ymin,ymax,num)
+    xy = mat(mesh(x,y)).T
+    res = nmap(lambda row: nmap(lambda pair: hom(0,0,0,[pair[0],pair[1],0]) ,row), xy)
+    a,b,c,d = res.shape
+    res = res.reshape((a*b,c,d))
+    return res
+
+def ik(pose):
+    return invkin(pose)[0]
+
+def flange(pose):
+    '''
+    Given a pose, calulate the forward-kinematics frame obtained
+    from reaching the point by inverse-kinematics.
+    '''
+    return forward_kinematics(*ik(pose), **dh_params)['flange']
+
+def pen_pos(pose, dim=2):
+    return pose[:dim,3]
+
+def pen_ori(pose):
+    return pose[:3,:3]
+
+
+def err(mag):
+    mag = mag * 1e-3 # millimeters to meters
+    return uniform(-mag, mag)
+
+def err_pen_pos(mag, dim=2):
+    mag = mag * 1e-3 # millimeters to meters
+    ret = mat([uniform(-mag, mag) for _ in range(dim)])
+    ret[2:] = 0
+    return 
+
+def err_pen_ori(mag):
+    return mat([uniform(-mag, mag) for _ in range(9)]).reshape(3,3)
+
+def err_flange(mag):
+    '''
+        noise function used to generate a homogenous matrix with(-mag, mag)
+        noise on the translation part.
+
+        unit of mag is in milimeters
+    '''
+    mag = mag*1e-3 # millimeters to meters
+    pos = mat([uniform(-mag, mag) for x in range(3)])
+    res = zeros((4,4))
+    res[:3,3] = pos
+    return res
+
+def solution_run(geometry_info):
+    num_meas = len(geometry_info['data']['forward_kinematics'])
+    res = [ cal.find_solution_pen_tip(geometry_info, k)
+            for k in range(3, num_meas) ]
+    return mat(res), [k for k in range(3, num_meas)]
+
+def solution_errors(solution, comparison):
+    c = solution[1]
+    solution = solution[0]
+    wobj = comparison[:,:3]
+    tool = comparison[:,3]
+
+    tool_err = abs(tool - solution[:,3]) * 1000
+    wobj_err = abs(wobj - solution[:,:3])
+    errors = {
+        'wobj': {
+            'norm': norm(wobj_err),
+            'x_ang': acos(wobj[:,0].dot(normalize(solution[:,0])))*180.0/pi,
+            'y_ang': acos(wobj[:,1].dot(normalize(solution[:,1])))*180.0/pi,
+            'n_ang': acos(wobj[:,2].dot(normalize(solution[:,2])))*180.0/pi,
+            'unit': 'deg'
+            },
+        'tool': {
+            'norm': norm(tool_err),
+            'x': tool_err[0],
+            'y': tool_err[1],
+            'z': tool_err[2],
+            'unit': 'mm'
+            },
+        'cond': c
+        }
+    return errors
 
 if __name__ == '__main__':
     # init - random generator
