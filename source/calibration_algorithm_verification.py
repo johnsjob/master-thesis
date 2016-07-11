@@ -315,11 +315,16 @@ if __name__ == '__main__':
     flanges = nmap(lambda x: x + err_flange(0.03), flanges)
 
     # obtain relative pen positions from local targets
+    # unit: meters
     penxy0 = nmap(pen_pos, tars)
 
-    # convert to 'anoto coords'
-    penxy = nmap(lambda x: pen_pos(x) + mat((-(x[2,0]/0.70710678118654757)*0.8e-3*2, -(x[2,1]/0.70710678118654757)*0.8e-3*2)), tars)
+    # convert to 'anoto coords' with projection error
+    # unit: meters
+    penxy = nmap(lambda x: pen_pos(x) + mat((-(x[2,0]/0.70710678118654757)*0.8e-3*2,
+                                             -(x[2,1]/0.70710678118654757)*0.8e-3*2)), tars)
     #penxy = nmap(lambda x: pen_pos(x)), tars)
+
+    # convert to "anoto coords" in ad "anoto distance"
     penxyanoto = penxy*1000/0.3 + 1e9
     
     # obtain relative pen orietnation from local targets
@@ -335,7 +340,7 @@ if __name__ == '__main__':
                     'global_tool_orientation': penori
                 }
         }
-    # perform calibration, present results (tip, and wobj)
+    # perform calibration
     solution = cal.find_solution_pen_tip(geometry_info)
     d = solution_errors(solution, ref)
     print_dict(d)
@@ -345,6 +350,9 @@ if __name__ == '__main__':
     (sol1,sol2,tensor,(u,s,v)),_ = cal.find_solution_pen_ori(geometry_info)
     print sol2[2] - tool[:3,:3]
     solved_tool_ori = sol2[2]
+
+    
+    # present results (tip, and wobj)
     plot(xvals,
          log10([e['tool']['norm'] for e in errors]))
     xlim(xvals[0],xvals[-1])
@@ -356,6 +364,7 @@ if __name__ == '__main__':
     plot(penxy[:,0],penxy[:,1],'r.')
     grid()
     show()
+
     plot(penxy0[:num_points_side,0],penxy0[:num_points_side,1],'k.')
     plot(penxy[:num_points_side,0],penxy[:num_points_side,1],'r.')
     grid()
