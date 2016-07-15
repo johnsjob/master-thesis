@@ -35,6 +35,7 @@ import time
 import json
 
 import utils
+import cPickle as pickle
 
 from collections import OrderedDict
 
@@ -340,6 +341,38 @@ if __name__ == '__main__':
                     'global_tool_orientation': penori
                 }
         }
+
+    # save data to pickle
+    pickle_data = []
+    for k in xrange(len(flanges)):
+        tmp = {
+            'pen_pos': geometry_info['data']['pentip_2d'][k],
+            'pen_ori': geometry_info['data']['global_tool_orientation'][k][:3,:3],
+            'pen_fsr': numpy.NAN,
+            'pen_fsr_adc': numpy.NAN,
+            'robot_joints': ik(global_tars[k]),
+            'robot_tcp': forward_kinematics(*global_tars[0], **dh_params)['tcp'],
+            'robot_flange': forward_kinematics(*global_tars[0], **dh_params)['flange'],
+            }
+        pickle_data.append(tmp)
+
+    with open('calibration_verifitcation.pickle', 'wb+') as fp:
+        pickle.dump(pickle_data, fp)
+
+    with open('tool_wobj.yaml', 'w+') as fp:
+        json.dump({
+            'tool': {
+                'pos': list(dh_params['tool'][:3,3]),
+                'q': list(rot_to_quat(dh_params['tool'][:3,:3]))
+                },
+            'wobj': {
+                'pos': list(wobj[:3,3]),
+                'q': list(rot_to_quat(dh_params['tool'][:3,:3]))
+                }
+            }, fp, indent=4)
+        
+    
+        
     # perform calibration
     solution = cal.find_solution_pen_tip(geometry_info)
     d = solution_errors(solution, ref)
