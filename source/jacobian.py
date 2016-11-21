@@ -4,11 +4,10 @@ import numpy as n
 n.set_printoptions(suppress=True)
 
 from numpy.linalg import norm, inv, det
-from numpy import array as mat, linspace, diff, cross
+from numpy import array as mat, linspace, diff, cross, inf
 
 # unit-testing
 import unittest
-import inspect
 
 # imports - thesis
 from helperfunctions_math import homogenous_matrix as hom,\
@@ -21,7 +20,6 @@ from helperfunctions_math import matmul, nmap, homogenous_matrix as hom
 from denavit_hartenberg140 import forward_kinematics,\
      inverse_kinematics_irb140, DH_TABLE,\
      inverse_kinematics_curve, calc_valid_invkin_irb140
-
 
 # functions
 def jacobian_from_joints(*joints):
@@ -40,77 +38,279 @@ def jacobian_from_joints(*joints):
     J = J.reshape((6,6))
     return J
 
+def tcp_from_joints(*joints, **dh_table):
+    return forward_kinematics(*joints, **dh_table)['tcp']
+
+def flange_from_joints(*joints, **dh_table):
+    return forward_kinematics(*joints, **dh_table)['flange']
+
+def robot_frames(*joints, **dh_table):
+    return forward_kinematics(*joints, **dh_table)['robot_geometry_global']
+    
+def show_func_name(a_func):
+    def wrapper(*args, **kwargs):
+        print '\n{} :: {}'.format(args[0].__class__.__name__, a_func.__name__)
+        return a_func(*args, **kwargs)
+    return wrapper
+
 # tests
-class JacobianTest(unittest.TestCase):
+class JacobianTestWithTool(unittest.TestCase):
     def setUp(self):
         self.dh_table = DH_TABLE
-        self.dh_table['tool'] = hom(0,0,0,[-0.2,0.0,0])
-        self.joints = (0,0,0,
-                      0,90,0)
+        self.dh_table['tool'] = hom(0,0,0,[0.1,0.12,0.13])
+        self.joints = (0,0,0,0,0,0)
+        self.tcp = forward_kinematics(*self.joints,**self.dh_table)['tcp']
+
+    @show_func_name
+    def test_forward_kinematics_setup(self):
+        tcp = n.round(self.tcp, 12)
+        test_val = ( tcp == mat([[ 0. ,  0. ,  1. ,  0.645],
+                                 [-0. ,  1. , -0. ,  0.12 ],
+                                 [-1. , -0. ,  0. ,  0.612],
+                                 [ 0. ,  0. ,  0. ,  1.   ]]).reshape(4,4)).all()
+        self.assertTrue(test_val)
+        print(tcp)
+
+    @show_func_name
+    def test_jacobian_q1(self):
+        expected_vw = mat((-0.12,0.645,0,0,0,1))
+        result_vw  = jacobian_from_joints(*self.joints).dot((1,0,0,0,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)
+
+    @show_func_name
+    def test_jacobian_q2(self):
+        expected_vw = mat([0.26, 0, -0.575, 0, 1, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,1,0,0,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)
+        
+    @show_func_name
+    def test_jacobian_q3(self):
+        expected_vw = mat([-0.1, 0, -0.575, 0, 1, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,1,0,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_q4(self):
+        expected_vw = mat([0, 0.1, 0.12, 1, 0, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,1,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_q5(self):
+        expected_vw = mat([-0.1, 0, -0.195, 0, 1, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,1,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)
+
+    @show_func_name
+    def test_jacobian_q6(self):
+        expected_vw = mat([0, 0.1, 0.12, 1, 0, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,0,1))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_w1_keep_flange_orientation_constant(self):
+        expected_vw = mat([ 0, 0.45,  0,  0,  0,  0])
+        result_vw  = jacobian_from_joints(0,0,0,0,90,0).dot((1,0,0,0,0,1))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_w2_pure_translation_positive_x(self):
+        expected_vw = mat([ 0.36, 0,  0,  0,  0,  0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,1,-1,0,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_w3_keep_flange_orientation_and_position_constant(self):
+        expected_vw = mat([ 0, 0,  0,  0,  0,  0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,-1,0,1))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+class JacobianTestWithoutTool(unittest.TestCase):
+    def setUp(self):
+        self.dh_table = DH_TABLE
+        self.dh_table['tool'] = None
+        self.joints = (0,0,0,0,0,0)
+        self.tcp = forward_kinematics(*self.joints,**self.dh_table)['tcp']
+
+    @show_func_name
+    def test_forward_kinematics_setup(self):
+        tcp = n.round(self.tcp, 12)
+        test_val = ( tcp == mat([[ 0. ,  0. ,  1. ,  0.515],
+                                 [-0. ,  1. , -0. , -0.   ],
+                                 [-1. , -0. ,  0. ,  0.712],
+                                 [ 0. ,  0. ,  0. ,  1.   ]]).reshape(4,4)).all()
+        self.assertTrue(test_val)
+        print(tcp)
+
+    @show_func_name
+    def test_jacobian_q1(self):
+        expected_vw = mat((0,0.515,0,0,0,1))
+        result_vw  = jacobian_from_joints(*self.joints).dot((1,0,0,0,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)
+
+    @show_func_name
+    def test_jacobian_q2(self):
+        expected_vw = mat([0.36, 0, -0.445, 0, 1, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,1,0,0,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_q3(self):
+        expected_vw = mat([0, 0, -0.445, 0, 1, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,1,0,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_q4(self):
+        expected_vw = mat([0, 0, 0, 1, 0, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,1,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_q5(self):
+        expected_vw = mat([0, 0, -0.065, 0, 1, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,1,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_q6(self):
+        expected_vw = mat([0, 0, 0, 1, 0, 0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,0,1))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_pure_translation_positive_x(self):
+        expected_vw = mat([ 0.36, 0,  0,  0,  0,  0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,1,-1,0,0,0))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_keep_flange_orientation_constant(self):
+        expected_vw = mat([ 0, 0.45,  0,  0,  0,  0])
+        result_vw  = jacobian_from_joints(0,0,0,0,90,0).dot((1,0,0,0,0,1))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+    @show_func_name
+    def test_jacobian_keep_flange_orientation_and_position_constant(self):
+        expected_vw = mat([ 0, 0,  0,  0,  0,  0])
+        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,-1,0,1))
+        max_error = norm(expected_vw - result_vw, inf)
+        print('\tExpected: {}\n\tResult:   {}\n\tMax Error: {}\n'.format(expected_vw,
+                                                               result_vw,
+                                                               max_error))
+        self.assertAlmostEqual(0, max_error)        
+
+class JacobianTestGenericWithoutTool(unittest.TestCase):
+    def setUp(self):
+        self.dh_table = DH_TABLE
+        self.dh_table['tool'] = None
+        self.joints = (0,0,0,0,0,0)
         self.tcp = forward_kinematics(*self.joints,**self.dh_table)['tcp']
         self.flange = forward_kinematics(*self.joints,**self.dh_table)['flange']
-        self.invkin_joints = calc_valid_invkin_irb140(self.tcp)
-        self.jacobian = jacobian_from_joints(*self.invkin_joints[0])
         
-
+    @show_func_name
     def test_fordward_kinematics_setup(self):
-        print inspect.stack()[0][3]
         tcp = n.round(self.tcp,12)
-        test_val = ( tcp == mat([-1, 0, 0, 0.65,
+        test_val = ( tcp == mat([ 0, 0, 1, 0.515,
                                   0, 1, 0, 0,
-                                  0, 0,-1, 0.647,
+                                 -1, 0, 0, 0.712,
                                   0, 0, 0, 1]).reshape(4,4)).all()
         self.assertTrue(test_val)
-        print tcp
+        print 'tcp = \n{}\n'.format(tcp)
 
-        flange = n.round(self.flange,12)
-        test_val = ( flange == mat([-1, 0, 0, 0.45,
-                                     0, 1, 0, 0,
-                                     0, 0,-1, 0.647,
-                                     0, 0, 0, 1]).reshape(4,4)).all()
-        self.assertTrue(test_val)
-        print flange
-
-    def test_jacobian_determinant(self):
-        print inspect.stack()[0][3]
-        det_val = abs(det(self.jacobian))
+    @show_func_name
+    def test_jacobian_determinant_should_be_non_zero(self):
+        det_val = abs(det(jacobian_from_joints(10,20,30,40,50,60)))
         print det_val
         self.assertNotAlmostEqual(det_val, 0)
 
+    @show_func_name
+    def test_jacobian_determinant_should_be_zero(self):
+        det_val = abs(det(jacobian_from_joints(0,0,0,0,0,0)))
+        print det_val
+        self.assertAlmostEqual(det_val, 0)
+
+    @show_func_name
     def test_jacobian_inversion(self):
-        print inspect.stack()[0][3]
-        #j1', j2', j3', ...
+        #q1', q2', q3', ...
         test_joints = (1,2,3,4,5,6)
-        vw = self.jacobian.dot(test_joints)
+        jacobian = jacobian_from_joints(*test_joints)
+        vw = jacobian.dot(test_joints)
         print test_joints
         # vx, vy, vz, wx, wy, wz
-        q = inv(self.jacobian).dot(vw)
+        q = inv(jacobian).dot(vw)
         print q
         for a,b in zip(test_joints, q):
             self.assertAlmostEqual(a,b)
 
-
-    def test_rotation_with_non_rigid_link(self):
-        print inspect.stack()[0][3]
-        #j1', j2', j3', ...
-        vw = self.jacobian.dot((1,0,0,
-                                0,0,1))
-        print vw
-        for i in [0,2,3,4,5]:
-            self.assertAlmostEqual(vw[i],0)
-        self.assertAlmostEqual(vw[1], self.flange[0,3])
-
-    def test_rotation_with_rigid_link(self):
-        print inspect.stack()[0][3]
-        #j1', j2', j3', ...
-        vw = self.jacobian.dot((1,0,0,
-                                0,0,0))
-        print vw
-        for i in [0,2,3,4]:
-            self.assertAlmostEqual(vw[i],0)
-        self.assertAlmostEqual(vw[-1], 1)
-        self.assertAlmostEqual(vw[1], self.tcp[0,3])
-
-
 if __name__ == '__main__':
+    q = (0,0,0,0,0,0); f = robot_frames(*q, **DH_TABLE); tcp = tcp_from_joints(*q, **DH_TABLE)
     unittest.main()
