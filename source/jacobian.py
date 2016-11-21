@@ -61,21 +61,12 @@ class JacobianTestWithTool(unittest.TestCase):
         self.joints = (0,0,0,0,0,0)
         self.tcp = forward_kinematics(*self.joints,**self.dh_table)['tcp']
 
-#    @show_func_name
-#    def test_forward_kinematics_setup(self):
-#        tcp = n.round(self.tcp, 12)
-#        test_val = ( tcp == mat([[ 0. ,  0. ,  1. ,  0.645],
-#                                 [-0. ,  1. , -0. ,  0.12 ],
-#                                 [-1. , -0. ,  0. ,  0.612],
-#                                 [ 0. ,  0. ,  0. ,  1.   ]]).reshape(4,4)).all()
-#        self.assertTrue(test_val)
-#        print(tcp)
-
     @show_func_name
     def test_jacobian_q1(self):
         expected_vw = mat((-0.12,0.645,0,0,0,1))
         result_vw  = jacobian_from_joints(*self.joints).dot((1,0,0,0,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((1,0,0,0,0,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -86,6 +77,7 @@ class JacobianTestWithTool(unittest.TestCase):
         expected_vw = mat([0.26, 0, -0.575, 0, 1, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,1,0,0,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,1,0,0,0,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -96,6 +88,7 @@ class JacobianTestWithTool(unittest.TestCase):
         expected_vw = mat([-0.1, 0, -0.575, 0, 1, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,1,0,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,0,1,0,0,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -106,6 +99,7 @@ class JacobianTestWithTool(unittest.TestCase):
         expected_vw = mat([0, 0.1, 0.12, 1, 0, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,1,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,0,0,1,0,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -116,6 +110,7 @@ class JacobianTestWithTool(unittest.TestCase):
         expected_vw = mat([-0.1, 0, -0.195, 0, 1, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,1,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,0,0,0,1,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -126,6 +121,7 @@ class JacobianTestWithTool(unittest.TestCase):
         expected_vw = mat([0, 0.1, 0.12, 1, 0, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,0,1))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,0,0,0,0,1))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -136,6 +132,7 @@ class JacobianTestWithTool(unittest.TestCase):
         expected_vw = mat([ 0, 0.45,  0,  0,  0,  0])
         result_vw  = jacobian_from_joints(0,0,0,0,90,0).dot((1,0,0,0,0,1))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((1,0,0,0,0,1))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -146,6 +143,7 @@ class JacobianTestWithTool(unittest.TestCase):
         expected_vw = mat([ 0.36, 0,  0,  0,  0,  0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,1,-1,0,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format((0,1,-1,0,0,0)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -156,6 +154,7 @@ class JacobianTestWithTool(unittest.TestCase):
         expected_vw = mat([ 0, 0,  0,  0,  0,  0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,-1,0,1))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format((0,0,0,-1,0,1)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -168,21 +167,12 @@ class JacobianTestWithoutTool(unittest.TestCase):
         self.joints = (0,0,0,0,0,0)
         self.tcp = forward_kinematics(*self.joints,**self.dh_table)['tcp']
 
-#    @show_func_name
-#    def test_forward_kinematics_setup(self):
-#        tcp = n.round(self.tcp, 12)
-#        test_val = ( tcp == mat([[ 0. ,  0. ,  1. ,  0.515],
-#                                 [-0. ,  1. , -0. , -0.   ],
-#                                 [-1. , -0. ,  0. ,  0.712],
-#                                 [ 0. ,  0. ,  0. ,  1.   ]]).reshape(4,4)).all()
-#        self.assertTrue(test_val)
-#        print(tcp)
-
     @show_func_name
     def test_jacobian_q1(self):
         expected_vw = mat((0,0.515,0,0,0,1))
         result_vw  = jacobian_from_joints(*self.joints).dot((1,0,0,0,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((1,0,0,0,0,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -193,6 +183,7 @@ class JacobianTestWithoutTool(unittest.TestCase):
         expected_vw = mat([0.36, 0, -0.445, 0, 1, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,1,0,0,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,1,0,0,0,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -203,6 +194,7 @@ class JacobianTestWithoutTool(unittest.TestCase):
         expected_vw = mat([0, 0, -0.445, 0, 1, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,1,0,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,0,1,0,0,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -213,6 +205,7 @@ class JacobianTestWithoutTool(unittest.TestCase):
         expected_vw = mat([0, 0, 0, 1, 0, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,1,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,0,0,1,0,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -223,6 +216,7 @@ class JacobianTestWithoutTool(unittest.TestCase):
         expected_vw = mat([0, 0, -0.065, 0, 1, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,1,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,0,0,0,1,0))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -233,6 +227,7 @@ class JacobianTestWithoutTool(unittest.TestCase):
         expected_vw = mat([0, 0, 0, 1, 0, 0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,0,1))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format(((0,0,0,0,0,1))))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -243,6 +238,7 @@ class JacobianTestWithoutTool(unittest.TestCase):
         expected_vw = mat([ 0.36, 0,  0,  0,  0,  0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,1,-1,0,0,0))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format((0,1,-1,0,0,0)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -253,6 +249,7 @@ class JacobianTestWithoutTool(unittest.TestCase):
         expected_vw = mat([ 0, 0.45,  0,  0,  0,  0])
         result_vw  = jacobian_from_joints(0,0,0,0,90,0).dot((1,0,0,0,0,1))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format((1,0,0,0,0,1)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -263,6 +260,7 @@ class JacobianTestWithoutTool(unittest.TestCase):
         expected_vw = mat([ 0, 0,  0,  0,  0,  0])
         result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,-1,0,1))
         max_error = norm(expected_vw - result_vw, inf)
+        print('Joint values: {}'.format((0,0,0,-1,0,1)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -276,26 +274,16 @@ class JacobianTestGenericWithoutTool(unittest.TestCase):
         self.tcp = forward_kinematics(*self.joints,**self.dh_table)['tcp']
         self.flange = forward_kinematics(*self.joints,**self.dh_table)['flange']
         
-##    @show_func_name
-##    def test_forward_kinematics_setup(self):
-##        tcp = n.round(self.tcp,12)
-##        test_val = ( tcp == mat([ 0, 0, 1, 0.515,
-##                                  0, 1, 0, 0,
-##                                 -1, 0, 0, 0.712,
-##                                  0, 0, 0, 1]).reshape(4,4)).all()
-##        self.assertTrue(test_val)
-##        print 'tcp = \n{}\n'.format(tcp)
-
     @show_func_name
     def test_jacobian_determinant_should_be_non_zero(self):
-    	print "joint values: {}".format((10,20,30,40,50,60))
+    	print "Joint values: {}".format((10,20,30,40,50,60))
         det_val = abs(det(jacobian_from_joints(10,20,30,40,50,60)))
         print det_val
         self.assertNotAlmostEqual(det_val, 0)
 
     @show_func_name
     def test_jacobian_determinant_should_be_zero(self):
-    	print "joint values: {}".format((0,0,0,0,0,0))
+    	print "Joint values: {}".format((0,0,0,0,0,0))
         det_val = abs(det(jacobian_from_joints(0,0,0,0,0,0)))
         print det_val
         self.assertAlmostEqual(det_val, 0)
@@ -305,7 +293,7 @@ class JacobianTestGenericWithoutTool(unittest.TestCase):
     	
         #q1', q2', q3', ...
         test_joints = (1,2,3,4,5,6)
-    	print "joint values: {}".format(test_joints)
+    	print "Joint values: {}".format(test_joints)
 
         jacobian = jacobian_from_joints(*test_joints)
         vw = jacobian.dot(test_joints)
@@ -320,7 +308,7 @@ class JacobianTestGenericWithoutTool(unittest.TestCase):
     def test_jacobian_calculation_for_non_zero_joints(self):    	
         #q1', q2', q3', ...
         test_joints = (10,20,30,40,50,60)
-    	print "joint values: {}".format(test_joints)
+    	print "Joint values: {}".format(test_joints)
         jacobian = jacobian_from_joints(*test_joints)
         
         res = mat([[-0.10706101, -0.00919023, -0.3423402 ,  0.01752216, -0.0603293 ,
@@ -342,7 +330,7 @@ class JacobianTestGenericWithoutTool(unittest.TestCase):
     def test_jacobian_calculation_for_zero_joints(self):    	
         #q1', q2', q3', ...
         test_joints = (0,0,0,0,0,0)
-    	print "joint values: {}".format(test_joints)
+    	print "Joint values: {}".format(test_joints)
         jacobian = jacobian_from_joints(*test_joints)
         
         res = mat([[ 0.   ,  0.36 ,  0.   , -0.   , -0.   ,  0.   ],
