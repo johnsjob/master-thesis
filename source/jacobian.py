@@ -62,77 +62,85 @@ class JacobianTestWithTool(unittest.TestCase):
         self.tcp = forward_kinematics(*self.joints,**self.dh_table)['tcp']
 
     @show_func_name
-    def test_jacobian_q1(self):
+    def test_jacobian_q1_angular_velocity(self):
+    	angular_velocities = (1,0,0,0,0,0)
         expected_vw = mat((-0.12,0.645,0,0,0,1))
-        result_vw  = jacobian_from_joints(*self.joints).dot((1,0,0,0,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((1,0,0,0,0,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)
 
     @show_func_name
-    def test_jacobian_q2(self):
+    def test_jacobian_q2_angular_velocity(self):
+    	angular_velocities = (0,1,0,0,0,0)
         expected_vw = mat([0.26, 0, -0.575, 0, 1, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,1,0,0,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,1,0,0,0,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)
         
     @show_func_name
-    def test_jacobian_q3(self):
+    def test_jacobian_q3_angular_velocity(self):
+    	angular_velocities = (0,0,1,0,0,0)
         expected_vw = mat([-0.1, 0, -0.575, 0, 1, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,1,0,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,0,1,0,0,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)        
 
     @show_func_name
-    def test_jacobian_q4(self):
+    def test_jacobian_q4_angular_velocity(self):
+    	angular_velocities = (0,0,0,1,0,0)
         expected_vw = mat([0, 0.1, 0.12, 1, 0, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,1,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
+
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,0,0,1,0,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)        
 
     @show_func_name
-    def test_jacobian_q5(self):
+    def test_jacobian_q5_angular_velocity(self):
+    	angular_velocities = (0,0,0,0,1,0)
         expected_vw = mat([-0.1, 0, -0.195, 0, 1, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,1,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,0,0,0,1,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)
 
     @show_func_name
-    def test_jacobian_q6(self):
+    def test_jacobian_q6_angular_velocity(self):
+    	angular_velocities = (0,0,0,0,0,1)
         expected_vw = mat([0, 0.1, 0.12, 1, 0, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,0,1))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,0,0,0,0,1))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)        
 
     @show_func_name
-    def test_jacobian_w1_keep_flange_orientation_constant(self):
+    def test_jacobian_w1_angular_velocity_keep_flange_orientation_constant(self):
+    	angular_velocities = (1,0,0,0,0,1)
         expected_vw = mat([ 0, 0.45,  0,  0,  0,  0])
-        result_vw  = jacobian_from_joints(0,0,0,0,90,0).dot((1,0,0,0,0,1))
+        result_vw  = jacobian_from_joints(0,0,0,0,90,0).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((1,0,0,0,0,1))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -140,10 +148,11 @@ class JacobianTestWithTool(unittest.TestCase):
 
     @show_func_name
     def test_jacobian_w2_pure_translation_positive_x(self):
+    	angular_velocities = (0,1,-1,0,0,0)
         expected_vw = mat([ 0.36, 0,  0,  0,  0,  0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,1,-1,0,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format((0,1,-1,0,0,0)))
+        print('Joint values: {}'.format(angular_velocities))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -151,10 +160,11 @@ class JacobianTestWithTool(unittest.TestCase):
 
     @show_func_name
     def test_jacobian_w3_keep_flange_orientation_and_position_constant(self):
+    	angular_velocities = (0,0,0,-1,0,1)
         expected_vw = mat([ 0, 0,  0,  0,  0,  0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,-1,0,1))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format((0,0,0,-1,0,1)))
+        print('Joint values: {}'.format(angular_velocities))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -168,66 +178,72 @@ class JacobianTestWithoutTool(unittest.TestCase):
         self.tcp = forward_kinematics(*self.joints,**self.dh_table)['tcp']
 
     @show_func_name
-    def test_jacobian_q1(self):
+    def test_jacobian_q1_angular_velocity(self):
+    	angular_velocities = (1,0,0,0,0,0)
         expected_vw = mat((0,0.515,0,0,0,1))
-        result_vw  = jacobian_from_joints(*self.joints).dot((1,0,0,0,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((1,0,0,0,0,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)
 
     @show_func_name
-    def test_jacobian_q2(self):
+    def test_jacobian_q2_angular_velocity(self):
+    	angular_velocities = (0,1,0,0,0,0)
         expected_vw = mat([0.36, 0, -0.445, 0, 1, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,1,0,0,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,1,0,0,0,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)        
 
     @show_func_name
-    def test_jacobian_q3(self):
+    def test_jacobian_q3_angular_velocity(self):
+    	angular_velocities = (0,0,1,0,0,0)
         expected_vw = mat([0, 0, -0.445, 0, 1, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,1,0,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,0,1,0,0,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)        
 
     @show_func_name
-    def test_jacobian_q4(self):
+    def test_jacobian_q4_angular_velocity(self):
+    	angular_velocities = (0,0,0,1,0,0)
         expected_vw = mat([0, 0, 0, 1, 0, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,1,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,0,0,1,0,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)        
 
     @show_func_name
-    def test_jacobian_q5(self):
+    def test_jacobian_q5_angular_velocity(self):
+    	angular_velocities = (0,0,0,0,1,0)
         expected_vw = mat([0, 0, -0.065, 0, 1, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,1,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,0,0,0,1,0))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
         self.assertAlmostEqual(0, max_error)        
 
     @show_func_name
-    def test_jacobian_q6(self):
+    def test_jacobian_q6_angular_velocity(self):
+    	angular_velocities = (0,0,0,0,0,1)
         expected_vw = mat([0, 0, 0, 1, 0, 0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,0,0,1))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format(((0,0,0,0,0,1))))
+        print('Joint values: {}'.format((angular_velocities)))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -235,10 +251,11 @@ class JacobianTestWithoutTool(unittest.TestCase):
 
     @show_func_name
     def test_jacobian_pure_translation_positive_x(self):
+    	angular_velocities = (0,1,-1,0,0,0)
         expected_vw = mat([ 0.36, 0,  0,  0,  0,  0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,1,-1,0,0,0))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format((0,1,-1,0,0,0)))
+        print('Joint values: {}'.format(angular_velocities))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -246,10 +263,11 @@ class JacobianTestWithoutTool(unittest.TestCase):
 
     @show_func_name
     def test_jacobian_keep_flange_orientation_constant(self):
+    	angular_velocities = (1,0,0,0,0,1)
         expected_vw = mat([ 0, 0.45,  0,  0,  0,  0])
-        result_vw  = jacobian_from_joints(0,0,0,0,90,0).dot((1,0,0,0,0,1))
+        result_vw  = jacobian_from_joints(0,0,0,0,90,0).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format((1,0,0,0,0,1)))
+        print('Joint values: {}'.format(angular_velocities))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -257,10 +275,11 @@ class JacobianTestWithoutTool(unittest.TestCase):
 
     @show_func_name
     def test_jacobian_keep_flange_orientation_and_position_constant(self):
+    	angular_velocities = (0,0,0,-1,0,1)
         expected_vw = mat([ 0, 0,  0,  0,  0,  0])
-        result_vw  = jacobian_from_joints(*self.joints).dot((0,0,0,-1,0,1))
+        result_vw  = jacobian_from_joints(*self.joints).dot(angular_velocities)
         max_error = norm(expected_vw - result_vw, inf)
-        print('Joint values: {}'.format((0,0,0,-1,0,1)))
+        print('Joint values: {}'.format(angular_velocities))
         print('Expected: {}\nResult:   {}\nMax Error: {}\n'.format(expected_vw,
                                                                result_vw,
                                                                max_error))
@@ -276,40 +295,41 @@ class JacobianTestGenericWithoutTool(unittest.TestCase):
         
     @show_func_name
     def test_jacobian_determinant_should_be_non_zero(self):
-    	print "Joint values: {}".format((10,20,30,40,50,60))
-        det_val = abs(det(jacobian_from_joints(10,20,30,40,50,60)))
+    	joint_values = (10,20,30,40,50,60)
+    	print "Joint values: {}".format(joint_values)
+        det_val = abs(det(jacobian_from_joints(*joint_values)))
         print det_val
         self.assertNotAlmostEqual(det_val, 0)
 
     @show_func_name
     def test_jacobian_determinant_should_be_zero(self):
-    	print "Joint values: {}".format((0,0,0,0,0,0))
-        det_val = abs(det(jacobian_from_joints(0,0,0,0,0,0)))
+    	joint_values = (0,0,0,0,0,0)
+    	print "Joint values: {}".format(joint_values)
+        det_val = abs(det(jacobian_from_joints(*joint_values)))
         print det_val
         self.assertAlmostEqual(det_val, 0)
         
     @show_func_name
     def test_jacobian_inversion(self):
-    	
         #q1', q2', q3', ...
-        test_joints = (1,2,3,4,5,6)
-    	print "Joint values: {}".format(test_joints)
+        joint_values = (1,2,3,4,5,6)
+    	print "Joint values: {}".format(joint_values)
 
-        jacobian = jacobian_from_joints(*test_joints)
-        vw = jacobian.dot(test_joints)
-        print test_joints
+        jacobian = jacobian_from_joints(*joint_values)
+        vw = jacobian.dot(joint_values)
+        print joint_values
         # vx, vy, vz, wx, wy, wz
         q = inv(jacobian).dot(vw)
 
-        for a,b in zip(test_joints, q):
+        for a,b in zip(joint_values, q):
             self.assertAlmostEqual(a,b)
 
     @show_func_name
     def test_jacobian_calculation_for_non_zero_joints(self):    	
         #q1', q2', q3', ...
-        test_joints = (10,20,30,40,50,60)
-    	print "Joint values: {}".format(test_joints)
-        jacobian = jacobian_from_joints(*test_joints)
+        joint_values = (10,20,30,40,50,60)
+    	print "Joint values: {}".format(joint_values)
+        jacobian = jacobian_from_joints(*joint_values)
         
         res = mat([[-0.10706101, -0.00919023, -0.3423402 ,  0.01752216, -0.0603293 ,
         -0.        ],
@@ -329,9 +349,9 @@ class JacobianTestGenericWithoutTool(unittest.TestCase):
     @show_func_name
     def test_jacobian_calculation_for_zero_joints(self):    	
         #q1', q2', q3', ...
-        test_joints = (0,0,0,0,0,0)
-    	print "Joint values: {}".format(test_joints)
-        jacobian = jacobian_from_joints(*test_joints)
+        joint_values = (0,0,0,0,0,0)
+    	print "Joint values: {}".format(joint_values)
+        jacobian = jacobian_from_joints(*joint_values)
         
         res = mat([[ 0.   ,  0.36 ,  0.   , -0.   , -0.   ,  0.   ],
                [ 0.515, -0.   ,  0.   , -0.   , -0.   ,  0.   ],
@@ -341,6 +361,8 @@ class JacobianTestGenericWithoutTool(unittest.TestCase):
                [ 1.   ,  0.   ,  0.   ,  0.   , -0.   ,  0.   ]])
         self.assertAlmostEqual(n.max(n.abs(res - jacobian)), 0)
         print res
+
+
 
 if __name__ == '__main__':
     q = (10,20,30,40,50,60); f = robot_frames(*q, **DH_TABLE); tcp = tcp_from_joints(*q, **DH_TABLE)
