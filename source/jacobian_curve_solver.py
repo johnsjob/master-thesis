@@ -1,14 +1,16 @@
 import random
 
 import numpy, numpy as n
-from numpy import pi
+from numpy import pi, linspace
 from numpy.linalg import norm, det, inv
 from helperfunctions_plot import *
 from helperfunctions_math import rand_range,\
                                  rotation_matrix_rot_tilt_skew as ori,\
-                                 homogenous_matrices, nzip, nmap
+                                 homogenous_matrices, nzip, nmap,\
+                                 quat_slerp
 from pylab import axhline
 from plane_relative import generate_symmetric_curve,\
+                           generate_curve,\
                            get_transformed_points, attach_to_base_frame,\
                            create_circle_curve, place_curve, attach_frames,\
                            orientation_frames
@@ -42,62 +44,59 @@ numpy.set_printoptions(suppress=True)
 
 # generate angles
 num_points = 50
-rot  = numpy.linspace(0,180,num_points)
-tilt = numpy.linspace(-40,40,num_points)
+rot  = numpy.linspace(0,0,num_points)
+tilt = numpy.linspace(0,0,num_points)
 skew = numpy.linspace(0,0,num_points)
 angles = nzip(rot, tilt, skew)
 
 normalize = lambda x: x / norm(x)
 
-def calc_jacobian(*joints):
-    J = jacobian_from_joints(*joints)
-    return J
+def calc_robot_tcp(*joints):
+    return forward_kinematics(*joints, **dh_table)['tcp']
 
-def calc_joint_velocities(joints, vw):
-    J = calc_jacobian(*joints)
-    joint_vel = inv(J).dot(vw)
-    return joint_vel * 180.0 / pi
+def calc_robot_curve_j1(*jvals):
+    return mat([calc_robot_tcp(v,0,0,0,0,0) for v in jvals])
+
 
 if __name__ == '__main__':
     dh_table['tool'] = hom(0,0,0,[0.0,0.0,0.1])
-    wobj = hom(-90,180,0,[0.3,0,0.5])
+    wobj = hom(-90,180,0,[0.6,0,0.5])
+    # robot movement
+    robot_movement_j1 = calc_robot_curve_j1(*linspace(0,90,50))
 
-    # generate a curve in the last global robot-frame
-    curve = create_circle_curve(diameter=0.3, num_p=num_points)
-
-    oris = orientation_frames(angles)
-    frames = attach_frames(oris, curve)
-
-    # tansform frames - paper -> robot
-    trajectory = attach_to_base_frame(wobj, *frames)
-    center = wobj[:3,3]
-    r = trajectory[:,:3,3] - center
-    normal = normalize( n.cross(r[0], r[12]) )
+    trajectory = robot_movement_j1
+    
+    # create velocities
     # traverse curve in 10 seconds
-    # speed = circumf / 10s = 0.3*pi / 10s
-    speed = 0.0942477796076937
-    w = normal * speed
-    velocity = n.cross(w,r) * speed
-    velocity = nmap(lambda x: list(x)+[0,0,0], velocity)
+    velocity = n.diff(trajectory[:,:3,3], axis=0) / (10.0/len(trajectory)) #m/s
+    velocity = mat([[0,0,0]] + list(velocity))
+    angular_velocity = velocity*0
+    vw = nzip(velocity, angular_velocity).reshape(50,6)
+
+    #inverse kinematics over curve
     result = inverse_kinematics_curve(trajectory)
     path = find_single_path(result)
-    joint_vel = nmap(lambda x: calc_joint_velocities(*x), zip(path, velocity))
-    J = nmap(lambda x: calc_jacobian(*x), path)
-    print path
-    print joint_vel
+##    joint_vel = nmap(lambda x: calc_joint_velocities(*x), zip(path, vw))
+    J = nmap(lambda x: jacobian_from_joints(*x), path)
+    Jinv = nmap(inv, J)
+    joint_angular_vel = nmap(lambda x: reduce(n.dot, x), zip(Jinv, vw))
 
-    for count in xrange(0,50,11):
-        print count
-        pl = StPlot()
-        joints = path[count]
-                
-        robot_info = forward_kinematics(*joints, **dh_table)
-        pl.draw_robot(robot_info['robot_geometry_global'])
-        pl.draw_trajectory(trajectory)
-        pl.draw_tool(robot_info['flange'],
-                           dh_table['tool'])
-        break
-    pl.draw_joint_paths(path)
-    pl.draw_joint_velocities(joint_vel)
-    pl.draw_jacobian_determinants(J)
-    pl.show()
+## 
+##    print 'Path found: \n {}'.format(path)
+##    print 'Joint angular velocities: \n {}'.format(joint_vel)
+##
+##    for count in xrange(1):
+##        pl = StPlot()
+####        joints = path[count]
+####                
+####        robot_info = forward_kinematics(*joints, **dh_table)
+####        pl.draw_robot(robot_info['robot_geometry_global'])
+####        pl.draw_trajectory(trajectory)
+####        pl.draw_tool(robot_info['flange'],
+####                           dh_table['tool'])
+####        pl.draw_frame(wobj, size=0.2)
+####        break
+##    pl.draw_joint_paths(path)
+##    pl.draw_joint_velocities(joint_vel)
+###    pl.draw_jacobian_determinants(J)
+##    pl.show()

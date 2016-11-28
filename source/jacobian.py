@@ -38,13 +38,13 @@ def jacobian_from_joints(*joints):
     J = J.reshape((6,6))
     return J
 
-def tcp_from_joints(*joints, **dh_table):
+def __tcp_from_joints(*joints, **dh_table):
     return forward_kinematics(*joints, **dh_table)['tcp']
 
-def flange_from_joints(*joints, **dh_table):
+def __flange_from_joints(*joints, **dh_table):
     return forward_kinematics(*joints, **dh_table)['flange']
 
-def robot_frames(*joints, **dh_table):
+def __robot_frames(*joints, **dh_table):
     return forward_kinematics(*joints, **dh_table)['robot_geometry_global']
     
 def show_func_name(a_func):
@@ -365,5 +365,5 @@ class JacobianTestGenericWithoutTool(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    q = (10,20,30,40,50,60); f = robot_frames(*q, **DH_TABLE); tcp = tcp_from_joints(*q, **DH_TABLE)
+    q = (10,20,30,40,50,60); f = __robot_frames(*q, **DH_TABLE); tcp = __tcp_from_joints(*q, **DH_TABLE)
     unittest.main()
