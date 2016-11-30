@@ -8,7 +8,9 @@ from helperfunctions_math import rand_range,\
                                  rotation_matrix_rot_tilt_skew as ori,\
                                  homogenous_matrices, nzip, nmap,\
                                  quat_slerp
-from pylab import axhline
+from pylab import axhline, xticks, savefig, clf
+from pylab import minorticks_on, subplot, subplots_adjust
+
 from plane_relative import generate_symmetric_curve,\
                            generate_curve,\
                            get_transformed_points, attach_to_base_frame,\
@@ -54,49 +56,205 @@ normalize = lambda x: x / norm(x)
 def calc_robot_tcp(*joints):
     return forward_kinematics(*joints, **dh_table)['tcp']
 
-def calc_robot_curve_j1(*jvals):
-    return mat([calc_robot_tcp(v,0,0,0,0,0) for v in jvals])
+
+def custom_plot(*args, **kwargs):
+    plot(*args, **kwargs)
+    grid(b=True, which='major', color='k', linestyle='-', linewidth=0.3)
+    grid(b=True, which='minor', color='k', linestyle='-', linewidth=0.1)
+    minorticks_on()
+
+def custom_show(_legend, xl='', yl='', titl=''):
+    legend(_legend)
+    xlabel(xl)
+    ylabel(yl)
+    title(titl)
+    savefig()
+    
+def calc_robot_curve_j1():
+    N = 100.0
+    T = 10.0
+    L = pi/2.0
+    djs = linspace(0,L*180/pi,N)
+    dts = linspace(0,T,N)
+
+    djdts = djs/dts
+    print djdts
+    print djdts*dts
+
+    dt = T / N # seconds / dx
+    rads_per_second = L / T
+    
+    tcps = mat([calc_robot_tcp(v,10,20,0,90,0) for v in linspace(0, L*180/pi, N)])
+    #w = -tcps[:,:3,2]*rads_per_second
+    w = mat([[0,0,1]*int(N)]).reshape(N,3)*rads_per_second
+    print w.shape
+    r = tcps[:,:3,3]
+    v = nmap(lambda x: reduce(n.cross, x), zip(w, r))
+    return tcps, nzip(v,w).reshape(N,6),dts
 
 
 if __name__ == '__main__':
     dh_table['tool'] = hom(0,0,0,[0.0,0.0,0.1])
     wobj = hom(-90,180,0,[0.6,0,0.5])
     # robot movement
-    robot_movement_j1 = calc_robot_curve_j1(*linspace(0,90,50))
+    ##robot_movement_j1, vw, dts = calc_robot_curve_j1()
+    ##trajectory = robot_movement_j1
 
-    trajectory = robot_movement_j1
+    curve = generate_symmetric_curve()
+    N = len(curve)
+    T = 12.56
+    L = 2*pi
+    dt = T / N # seconds / dx
+    rads_per_second = L / T
+
+    frame = calc_robot_tcp(0,0,0,0,90,0)
+    center = frame[:3,3]
+    curve = nmap(frame.dot, curve)
+    r = curve[:,:3] - center
+    frames = n.tile(frame,(50,1)).reshape(50,4,4)
+    frames[:,:,3] = curve
+    trajectory = frames
+    t = linspace(0, T, N)
+    w = mat([[0,0,-1]]*len(trajectory))*rads_per_second
+    v = nmap(lambda x: reduce(n.cross, x), zip(w,r))
+    w = mat([[0,0,0]]*len(trajectory))
+    vw = n.hstack((v,w))
     
-    # create velocities
-    # traverse curve in 10 seconds
-    velocity = n.diff(trajectory[:,:3,3], axis=0) / (10.0/len(trajectory)) #m/s
-    velocity = mat([[0,0,0]] + list(velocity))
-    angular_velocity = velocity*0
-    vw = nzip(velocity, angular_velocity).reshape(50,6)
-
     #inverse kinematics over curve
     result = inverse_kinematics_curve(trajectory)
     path = find_single_path(result)
-##    joint_vel = nmap(lambda x: calc_joint_velocities(*x), zip(path, vw))
     J = nmap(lambda x: jacobian_from_joints(*x), path)
     Jinv = nmap(inv, J)
-    joint_angular_vel = nmap(lambda x: reduce(n.dot, x), zip(Jinv, vw))
+    joint_angular_vel = nmap(lambda x: reduce(n.dot, x), zip(Jinv, vw))*180/pi
 
-## 
-##    print 'Path found: \n {}'.format(path)
-##    print 'Joint angular velocities: \n {}'.format(joint_vel)
-##
-##    for count in xrange(1):
-##        pl = StPlot()
-####        joints = path[count]
+    print 'Path found: \n {}'.format(path)
+    print 'Joint angular velocities: \n {}'.format(joint_angular_vel)
+
+    index=0
+    subplots_adjust(hspace=0.35)
+    subplot(211)
+    custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$q_'+str(index+1)+'$'])
+    subplot(212)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees / second')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q1.png')
+    clf()
+
+    index=1
+    subplots_adjust(hspace=0.35)
+    subplot(211)
+    custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$q_'+str(index+1)+'$'])
+    subplot(212)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees / second')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q2.png')
+    clf()
+    
+    index=2
+    subplots_adjust(hspace=0.35)
+    subplot(211)
+    custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$q_'+str(index+1)+'$'])
+    subplot(212)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees / second')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q3.png')
+    clf()
+
+    index=3
+    subplots_adjust(hspace=0.35)
+    subplot(211)
+    custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$q_'+str(index+1)+'$'])
+    subplot(212)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees / second')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q4.png')
+    clf()
+
+    index=4
+    subplots_adjust(hspace=0.35)
+    subplot(211)
+    custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$q_'+str(index+1)+'$'])
+    subplot(212)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees / second')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q5.png')
+    clf()
+
+    index=5
+    subplots_adjust(hspace=0.35)
+    subplot(211)
+    custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$q_'+str(index+1)+'$'])
+    subplot(212)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('degrees / second')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q6.png')
+    clf()
+######
+##    pl = StPlot()
+##    joints = path[0]
 ####                
-####        robot_info = forward_kinematics(*joints, **dh_table)
-####        pl.draw_robot(robot_info['robot_geometry_global'])
-####        pl.draw_trajectory(trajectory)
-####        pl.draw_tool(robot_info['flange'],
-####                           dh_table['tool'])
-####        pl.draw_frame(wobj, size=0.2)
-####        break
+##    robot_info = forward_kinematics(*joints, **dh_table)
+##    pl.draw_robot(robot_info['robot_geometry_global'])
+##    pl.draw_trajectory(trajectory)
+##    pl.draw_tool(robot_info['flange'],
+##                 dh_table['tool'])
+########        pl.draw_frame(wobj, size=0.2)
+########        break
 ##    pl.draw_joint_paths(path)
-##    pl.draw_joint_velocities(joint_vel)
-###    pl.draw_jacobian_determinants(J)
-##    pl.show()
+##    pl.draw_joint_velocities(joint_angular_vel)
+##    pl.draw_jacobian_determinants(J)
+##    pl.savefig()
