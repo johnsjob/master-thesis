@@ -140,13 +140,14 @@ if __name__ == '__main__':
     xlim((0,49))
     legend(['$q_'+str(index+1)+'$'])
     subplot(212)
-    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
     xlabel('seconds')
     ylabel('degrees / second')
     xticks(range(0,50,10)+[49],linspace(0,T,6))
     xlim((0,49))
     legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
-    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q1.png')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q1.png',
+            bbox_inches='tight', pad_inches=0)
     clf()
 
     index=1
@@ -159,13 +160,14 @@ if __name__ == '__main__':
     xlim((0,49))
     legend(['$q_'+str(index+1)+'$'])
     subplot(212)
-    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
     xlabel('seconds')
     ylabel('degrees / second')
     xticks(range(0,50,10)+[49],linspace(0,T,6))
     xlim((0,49))
     legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
-    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q2.png')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q2.png',
+            bbox_inches='tight', pad_inches=0)
     clf()
     
     index=2
@@ -176,15 +178,16 @@ if __name__ == '__main__':
     ylabel('degrees')
     xticks(range(0,50,10)+[49],linspace(0,T,6))
     xlim((0,49))
-    legend(['$q_'+str(index+1)+'$'])
+    legend(['$q_'+str(index+1)+'$'], loc='lower right')
     subplot(212)
-    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
     xlabel('seconds')
     ylabel('degrees / second')
     xticks(range(0,50,10)+[49],linspace(0,T,6))
     xlim((0,49))
     legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
-    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q3.png')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q3.png',
+            bbox_inches='tight', pad_inches=0)
     clf()
 
     index=3
@@ -197,13 +200,14 @@ if __name__ == '__main__':
     xlim((0,49))
     legend(['$q_'+str(index+1)+'$'])
     subplot(212)
-    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
     xlabel('seconds')
     ylabel('degrees / second')
     xticks(range(0,50,10)+[49],linspace(0,T,6))
     xlim((0,49))
     legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
-    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q4.png')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q4.png',
+            bbox_inches='tight', pad_inches=0)
     clf()
 
     index=4
@@ -216,13 +220,14 @@ if __name__ == '__main__':
     xlim((0,49))
     legend(['$q_'+str(index+1)+'$'])
     subplot(212)
-    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
     xlabel('seconds')
     ylabel('degrees / second')
     xticks(range(0,50,10)+[49],linspace(0,T,6))
     xlim((0,49))
-    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
-    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q5.png')
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q5.png',
+            bbox_inches='tight', pad_inches=0)
     clf()
 
     index=5
@@ -235,26 +240,34 @@ if __name__ == '__main__':
     xlim((0,49))
     legend(['$q_'+str(index+1)+'$'])
     subplot(212)
-    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'g', linewidth=1.5)
+    custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
     xlabel('seconds')
     ylabel('degrees / second')
     xticks(range(0,50,10)+[49],linspace(0,T,6))
     xlim((0,49))
-    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
-    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q6.png')
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q6.png',
+            bbox_inches='tight', pad_inches=0)
     clf()
-######
-##    pl = StPlot()
-##    joints = path[0]
-####                
-##    robot_info = forward_kinematics(*joints, **dh_table)
-##    pl.draw_robot(robot_info['robot_geometry_global'])
-##    pl.draw_trajectory(trajectory)
-##    pl.draw_tool(robot_info['flange'],
-##                 dh_table['tool'])
-########        pl.draw_frame(wobj, size=0.2)
-########        break
+
+
+    custom_plot(nmap(det, J), 'b', linewidth=1.5)
+    xlabel('seconds')
+    ylabel('det(J)')
+    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlim((0,49))
+    savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\J.png',
+            bbox_inches='tight', pad_inches=0)
+    clf()
+    
+    pl = StPlot()
+    joints = path[13]
+    robot_info = forward_kinematics(*joints, **dh_table)
+    pl.draw_robot(robot_info['robot_geometry_global'])
+    pl.draw_trajectory(trajectory)
+    pl.draw_tool(robot_info['flange'],
+                 dh_table['tool'])
 ##    pl.draw_joint_paths(path)
 ##    pl.draw_joint_velocities(joint_angular_vel)
 ##    pl.draw_jacobian_determinants(J)
-##    pl.savefig()
+    pl.show()
