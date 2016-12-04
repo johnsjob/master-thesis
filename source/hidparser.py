@@ -92,23 +92,12 @@ class BTPen:
 
     def record(self, num_reports=100, num_warmup=50):
         res = []
-        old_pos = self.read().data
-        skipped = []
-        total = []
         while len(res) < (num_reports + num_warmup):
             read_hid = self.read()
             data = read_hid.data
-            total.append(data)
-##            if (abs(data['x'] - old_pos['x']) > 1000) or (abs(data['y'] - old_pos['y']) > 1000):
-##                print 'skipping:'
-##                print json.dumps(data, indent=4)
-##                skipped.append(data)
-##                continue
-            old_pos = dict(data)
             res.append(data)
             print 'Coord #{}'.format(len(res))
-#            print json.dumps(data, indent=4)
-        return res[num_warmup:], total, skipped
+        return res[num_warmup:]
 
     def __del__(self):
         if self._init:
@@ -128,15 +117,49 @@ def list_to_spaced_vals(x):
     res = 'E: 3.14 20 {}\n'.format(res)
     return res
 
+def filter_func(p):
+    if (p[0] < 1000) or (p[1] < 1000):
+        return False
+    else:
+        return True    
+
 if __name__ == '__main__':
     pen = BTPen()
-    reports, total, skipped = pen.record(num_reports=600, num_warmup=20)
+    reports = pen.record(num_reports=900, num_warmup=20)
     del pen
-    pos = mat([[d['x'], d['y']] for d in reports])
-    tx = mat([d['tiltx'] for d in reports])
-    ty = mat([d['tilty'] for d in reports])
-    tw = mat([d['twist'] for d in reports])
 
     with open('./test.txt','w+') as fp:
         lines = [list_to_spaced_vals(r['raw']) for r in reports]
         fp.writelines(lines)
+
+    positions = mat([[p['x'], p['y'], p['tiltx']/100.0, p['tilty']/100.0, p['twist']/100.0] for p in reports])    
+    pos = mat(filter(filter_func, positions))
+    pos_err = mat(filter(lambda x: not filter_func(x), positions))
+
+    from pylab import *
+    ad_to_mm = 0.3
+    mm_to_cm = 0.1
+    correction_factor = 0.0625
+    cm = ad_to_mm * mm_to_cm * correction_factor
+
+    plot( (pos[:,0] - pos[0,0])*cm,
+         -(pos[:,1] - pos[0,1])*cm, 'b')
+    xlabel('x-axis (centimeters)')
+    ylabel('y-axis (centimeters)')
+    grid()
+    show()
+
+    plot(positions[:,0], -positions[:,1], 'r')
+    xlabel('x-axis (anoto distance)')
+    ylabel('y-axis (anoto distance)')
+    grid()
+    show()
+    
+    plot( positions[:,0]*cm,
+         -positions[:,1]*cm, 'r', linewidth=0.3)
+    plot( pos[:,0]*cm,
+         -pos[:,1]*cm, 'b')
+    xlabel('x-axis (centimeters)')
+    ylabel('y-axis (centimeters)')
+    grid()
+    show()
