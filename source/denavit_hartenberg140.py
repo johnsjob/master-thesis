@@ -72,7 +72,7 @@ def backward_facing_elbow_down(dh_table, T44):
     th21 = atan2(s, x0)
     th22 = atan2(beta*sin2(th3), alpha + beta*cos2(th3))
     j2 = -90 + th21 - th22
-            
+
     #packing the solutions in a dynamic way
 ##    j4, j5, j6,\
 ##    j41,j51,j61, \
@@ -97,7 +97,7 @@ def backward_facing_elbow_up(dh_table, T44):
 
     #First angle - j1, used to adjust a point-position
     j1 = calc_j1(wcp, flipped=True)
-    
+
     p0 = mat([70e-3, 0, 352e-3])
     p0 = homogenous_rotation_z(j1)[0:3,0:3].dot(p0)
 
@@ -156,7 +156,7 @@ def elbow_up(dh_table, T44):
     if norm(wcp[:2])-norm(p0[:2]) < 0:
         j2 = -90 + (th21 - th22)
 ##        j3 = -90-th3
-            
+
 ##    j4, j5, j6,\
 ##    j41,j51,j61, \
 ##    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
@@ -197,7 +197,7 @@ def elbow_down(dh_table, T44):
     if norm(wcp[:2])-norm(p0[:2]) < 0:
         j2 = -90 + (th21+th22)
 ##        j3 = -90-th3
-    
+
 ##    j4, j5, j6,\
 ##    j41,j51,j61, \
 ##    j42,j52,j62 = inverse_kinematics_spherical_wrist(dh_table, j1, j2, j3, T44)
@@ -247,7 +247,7 @@ def inverse_kinematics_irb140(dh_table, T44):
 
     if not dh_table.has_key('tool'):
         dh_table['tool'] = None
-        
+
     tool = dh_table['tool']
 
     if not (tool is None):
@@ -303,6 +303,12 @@ def check_solution(j1,j2,j3,j4,j5,j6, inclusive=True):
     sol &= check_range(j6, -400, 400, inclusive)
     return sol
 
+def check_solution_elbow_up(j1,j2,j3,j4,j5,j6, inclusive=True):
+    sol = check_solution(j1, j2, j3, j4, j5, j6, inclusive=True)
+    sol &= (n.round(j2, decimals=3) >= 0.0)
+    sol &= check_range(j3, -90, 50,  inclusive)
+    return sol
+
 def filter_solutions(solutions, filter_function = check_solution):
     result = []
     for s in solutions.T:
@@ -341,7 +347,7 @@ def __find_solution_path(res, result, curr_point=0, curr_ind=0, tol=20.0):
     solution = p_curr[curr_ind]
     if curr_point+1 >= len(res):
         result.append(solution)
-        return 
+        return
     else:
         p_dest = res[curr_point+1]
     sol_diff = map(norm, solution - p_dest)
@@ -374,7 +380,7 @@ def find_paths(ik_curve):
         for index in xrange(len(result[0])):
             path = __find_path(result, index)
             if path:
-                print 'FOUND ONE' 
+                print 'FOUND ONE'
                 total.append(list(path))
         return mat(total)
 
@@ -421,7 +427,7 @@ def iterdim(a, axis=0):
 # TEST-CASE IRB140
 #----------------------------------------------------------------------------------------------------------#
 class TestIRB140(unittest.TestCase):
-        
+
     def test_elbow_down(self):
         print 'test_elbow_down'
         for _ in xrange(100):
@@ -465,7 +471,6 @@ class TestIRB140(unittest.TestCase):
                 self.assertAlmostEqual(b, j2)
                 self.assertAlmostEqual(c, j3)
 
-
     def test_elbow_up(self):
         print '\ntest_elbow_up'
         for _ in xrange(100):
@@ -508,7 +513,6 @@ class TestIRB140(unittest.TestCase):
                 self.assertAlmostEqual(a, j1)
                 self.assertAlmostEqual(b, j2)
                 self.assertAlmostEqual(c, j3)
-
 
     def test_elbow_down_backward_facing(self):
         print '\ntest_elbow_down_backward'
@@ -610,13 +614,13 @@ class TestIRB140(unittest.TestCase):
                 s0 = j1,j2,j3,j4,j5,j6
 
                 robot_info = forward_kinematics(*s0, **DH_TABLE)
-                T44, debug1  = robot_info['flange'], robot_info['robot_geometry_local'] 
+                T44, debug1  = robot_info['flange'], robot_info['robot_geometry_local']
                 sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
                 sol = sol.T
 
                 for i,s in enumerate(sol):
                     robot_info = forward_kinematics(*s, **DH_TABLE)
-                    A, debug2  = robot_info['flange'], robot_info['robot_geometry_local'] 
+                    A, debug2  = robot_info['flange'], robot_info['robot_geometry_local']
                     if i in [l+m*8 for m,_ in enumerate(range(0, len(sol), 8)) for l in [0,1,4,5]]: #all non-flipped solutions only
                         self.assertAlmostEqual(norm(A-T44), 0)
                     else:
@@ -635,13 +639,13 @@ class TestIRB140(unittest.TestCase):
                 s0 = j1,j2,j3,j4,j5,j6
 
                 robot_info = forward_kinematics(*s0, **DH_TABLE)
-                T44, debug1  = robot_info['flange'], robot_info['robot_geometry_local'] 
+                T44, debug1  = robot_info['flange'], robot_info['robot_geometry_local']
                 sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
                 for s in sol.T:
                     robot_info = forward_kinematics(*s, **DH_TABLE)
-                    A, debug2  = robot_info['flange'], robot_info['robot_geometry_local'] 
+                    A, debug2  = robot_info['flange'], robot_info['robot_geometry_local']
                     self.assertAlmostEqual(norm(A-T44), 0)
-                    
+
     def test_forward_kinematics_general(self):
         print '\ntest_forward_kinematics_general'
 
@@ -656,7 +660,7 @@ class TestIRB140(unittest.TestCase):
             j5 = rand_range(-115, 115)
             j6 = rand_range(-400, 400)
 
-            # makes sure we never end up at a singular point                
+            # makes sure we never end up at a singular point
 
             while (abs(j3) - 90) < 1e-7:
                 j3 = rand_range(-230, 50)
@@ -664,11 +668,11 @@ class TestIRB140(unittest.TestCase):
             s0 = j1,j2,j3,j4,j5,j6
             robot_info = forward_kinematics(j1, j2, j3, j4, j5, j6, **DH_TABLE)
             T44, debug1 = robot_info['flange'], robot_info['robot_geometry_local']
-            
+
             while norm(calc_wcp(T44,L=0.065)[:2]) < 1e-7:
                 j2 = rand_range(-90, 110)
                 T44, debug1  = forward_kinematics(j1, j2, j3, j4, j5, j6, **DH_TABLE)
-            
+
             sol = mat( inverse_kinematics_irb140(DH_TABLE, T44) )
             num_valid_solutions = 0
             for s in sol.T:
