@@ -6,6 +6,9 @@ from numpy import pi, linspace, meshgrid as mesh, zeros,\
 
 from numpy.linalg import norm, det, inv
 from numpy.random import uniform, seed, set_state, get_state
+
+from orientation_verification import solve_ori, fit_to_ori
+
 from helperfunctions_plot import *
 import calibration_algorithm as cal
 from helperfunctions_math import rotation_matrix_rot_tilt_skew as ori,\
@@ -249,12 +252,21 @@ def solution_errors(solution, comparison):
 
     tool_err = abs(tool - solution[:,3]) * 1000
     wobj_err = abs(wobj - solution[:,:3])
+    wobjsol2, _ = fit_to_ori(solution[:,:3])
+    wobj_err22 = abs(wobj - wobjsol2)
     errors = {
         'wobj': {
             'norm': norm(wobj_err),
             'x_ang': acos(wobj[:,0].dot(normalize(solution[:,0])))*180.0/pi,
             'y_ang': acos(wobj[:,1].dot(normalize(solution[:,1])))*180.0/pi,
             'n_ang': acos(wobj[:,2].dot(normalize(solution[:,2])))*180.0/pi,
+            'unit': 'deg'
+            },
+        'wobj22': {
+            'norm': norm(wobj_err22),
+            'x_ang': acos(wobj[:,0].dot(wobjsol2[:,0]))*180.0/pi,
+            'y_ang': acos(wobj[:,1].dot(wobjsol2[:,1]))*180.0/pi,
+            'n_ang': acos(wobj[:,2].dot(wobjsol2[:,2]))*180.0/pi,
             'unit': 'deg'
             },
         'tool': {

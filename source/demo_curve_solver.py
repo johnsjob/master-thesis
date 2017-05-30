@@ -22,7 +22,7 @@ from denavit_hartenberg import homogenous_matrix as hom
 from standardplot import StPlot
 import pylab as plt
 
-import itertools as it
+import itertools as ited
 
 import sys
 import time

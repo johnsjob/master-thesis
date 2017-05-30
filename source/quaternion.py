@@ -1,4 +1,6 @@
-from numpy import array as mat, sin, arccos, dot, linspace
+from numpy import array as mat, sin,\
+                  arccos, dot, linspace, sqrt, \
+                  sign
 from numpy.linalg import norm
 
 def rot_to_quat(R):

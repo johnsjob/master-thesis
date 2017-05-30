@@ -11,6 +11,8 @@ from numpy import array as mat, dot, cross, inf
 from numpy import linalg
 from numpy.linalg import norm
 
+from quaternion import *
+
 #random import
 from random import random as rand
 #----------------------------------------------------------------------------------------------------------#
@@ -106,7 +108,7 @@ def homogenous_matrix(*args):
     """
     l_args = len(args)
     valid_types  = [tuple, list, numpy.ndarray]
-    
+
     ## TODO: separate into subcase-functions (!!!)
     if  l_args == 0: #case -1: no input
         R = eye(4)
@@ -134,7 +136,7 @@ def homogenous_matrix(*args):
             (rot, tilt, skew), t = args[:3], args[3:][0]
     elif l_args == 6: #case 1
         (rot, tilt, skew), t = args[:3], args[3:]
-    
+
     if not type(t) in valid_types:
         raise ArithmeticError('translation part can not be a scalar.')
     elif len(t) < 3:
@@ -163,84 +165,6 @@ def homogenous_matrices(frames):
     4:    (R, t), where R is list or numpy.array  (1x, 1x)
     """
     return mat( map(lambda x: homogenous_matrix(*x), frames) )
-#----------------------------------------------------------------------------------------------------------#
-def rot_to_quat(R):
-    """
-    """
-
-    r11, r12, r13,\
-    r21, r22, r23,\
-    r31, r32, r33 = R.reshape(9) 
-
-    q0 = ( r11 + r22 + r33 + 1.0) / 4.0
-    q1 = ( r11 - r22 - r33 + 1.0) / 4.0
-    q2 = (-r11 + r22 - r33 + 1.0) / 4.0
-    q3 = (-r11 - r22 + r33 + 1.0) / 4.0
-    if(q0 < 0.0):
-        q0 = 0.0
-    if(q1 < 0.0):
-        q1 = 0.0
-    if(q2 < 0.0):
-        q2 = 0.0
-    if(q3 < 0.0):
-        q3 = 0.0
-    q0 = sqrt(q0)
-    q1 = sqrt(q1)
-    q2 = sqrt(q2)
-    q3 = sqrt(q3)
-    if((q0 >= q1) and (q0 >= q2) and (q0 >= q3)):
-        q0 *= +1.0
-        q1 *= sign(r32 - r23)
-        q2 *= sign(r13 - r31)
-        q3 *= sign(r21 - r12)
-    elif((q1 >= q0) and (q1 >= q2) and (q1 >= q3)):
-        q0 *= sign(r32 - r23)
-        q1 *= +1.0
-        q2 *= sign(r21 + r12)
-        q3 *= sign(r13 + r31)
-    elif((q2 >= q0) and (q2 >= q1) and (q2 >= q3)):
-        q0 *= sign(r13 - r31);
-        q1 *= sign(r21 + r12);
-        q2 *= +1.0
-        q3 *= sign(r32 + r23);
-    elif(q3 >= q0 and q3 >= q1 and q3 >= q2):
-        q0 *= sign(r21 - r12);
-        q1 *= sign(r31 + r13);
-        q2 *= sign(r32 + r23);
-        q3 *= +1.0
-    else:
-        print("coding error\n")
-
-    q = mat( (q0, q1, q2, q3) )
-    q = q / norm(q)
-
-    return q
-#----------------------------------------------------------------------------------------------------------#
-def quat_to_rot(q):
-    """
-    """
-    q0, q1, q2, q3 = q
-
-    r1 = [
-        q0**2 + q1**2 - q2**2 - q3**2,
-        2*(q1*q2 + q0*q3),
-        2*(q1*q3 - q0*q2)
-        ]
-
-    r2 = [
-        2*(q1*q2 - q0*q3),
-        q0**2 - q1**2 + q2**2 - q3**2,
-        2*(q2*q3 + q0*q1)
-        ]
-
-    r3 = [
-        2*(q1*q3 + q0*q2),
-        2*(q2*q3 - q0*q1),
-        q0**2 - q1**2 - q2**2 + q3**2
-        ]
-
-    R = mat(zip(r1,r2,r3))
-    return R
 #----------------------------------------------------------------------------------------------------------#
 def homogenous_translation_x( tx ):
     return mat([[1,        0,      0,     tx],
@@ -279,7 +203,7 @@ def expand_matrix(matrix, k=1,l=1):
     res = numpy.eye(m+k,n+l)
     res[0:m, 0:n] = matrix
     return res
-#----------------------------------------#    
+#----------------------------------------#
 def rotation_matrix_z(angle):
     '''
         creates a rotation Z-mapping from subspace to worldspace
@@ -316,14 +240,14 @@ def rotation_matrix_rot_tilt_skew(rot, tilt, skew):
         using euler angles in degrees (extrinsic mapping)
 
         (!) Note - rot is rotated counter-clockwise compared to ordinary euler z-rotation.
-    '''    
+    '''
     return matmul(rotation_matrix_z(-rot), rotation_matrix_x(tilt), rotation_matrix_z(skew))
 #----------------------------------------#
 def rotation_matrix_x_y_z(rx,ry,rz):
     '''
         creates a rotation XYZ-mapping from subspace to worldspace
         using euler angles in degrees (extrinsic mapping)
-    '''    
+    '''
     return matmul(rotation_matrix_x(rx), rotation_matrix_y(ry), rotation_matrix_z(rz))
 #----------------------------------------#
 def rotation_matrix_skew_tilt_rot(rot, tilt, skew):

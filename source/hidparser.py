@@ -12,8 +12,8 @@ class HIDReport:
         #return int(reduce(lambda x,y: str(x)+str(y), result), 16)
         if len(piece) == 1:
             import pdb; pdb.set_trace()
-        return int(reduce(lambda x,y: str(y)+str(x), result), 16)            
-            
+        return int(reduce(lambda x,y: str(y)+str(x), result), 16)
+
     def __init__(self, report=[], hex_report=None):
         result = OrderedDict()
 
@@ -47,7 +47,7 @@ class HIDReport:
     @property
     def pos(self):
         return self.report['x'], self.report['y']
-    
+
     @property
     def angles(self):
         return [self.report[key]/100.0 for key in ['tiltx','tilty','twist']]
@@ -69,7 +69,7 @@ class BTPen:
         for dev in devices:
             if 'pen' in dev['product_string'].lower():
                 return dev
-        
+
     def vid(self):
         return self._enum()['vendor_id']
 
@@ -121,7 +121,7 @@ def filter_func(p):
     if (p[0] < 1000) or (p[1] < 1000):
         return False
     else:
-        return True    
+        return True
 
 if __name__ == '__main__':
     pen = BTPen()
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         lines = [list_to_spaced_vals(r['raw']) for r in reports]
         fp.writelines(lines)
 
-    positions = mat([[p['x'], p['y'], p['tiltx']/100.0, p['tilty']/100.0, p['twist']/100.0] for p in reports])    
+    positions = mat([[p['x'], p['y'], p['tiltx']/100.0, p['tilty']/100.0, p['twist']/100.0] for p in reports])
     pos = mat(filter(filter_func, positions))
     pos_err = mat(filter(lambda x: not filter_func(x), positions))
 
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     ylabel('y-axis (anoto distance)')
     grid()
     show()
-    
+
     plot( positions[:,0]*cm,
          -positions[:,1]*cm, 'r', linewidth=0.3)
     plot( pos[:,0]*cm,

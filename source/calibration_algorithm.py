@@ -75,11 +75,11 @@ millimetre = unit / 1000.0
 #----------------------------------------
 # define delta vector which we want to find (in tool-space / local space)
 # in unit lengths
-L = 100 * millimetre
+L = 233 * millimetre
 local_delta_vector = mat([1,2,3])
 local_delta_vector = (local_delta_vector / norm(local_delta_vector))*L #length L
 
-# Orientation of the tool in tool (local) coordinate system 
+# Orientation of the tool in tool (local) coordinate system
 local_tool_orientation = rotation_matrix_rot_tilt_skew(-10, 20, 30)
 #----------------------------------------
 # define the anoto point spread in unit lengths
@@ -197,7 +197,7 @@ def solve_tool0_tip_alt(array_forward_kinematics_T44,
         rhs = mat(rhs).reshape((num_points-1) *  row_value)
     else:
         rhs = mat(rhs)
-        
+
     L = lhs.T.dot(lhs)
     R = lhs.T.dot(rhs)
 
@@ -242,7 +242,7 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
         {
             'rot':  rand_range(-180,180),
             'tilt': rand_range(0, pen_max_tilt),
-            'skew': rand_range(-90, 180) 
+            'skew': rand_range(-90, 180)
         }
         # Xtcp (flange) orientation in global space, generated relative to the paper plane
         info['Xflange_orientation_relative_to_paper_plane'] = \
@@ -281,7 +281,7 @@ def setup_geometry(current_plane, point_spread, num_points, perturbations=None):
 
     return geometry_info
 #----------------------------------------
-def find_solution_pen_tip(geometry_info, included_solutions_from_start = -1):    
+def find_solution_pen_tip(geometry_info, included_solutions_from_start = -1):
     result, cond_num = solve_tool0_tip_alt(geometry_info['data']['forward_kinematics'][:included_solutions_from_start],
                                       geometry_info['data']['pentip_2d'][:included_solutions_from_start],
                                       problem_formulation)
@@ -317,7 +317,7 @@ def _solve_orientation(As, Bs):
     # in this tensor the best solution resides in index 0,4,8 in the tensor form
     # of 9x3x3 which corresponds to diagonal elements of the 3x3x3x3 solution tensor
     solution_tensor = U.dot(V)
-    
+
     # best column-solutions resides in the diagonal of the 3x3x3x3 solution tensor
     C1, C2, C3 = solution_tensor[0::3, 0::3],\
                  solution_tensor[1::3, 1::3],\
@@ -329,6 +329,8 @@ def _solve_orientation(As, Bs):
     solution1 = mat([C1.T, C2.T, C3.T])
     solution2 = mat([D1, D2, D3])
     return solution1, solution2, solution_tensor, [U,S,V]
+
+
 
 def find_solution_pen_ori(geometry_info, included_solutions_from_start = -1):
     # solve for orientation s which should be same as local_tool_orientation
@@ -354,12 +356,12 @@ def perform_solution_run(geometry_info):
 
 ##        solve_info['point_spread_x'] = numpy.std(geometry_info['data']['pentip_2d'][:k], axis=0)[0]
 ##        solve_info['point_spread_y'] = numpy.std(geometry_info['data']['pentip_2d'][:k], axis=0)[1]
-        
+
         solve_info['tipwobj-result']   = tip_wobj_res[0]
         solve_info['tip-result']       = tip_wobj_res[0][:,3]
         solve_info['wobj-result']      = tip_wobj_res[0][:,:3]
         solve_info['tip-cond_num']     = tip_wobj_res[1]
-        
+
         solve_info['orientation-result'], solve_info['orientation-cond_num'] = find_solution_pen_ori(geometry_info, k)
         sol1, sol2, tens, (_u,_s,_v) = solve_info['orientation-result']
         solve_info['orientation-result'] = sol2
@@ -367,7 +369,7 @@ def perform_solution_run(geometry_info):
         solve_info['err-tipwobj'] = abs(geometry_info['correct_solution_geometry'] - solve_info['tipwobj-result'])
         solve_info['err-tip']     = numpy.linalg.norm(solve_info['err-tipwobj'][:,3])
         solve_info['err-wobj']    = numpy.linalg.norm(solve_info['err-tipwobj'][:,:3])
-        
+
         solve_info['err-ori']     = numpy.linalg.norm(geometry_info['local_tool_orientation'] - sol2)
         list_of_solving.append(solve_info)
 
@@ -385,12 +387,12 @@ def perform_solution_run(geometry_info):
 #----------------------------------------
 def make_plots(solving_data):
     global chosen_unit
-    
+
     logcond = log10( solving_data['tip-cond_num'] )
     plot(solving_data['interval'], logcond,
                        'b--',label='Condition number tip/wobj',
                        linewidth=2)
-    
+
     logerr  = log10( solving_data['err-tip'] )
     plot(solving_data['interval'], logerr,
                       'b',label='Error tip (frobenious norm)',
@@ -405,7 +407,7 @@ def make_plots(solving_data):
 ##    plot(solving_data['interval'], logerr,
 ##                      'r',label='Error ori (frobenious norm)',
 ##                      linewidth=2);
-    
+
     if chosen_unit == 'mm':
         tol = -1
         hlines(tol, solving_data['interval'][0],
@@ -415,7 +417,7 @@ def make_plots(solving_data):
         tol = -4
     hlines(-4, solving_data['interval'][0],
                solving_data['interval'][-1])
-    
+
     xlim(solving_data['interval'][0], solving_data['interval'][-1])
     xlabel('Number of points collected', fontsize=14)
     ylabel('log10'.format(chosen_unit), fontsize=14)
@@ -439,7 +441,7 @@ if __name__ == '__main__':
         print 'Run {} % complete!'.format(100* k / len(ks))
         with utils.timing.Timer() as timer:
             try:
-                print "Sampling points..."    
+                print "Sampling points..."
                 geometry_info = setup_geometry(plane, plane_point_spread,
                                                num_points, perturbations=['tip'])
                 print 'Collecting solving information...'
@@ -448,9 +450,10 @@ if __name__ == '__main__':
                 print
                 print 'Preparing plots...'
             except Exception as e:
+                print "Run #{} of {}: failed:".format(k+1, len(ks))
                 print str(e)
-                raise
-  #              continue
+#                raise
+                continue
 
     make_plots(solving_data)
     if chosen_unit == 'mm':

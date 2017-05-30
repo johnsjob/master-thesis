@@ -41,9 +41,9 @@ class StPlot:
         #---- First subplot
         ax_3d = fig.add_subplot(1, 1, 1, projection='3d')
 
-        cube_limits = mat([[-0.7, 0.7],
-                          [-0.7, 0.7],
-                          [-0.2, 1]])*self.length_factor
+        cube_limits = mat([[0, 0.55],
+                          [-0.25, 0.25],
+                          [0.0, 0.55]])*self.length_factor
 
         plot_equal_perspective(ax_3d, cube_limits[0],
                                       cube_limits[1],
