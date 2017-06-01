@@ -289,7 +289,7 @@ if __name__ == '__main__':
               'flanges': [],
           }
 
-      xy = it.product(linspace(-0.3,0.3, 9), linspace(-0.3,0.3, 9))
+      xy = it.product(linspace(-0.3,0.3, 20), linspace(-0.3,0.3, 20))
       for x,y in xy:
           w = ori_pen_to_pattern(uniform(-90,90),uniform(0,40),uniform(-90,90))
           w[:3,:3] = w[:3,:3] + e(2e-3)
