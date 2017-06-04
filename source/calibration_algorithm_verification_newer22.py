@@ -14,11 +14,11 @@ from orientation_verification import solve_ori, fit_to_ori
 
 from helperfunctions_plot import *
 import calibration_algorithm_newer as cal
-from helperfunctions_math import rotation_matrix_rot_tilt_skew,\
+from helperfunctions_math import rotation_matrix_rot_tilt_skew as rot_mat_rts,\
                                  rotation_matrix_x_y_z as rot_mat_xyz,\
                                  homogenous_matrices, nzip, nmap,\
                                  quat_to_rot, rot_to_quat,\
-                                 rot_tilt_skew as rts
+                                 rot_tilt_skew
 from pylab import axhline
 from plane_relative import generate_symmetric_curve,\
                            get_transformed_points, attach_to_base_frame,\
@@ -219,7 +219,7 @@ def tcp(pose):
     return fk(ik(pose))['tcp']
 
 def ori_pen_to_pattern(r,t,s):
-    return hom(rotation_matrix_rot_tilt_skew(r,t,s))
+    return hom(rot_mat_rts(r,t,s))
 
 def solution_run(geometry_info):
     num_meas = len(geometry_info['data']['forward_kinematics'])
@@ -259,29 +259,18 @@ if __name__ == '__main__':
     # init - random generator
     set_state(rand_state)
 
-    # init - misc
-    num_points_side = 20
-    # rot, tilt, skew
-    # debug purposes
-    rot  = zeros(n.round((num_points_side**2)**(1/3.0)))
-    tilt = linspace(-20, 20, n.round((num_points_side**2)**(1/3.0)))
-    skew = linspace(0, 45, n.round((num_points_side**2)**(1/3.0)))
-    # best for now
-    rot  = zeros(n.round((num_points_side**2)**(1/3.0)))
-    tilt = linspace(-20, 20, n.round((num_points_side**2)**(1/3.0)))
-    skew = linspace(-90, 90, n.round((num_points_side**2)**(1/3.0)))
-    angles = mat(list(it.product(rot, tilt, skew)))
-
     # init - tool
     joints = (0,0,0,0,0,0)
     dh_params['tool'] = hom(0,0,0,
                            [0.005,0.005,0.233])
 
     tool = dh_params['tool']
+    tool[:3,:3] = rot_mat_rts(0,-20,90).dot(tool[:3,:3])
+
     e = lambda mag: mat([uniform(-1,1)*mag for _ in range(9)]).reshape(3,3)
 
     res = []
-    for _ in xrange(100):
+    for _ in xrange(1):
       geom = {
               'wobjs': [],
               'pen_oris': [],
@@ -289,10 +278,11 @@ if __name__ == '__main__':
               'flanges': [],
           }
 
+      # 20x20 = 400 measurements
       xy = it.product(linspace(-0.3,0.3, 20), linspace(-0.3,0.3, 20))
       for x,y in xy:
           w = ori_pen_to_pattern(uniform(-90,90),uniform(0,40),uniform(-90,90))
-          w[:3,:3] = w[:3,:3] + e(2e-3)
+          pen = w[:3,:3] = w[:3,:3] + e(2e-3)
 
           wobj = hom(0,180,-90,[x, y, 0])
           wobj[:3,:3] = wobj[:3,:3] + e(1e-1)
@@ -301,7 +291,7 @@ if __name__ == '__main__':
               geom['flanges'].append(flange(pose))
               geom['wobjs'].append(wobj)
               geom['poses'].append(pose)
-              geom['pen_oris'].append(w)
+              geom['pen_oris'].append(pen)
           except:
               pass
       print len(geom['poses'])
@@ -313,6 +303,8 @@ if __name__ == '__main__':
         B = mat(geom['flanges'])[:k,:3,:3]
 
         r1, (u,s,v) = solve_ori(A,B)
+        r1 = r1.T
+        
         R = tool[:3,:3]
 
         xang = acos(R[:,0].dot(r1[:,0]))*180/pi
@@ -341,3 +333,4 @@ if __name__ == '__main__':
       ylabel("Error (deg)")
       title(t)
       show()
+
