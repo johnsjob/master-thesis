@@ -1,6 +1,6 @@
 import random
-
-from pylab import xticks
+#
+from pylab import xticks, yticks, savefig, clf
 import numpy, numpy as n
 from numpy import diag, arange
 from numpy.linalg import det
@@ -44,6 +44,7 @@ import utils
 import cPickle as pickle
 
 from collections import OrderedDict
+import time, os, os.path as path
 
 # settings
 numpy.set_printoptions(precision=4)
@@ -269,8 +270,13 @@ if __name__ == '__main__':
 
     e = lambda mag: mat([uniform(-1,1)*mag for _ in range(9)]).reshape(3,3)
 
+    #-------------- prepare mesurements -----------------
+    old_time = None
     res = []
-    for _ in xrange(1):
+    for iteration in xrange(100): # standard value is 100
+      print "iteration {} of 100".format(iteration+1)
+      old_time = time.time()
+
       geom = {
               'wobjs': [],
               'pen_oris': [],
@@ -294,7 +300,7 @@ if __name__ == '__main__':
               geom['pen_oris'].append(pen)
           except:
               pass
-      print len(geom['poses'])
+      ## print len(geom['poses'])
 
       rx,ry,rz = [],[],[]
       num_meas = range(4,300)
@@ -304,7 +310,7 @@ if __name__ == '__main__':
 
         r1, (u,s,v) = solve_ori(A,B)
         r1 = r1.T
-        
+
         R = tool[:3,:3]
 
         xang = acos(R[:,0].dot(r1[:,0]))*180/pi
@@ -314,7 +320,17 @@ if __name__ == '__main__':
         ry.append(yang)
         rz.append(zang)
         res.append((rx,ry,rz))
-        print len(res)
+        ##print len(res)
+      print "- time: {}\n".format(time.time() - old_time)
+
+    #-------------- prepare results / plots -------------
+
+    figpath = r"C:\Users\***REMOVED***\Dropbox\exjobb\results\calibrationalg_res\penori"
+
+    legend_size = 16
+    font_size   = 20
+    title_size  = 25
+
     res = mat(res)
     rx = res[:,0,:]
     ry = res[:,1,:]
@@ -322,15 +338,20 @@ if __name__ == '__main__':
     _all = [rx, ry, rz]
     _titles = ["x-axis", "y-axis", "z-axis"]
     for o,t in zip(_all, _titles):
+      clf()
       plot(num_meas, n.max(o, axis=0), label="max")
       plot(num_meas, n.mean(o, axis=0), label="mean")
       plot(num_meas, n.min(o, axis=0), label="min")
-      legend()
+      legend(fontsize=legend_size)
       grid()
       xlim([num_meas[0], num_meas[-1]])
+      xticks(fontsize=legend_size)
+      yticks(fontsize=legend_size)
       #xticks(arange(4,300,(300)/12))
-      xlabel("Number of measurements")
-      ylabel("Error (deg)")
-      title(t)
-      show()
-
+      xlabel("Number of measurements", fontsize=font_size)
+      ylabel("Error [deg]", fontsize=font_size)
+      title(t, fontsize=title_size)
+      savefig(path.join(
+          figpath, "{}.png".format(t.replace("-","_"))
+        ), bbox_inches="tight")
+      #show()
