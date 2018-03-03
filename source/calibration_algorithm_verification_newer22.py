@@ -36,6 +36,9 @@ import pylab as plt
 
 import itertools as it
 
+import matplotlib
+import matplotlib.pyplot as plt
+
 import sys
 import time
 import json
@@ -271,6 +274,7 @@ if __name__ == '__main__':
     e = lambda mag: mat([uniform(-1,1)*mag for _ in range(9)]).reshape(3,3)
 
     #-------------- prepare mesurements -----------------
+
     old_time = None
     res = []
     for iteration in xrange(100): # standard value is 100
@@ -337,6 +341,7 @@ if __name__ == '__main__':
     rz = res[:,2,:]
     _all = [rx, ry, rz]
     _titles = ["x-axis", "y-axis", "z-axis"]
+    print matplotlib.get_backend()
     for o,t in zip(_all, _titles):
       clf()
       plot(num_meas, n.max(o, axis=0), label="max")
@@ -351,6 +356,9 @@ if __name__ == '__main__':
       xlabel("Number of measurements", fontsize=font_size)
       ylabel("Error [deg]", fontsize=font_size)
       title(t, fontsize=title_size)
+      # QT backend
+      manager = plt.get_current_fig_manager()
+      manager.window.showMaximized()
       savefig(path.join(
           figpath, "{}.png".format(t.replace("-","_"))
         ), bbox_inches="tight")
