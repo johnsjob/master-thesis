@@ -1,11 +1,16 @@
 # -*- coding: cp1252 -*-
 from __future__ import division
 #----------------------------------------#
+
+from plotsettings import PlotSettings
+
 import numpy
 import numpy as n
 import utils
 
-from pylab import xlim, ylim
+from pylab import xlim, ylim, xticks, yticks, savefig, clf
+import pylab
+
 from numpy.linalg import solve, lstsq, det, inv, cond, svd
 from numpy import array as mat, log10, diag
 #----------------------------------------
@@ -17,6 +22,7 @@ import plane_relative as plane_tools
 from orientation_verification import fit_to_ori, solve_ori
 
 from numpy.random import set_state
+import os.path as path
 
 rand_state = ('MT19937', n.array([4272543851, 2552595568,  431289734,  494160517,   15621524,
        3365871479, 3691534276,  705774780, 1590143843, 3193439880,
@@ -437,7 +443,7 @@ def perform_solution_run(geometry_info):
     print 'solution mean error tip(40) = {}\n'.format( numpy.mean( abs( solving_data['err-tip'][1:41]) ))
     print 'solution error ori = {}'.format( numpy.max( abs( solving_data['err-ori'][1:]) ))
     return solving_data
-#----------------------------------------
+
 def make_plots(solving_data):
     global chosen_unit
 
@@ -456,11 +462,6 @@ def make_plots(solving_data):
                       'g',label='Error wobj (frobenious norm)',
                       linewidth=2);
 
-##    logerr  = log10( solving_data['err-ori'] )
-##    plot(solving_data['interval'], logerr,
-##                      'r',label='Error ori (frobenious norm)',
-##                      linewidth=2);
-
     if chosen_unit == 'mm':
         tol = -1
         hlines(tol, solving_data['interval'][0],
@@ -472,8 +473,10 @@ def make_plots(solving_data):
                solving_data['interval'][-1])
 
     xlim(solving_data['interval'][0], solving_data['interval'][-1])
-    xlabel('Number of points collected', fontsize=14)
-    ylabel('log10'.format(chosen_unit), fontsize=14)
+    xlabel('Number of points collected', fontsize=PlotSettings.label_size)
+    ylabel('log10'.format(chosen_unit), fontsize=PlotSettings.label_size)
+    xticks(fontsize=PlotSettings.tick_size)
+    yticks(fontsize=PlotSettings.tick_size)
 
     index = 4-3
     plt.annotate("number of points = 4",
@@ -483,13 +486,16 @@ def make_plots(solving_data):
                                 connectionstyle="arc3"),
                 )
     grid()
-    title('Calibration algorithm verification using simulated geometry')
-    legend()
+    title('Calibration algorithm verification using simulated geometry', fontsize=PlotSettings.title_size)
+    legend(fontsize=PlotSettings.legend_size)
     show()
-#----------------------------------------
+
+#----- SCRIPT START ---------
+
 if __name__ == '__main__':
+  # generating data
     res = []
-    ks = range(90)
+    ks = range(90) # default value is 90
     for k in ks:
         print 'Run {} % complete!'.format(100* k / len(ks))
         with utils.timing.Timer() as timer:
@@ -499,6 +505,7 @@ if __name__ == '__main__':
                                                num_points, perturbations=['tip'])
                 print 'Collecting solving information...'
                 solving_data = perform_solution_run(geometry_info)
+
                 res.append(solving_data)
                 print
                 print 'Preparing plots...'
@@ -508,16 +515,21 @@ if __name__ == '__main__':
 #                raise
                 continue
 
-    make_plots(solving_data)
+#--------------- generate plots ---------------------------------
+
+##    make_plots(solving_data) # unused in report
+
     if chosen_unit == 'mm':
         length_tol = -1 # 1/10th millimetre
     else:
         length_tol = -4 # 1/10th millimetre (in meters)
 
-    for key,tol, un in zip(['err-tip', 'err-wobj'],
-                           [length_tol, -4],
-                           [chosen_unit, '']):
-        val = mat( [x[key] for x in res] )
+    for key,tol, un in zip(['err-tip', 'err-tip-zoom', 'err-wobj'],
+                           [length_tol, length_tol, -4],
+                           [chosen_unit, chosen_unit, '']):
+        val = mat([
+                    x[key.replace('-zoom','')] for x in res
+                    ])
         maxval = numpy.max(val, axis=0)
         minval = numpy.min(val, axis=0)
         meanval = numpy.mean(val, axis=0)
@@ -525,24 +537,53 @@ if __name__ == '__main__':
             unit_str = '[{}]'.format(un)
         else:
             unit_str = ''
-        plot(log10(maxval),'b', label = 'max {} {}'.format(key, unit_str))
-        plot(log10(meanval),'g', label = 'mean {} {}'.format(key, unit_str))
-        plot(log10(minval),'r', label = 'min {} {}'.format(key, unit_str))
-##        sx = numpy.mean(mat( [x['point_spread_x'] for x in res] ), axis=0)
-##        sy = numpy.mean(mat( [x['point_spread_y'] for x in res] ), axis=0)
-##        plot(log10(sx),'k', label = 'sx')
-##        plot(log10(sy),'k', label = 'sy')
+        clf() # clear figure
+        key_label = key.replace('-', ' ').replace('zoom', '')
+        plot(log10(maxval),'b', label = 'max {}'.format(key_label, unit_str))
+        plot(log10(meanval),'g', label = 'mean {}'.format(key_label, unit_str))
+        plot(log10(minval),'r', label = 'min {}'.format(key_label, unit_str))
         hlines(tol, solving_data['interval'][0],
                     solving_data['interval'][-1],
-                    label='Tolerance = 10^{} {}'.format(tol, unit_str))
-        legend()
-        xlim(solving_data['interval'][0], solving_data['interval'][-1])
-        xlabel('Number of measured points', fontsize=14)
-        ylabel('log10', fontsize=14)
+                    label='Tolerance = 10^{}'.format(tol, unit_str))
+        legend(fontsize=PlotSettings.legend_size)
+        if not key == 'err-tip-zoom':
+          xlim(solving_data['interval'][0], solving_data['interval'][-1])
+        else:
+          xlim(solving_data['interval'][0], 101)
+        xlabel('Number of measured points', fontsize=PlotSettings.label_size)
+        ylabel('Log$_{{10}}$ error {}'.format(unit_str),
+               fontsize=PlotSettings.label_size)
+        xticks(fontsize=PlotSettings.tick_size)
+        yticks(fontsize=PlotSettings.tick_size)
         if 'tip' in key:
             ylim(-4, 4)
         elif 'wobj' in key:
             ylim(-6, 1)
-        title('Calibration algorithm verification with repetition using simulated geometry')
+        title('Calibration algorithm verification with repetition '+\
+              'using simulated geometry', fontsize=PlotSettings.title_size)
         grid()
-        show()
+
+        # Qt4 backend - maximize plots
+        pylab.get_current_fig_manager().window.showMaximized()
+
+        # save figures
+        basepath = r"C:\Users\***REMOVED***\Dropbox\exjobb\results\calibrationalg_res"
+
+        if key == 'err-tip':
+          figpath = path.join(basepath, "tool_tip")
+          filename = "tool_tip_calibration_tilt40_spread200_len233_2"
+          filetype = ".png"
+          savefig(path.join(
+            figpath, filename + filetype), bbox_inches='tight')
+        elif key == 'err-tip-zoom':
+          figpath = path.join(basepath, "tool_tip")
+          filename = "tool_tip_calibration_tilt40_spread200_len233_22"
+          filetype = ".png"
+          savefig(path.join(
+            figpath, filename + filetype), bbox_inches='tight')
+        elif key == 'err-wobj':
+          figpath = path.join(basepath, "wobj")
+          filename = "wobj_calibration_tilt40_spread200_len233_2"
+          filetype = ".png"
+          savefig(path.join(
+            figpath, filename + filetype), bbox_inches='tight')
