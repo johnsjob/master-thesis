@@ -1,6 +1,9 @@
 import random
 
-from pylab import axhline, plot, show, axes, grid, xlabel, ylabel, title
+import os.path as path
+from plotsettings import PlotSettings
+from pylab import axhline, plot, show, \
+                  axes, grid, xlabel, ylabel, title, xticks, yticks, savefig
 
 from helperfunctions_math import mat, homogenous_matrix as hom, nzip,\
      rotation_matrix_skew_tilt_rot as ori
@@ -19,7 +22,7 @@ def plot_robot_geometry(robot_info, color='k'):
         tool_pos = nzip(robot_info['tcp'][:3, 3],
                         robot_info['flange'][:3, 3]).T
         plot(tool_pos[:,0],
-             tool_pos[:,2], color='g' ,linewidth=2)
+             tool_pos[:,2], color='g' ,linewidth=3)
 
 if __name__ == '__main__':
         j1 =  0
@@ -44,14 +47,19 @@ if __name__ == '__main__':
         ik_down = forward_kinematics(*s[5], **dh_table)
         ik_up_back = forward_kinematics(*s[10], **dh_table)
         ik_down_back = forward_kinematics(*s[15], **dh_table)
-        
+
         #plot_robot_geometry(info)
         plot_robot_geometry(ik_up,'b')
         plot_robot_geometry(ik_up_back,'b--')
         plot_robot_geometry(ik_down,'r')
         plot_robot_geometry(ik_down_back,'r--')
-        xlabel('x-axis (meters)')
-        ylabel('z-axis (meters)')
+        xlabel('x [m]', fontsize=PlotSettings.label_size)
+        ylabel('z [m]', fontsize=PlotSettings.label_size)
+        xticks(fontsize=PlotSettings.tick_size)
+        yticks(fontsize=PlotSettings.tick_size)
         grid()
         axes().set_aspect('equal', 'datalim')
-        show()
+        # save figure plot
+        figpath = r"C:\Users\***REMOVED***\Dropbox\exjobb\rapport\images"
+        savefig(path.join(
+            figpath, "invkin-elbowupdown2.png"), bbox_inches='tight')
