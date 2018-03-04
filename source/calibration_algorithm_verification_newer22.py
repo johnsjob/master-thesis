@@ -1,5 +1,7 @@
 import random
 #
+from plotsettings import PlotSettings
+
 from pylab import xticks, yticks, savefig, clf
 import numpy, numpy as n
 from numpy import diag, arange
@@ -331,9 +333,6 @@ if __name__ == '__main__':
 
     figpath = r"C:\Users\***REMOVED***\Dropbox\exjobb\results\calibrationalg_res\penori"
 
-    legend_size = 16
-    font_size   = 20
-    title_size  = 25
 
     res = mat(res)
     rx = res[:,0,:]
@@ -347,15 +346,15 @@ if __name__ == '__main__':
       plot(num_meas, n.max(o, axis=0), label="max")
       plot(num_meas, n.mean(o, axis=0), label="mean")
       plot(num_meas, n.min(o, axis=0), label="min")
-      legend(fontsize=legend_size)
+      legend(fontsize=PlotSettings.legend_size)
       grid()
       xlim([num_meas[0], num_meas[-1]])
-      xticks(fontsize=legend_size)
-      yticks(fontsize=legend_size)
+      xticks(fontsize=PlotSettings.tick_size)
+      yticks(fontsize=PlotSettings.tick_size)
       #xticks(arange(4,300,(300)/12))
-      xlabel("Number of measurements", fontsize=font_size)
-      ylabel("Error [deg]", fontsize=font_size)
-      title(t, fontsize=title_size)
+      xlabel("Number of measurements", fontsize=PlotSettings.label_size)
+      ylabel("Error [deg]", fontsize=PlotSettings.label_size)
+      title(t, fontsize=PlotSettings.title_size)
       # QT backend
       manager = plt.get_current_fig_manager()
       manager.window.showMaximized()
