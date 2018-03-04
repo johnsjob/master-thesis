@@ -10,7 +10,7 @@ FontSettings = namedtuple('FontSettings',
 
 title   = 25
 label   = 20
-legend  = 25
+legend  = 20
 tick    = 16
 
 PlotSettings = FontSettings(
