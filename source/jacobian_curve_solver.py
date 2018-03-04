@@ -1,5 +1,7 @@
 import random
 
+from plotsettings import PlotSettings
+
 import numpy, numpy as n
 from numpy import pi, linspace
 from numpy.linalg import norm, det, inv
@@ -8,7 +10,8 @@ from helperfunctions_math import rand_range,\
                                  rotation_matrix_rot_tilt_skew as ori,\
                                  homogenous_matrices, nzip, nmap,\
                                  quat_slerp
-from pylab import axhline, xticks, savefig, clf
+
+from pylab import axhline, xticks, yticks, savefig, clf
 from pylab import minorticks_on, subplot, subplots_adjust
 
 from plane_relative import generate_symmetric_curve,\
@@ -63,13 +66,6 @@ def custom_plot(*args, **kwargs):
     grid(b=True, which='minor', color='k', linestyle='-', linewidth=0.1)
     minorticks_on()
 
-def custom_show(_legend, xl='', yl='', titl=''):
-    legend(_legend)
-    xlabel(xl)
-    ylabel(yl)
-    title(titl)
-    savefig()
-    
 def calc_robot_curve_j1():
     N = 100.0
     T = 10.0
@@ -83,7 +79,7 @@ def calc_robot_curve_j1():
 
     dt = T / N # seconds / dx
     rads_per_second = L / T
-    
+
     tcps = mat([calc_robot_tcp(v,10,20,0,90,0) for v in linspace(0, L*180/pi, N)])
     #w = -tcps[:,:3,2]*rads_per_second
     w = mat([[0,0,1]*int(N)]).reshape(N,3)*rads_per_second
@@ -93,7 +89,11 @@ def calc_robot_curve_j1():
     return tcps, nzip(v,w).reshape(N,6),dts
 
 
-if __name__ == '__main__':
+XLABEL = 'time [s]'
+YLABEL_W = 'Joint angular velocity [deg / s]'
+YLABEL_Q = 'Joing angle [deg]'
+
+def main():
     dh_table['tool'] = hom(0,0,0,[0.0,0.0,0.1])
     wobj = hom(-90,180,0,[0.6,0,0.5])
     # robot movement
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     v = nmap(lambda x: reduce(n.cross, x), zip(w,r))
     w = mat([[0,0,0]]*len(trajectory))
     vw = n.hstack((v,w))
-    
+
     #inverse kinematics over curve
     result = inverse_kinematics_curve(trajectory)
     path = find_single_path(result)
@@ -131,135 +131,141 @@ if __name__ == '__main__':
     print 'Joint angular velocities: \n {}'.format(joint_angular_vel)
 
     index=0
-    subplots_adjust(hspace=0.35)
+    subplots_adjust(hspace=0.55)
     subplot(211)
     custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_Q, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$q_'+str(index+1)+'$'])
+    legend(['$q_'+str(index+1)+'$'], fontsize=PlotSettings.legend_size)
     subplot(212)
     custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees / second')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_W, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right', fontsize=PlotSettings.legend_size)
+    maximize_plot()
     savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q1.png',
             bbox_inches='tight', pad_inches=0)
     clf()
 
     index=1
-    subplots_adjust(hspace=0.35)
+    subplots_adjust(hspace=0.55)
     subplot(211)
     custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_Q, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$q_'+str(index+1)+'$'])
+    legend(['$q_'+str(index+1)+'$'], fontsize=PlotSettings.legend_size)
     subplot(212)
     custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees / second')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_W, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right', fontsize=PlotSettings.legend_size)
+    maximize_plot()
     savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q2.png',
             bbox_inches='tight', pad_inches=0)
     clf()
-    
+
     index=2
-    subplots_adjust(hspace=0.35)
+    subplots_adjust(hspace=0.55)
     subplot(211)
     custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_Q, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$q_'+str(index+1)+'$'], loc='lower right')
+    legend(['$q_'+str(index+1)+'$'], loc='lower right', fontsize=PlotSettings.legend_size)
     subplot(212)
     custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees / second')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_W, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right', fontsize=PlotSettings.legend_size)
+    maximize_plot()
     savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q3.png',
             bbox_inches='tight', pad_inches=0)
     clf()
 
     index=3
-    subplots_adjust(hspace=0.35)
+    subplots_adjust(hspace=0.55)
     subplot(211)
     custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_Q, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$q_'+str(index+1)+'$'])
+    legend(['$q_'+str(index+1)+'$'], fontsize=PlotSettings.legend_size)
     subplot(212)
     custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees / second')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_W, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right')
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='upper right', fontsize=PlotSettings.legend_size)
+    maximize_plot()
     savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q4.png',
             bbox_inches='tight', pad_inches=0)
     clf()
 
     index=4
-    subplots_adjust(hspace=0.35)
+    subplots_adjust(hspace=0.55)
     subplot(211)
     custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_Q, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$q_'+str(index+1)+'$'])
+    legend(['$q_'+str(index+1)+'$'], fontsize=PlotSettings.legend_size)
     subplot(212)
     custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees / second')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_W, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right', fontsize=PlotSettings.legend_size)
+    maximize_plot()
     savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q5.png',
             bbox_inches='tight', pad_inches=0)
     clf()
 
     index=5
-    subplots_adjust(hspace=0.35)
+    subplots_adjust(hspace=0.55)
     subplot(211)
     custom_plot(n.round(path[:,index],decimals=3), 'b', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_Q, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$q_'+str(index+1)+'$'])
+    legend(['$q_'+str(index+1)+'$'], fontsize=PlotSettings.legend_size)
     subplot(212)
     custom_plot(n.round(joint_angular_vel[:,index],decimals=3), 'r', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('degrees / second')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel(YLABEL_W, fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
-    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right')
+    legend(['$\dot{q}_'+str(index+1)+'$'], loc='lower right', fontsize=PlotSettings.legend_size)
+    maximize_plot()
     savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\q6.png',
             bbox_inches='tight', pad_inches=0)
     clf()
 
-
     custom_plot(nmap(det, J), 'b', linewidth=1.5)
-    xlabel('seconds')
-    ylabel('det(J)')
-    xticks(range(0,50,10)+[49],linspace(0,T,6))
+    xlabel(XLABEL, fontsize=PlotSettings.label_size)
+    ylabel('Jacobian determinant value', fontsize=PlotSettings.label_size)
+    xticks(range(0,50,10)+[49],linspace(0,T,6), fontsize=PlotSettings.tick_size)
     xlim((0,49))
+    maximize_plot()
     savefig('C:\\Users\\***REMOVED***\\Dropbox\\exjobb\\results\\inverse_kinematics_over_curve\\J.png',
             bbox_inches='tight', pad_inches=0)
     clf()
-    
+
     pl = StPlot()
     joints = path[13]
     robot_info = forward_kinematics(*joints, **dh_table)
@@ -267,7 +273,7 @@ if __name__ == '__main__':
     pl.draw_trajectory(trajectory)
     pl.draw_tool(robot_info['flange'],
                  dh_table['tool'])
-##    pl.draw_joint_paths(path)
-##    pl.draw_joint_velocities(joint_angular_vel)
-##    pl.draw_jacobian_determinants(J)
-    pl.show()
+#    pl.show()
+
+if __name__ == '__main__':
+    main()

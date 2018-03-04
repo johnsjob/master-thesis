@@ -1,6 +1,7 @@
 #plot imports
 from matplotlib.pylab import plot, hlines, xlim,\
 xlabel, ylabel, plt, grid, title, legend, show
+import pylab
 from numpy import array as mat
 import numpy as np
 
@@ -8,7 +9,7 @@ def init_plot(aspect=1/4.0):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=plt.figaspect(aspect))
-    ax = fig.gca(projection='3d') 
+    ax = fig.gca(projection='3d')
     return ax, fig
 #----------------------------------------#
 def plot_plane(ax, plane,style='-',scale_factor=1):
@@ -34,8 +35,13 @@ def plot_equal_perspective(ax, xList, yList, zList):
     ax.set_ylim3d(ymin, ymax)
     ax.set_zlim3d(zmin, zmax)
 ##    for xb, yb, zb in zip(Xb, Yb, Zb):
-##       ax.plot([xb], [yb], [zb], 'w')    
+##       ax.plot([xb], [yb], [zb], 'w')
 #----------------------------------------#
+def maximize_plot():
+    # Qt4 backend - maximize plots
+    pylab.get_current_fig_manager().window.showMaximized()
+#----------------------------------------#
+
 if __name__ == '__main__':
     ax, _ = init_plot()
-    
+

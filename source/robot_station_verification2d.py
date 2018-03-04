@@ -24,7 +24,7 @@ def plot_robot_geometry(robot_info, color='k'):
         plot(tool_pos[:,0],
              tool_pos[:,2], color='g' ,linewidth=3)
 
-if __name__ == '__main__':
+def main():
         j1 =  0
         j2 =  0
         j3 =  0
@@ -63,3 +63,6 @@ if __name__ == '__main__':
         figpath = r"C:\Users\***REMOVED***\Dropbox\exjobb\rapport\images"
         savefig(path.join(
             figpath, "invkin-elbowupdown2.png"), bbox_inches='tight')
+
+if __name__ == '__main__':
+    main()

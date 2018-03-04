@@ -8,10 +8,10 @@ FontSettings = namedtuple('FontSettings',
     'tick_size',
     ])
 
-legend = 16
+title   = 25
 label   = 20
-title  = 25
-tick = legend
+legend  = 25
+tick    = 16
 
 PlotSettings = FontSettings(
     legend_size = legend,

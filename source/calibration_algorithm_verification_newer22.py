@@ -261,7 +261,7 @@ def solution_errors(solution, comparison):
         }
     return errors
 
-if __name__ == '__main__':
+def main():
     # init - random generator
     set_state(rand_state)
 
@@ -362,3 +362,6 @@ if __name__ == '__main__':
           figpath, "{}.png".format(t.replace("-","_"))
         ), bbox_inches="tight")
       #show()
+
+if __name__ == '__main__':
+  main()

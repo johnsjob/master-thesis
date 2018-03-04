@@ -492,7 +492,7 @@ def make_plots(solving_data):
 
 #----- SCRIPT START ---------
 
-if __name__ == '__main__':
+def main():
   # generating data
     res = []
     ks = range(90) # default value is 90
@@ -587,3 +587,6 @@ if __name__ == '__main__':
           filetype = ".png"
           savefig(path.join(
             figpath, filename + filetype), bbox_inches='tight')
+
+if __name__ == '__main__':
+  main()
