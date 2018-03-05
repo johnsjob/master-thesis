@@ -12,6 +12,7 @@ from numpy import array as mat
 from pylab import plot, show, xticks, yticks, xlabel, ylabel, grid, savefig, clf
 
 from plotsettings import PlotSettings
+from helperfunctions_plot import maximize_plot
 
 basepath = r"C:\Users\***REMOVED***\Dropbox\exjobb\results\hid_capture"
 
@@ -37,6 +38,7 @@ def main():
     xticks(fontsize=PlotSettings.tick_size)
     yticks(fontsize=PlotSettings.tick_size)
     grid()
+    maximize_plot()
     savefig(path.join(basepath, "johnnys_local.png"),
         bbox_inches='tight')
     clf()
@@ -47,6 +49,7 @@ def main():
     xticks(fontsize=PlotSettings.tick_size)
     yticks(fontsize=PlotSettings.tick_size)
     grid()
+    maximize_plot()
     savefig(path.join(basepath, "johnnys_errors_global.png"),
         bbox_inches='tight')
     clf()
@@ -60,6 +63,7 @@ def main():
     xticks(fontsize=PlotSettings.tick_size)
     yticks(fontsize=PlotSettings.tick_size)
     grid()
+    maximize_plot()
     savefig(path.join(basepath, "johnnys_all.png"),
         bbox_inches='tight')
     clf()
