@@ -8,7 +8,8 @@ import time
 import hidparser
 from numpy import array as mat
 
-if __name__ == '__main__':
+
+def main():
     lines = None
     with open(r"C:\Users\***REMOVED***\Dropbox\exjobb\results\hid_capture\raw_hid_data.txt") as fp:
         lines = fp.readlines()
@@ -46,3 +47,7 @@ if __name__ == '__main__':
     ylabel('y [cm]')
     grid()
     show()
+
+
+if __name__ == '__main__':
+    main()
