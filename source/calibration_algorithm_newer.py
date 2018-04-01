@@ -24,6 +24,11 @@ from orientation_verification import fit_to_ori, solve_ori
 from numpy.random import set_state
 import os.path as path
 
+TITLE_SIZE = PlotSettings.title_size * 1.25
+LEGEND_SIZE = PlotSettings.legend_size
+LABEL_SIZE = PlotSettings.label_size * 1.25
+TICK_SIZE  = PlotSettings.tick_size * 1.25
+
 rand_state = ('MT19937', n.array([4272543851, 2552595568,  431289734,  494160517,   15621524,
        3365871479, 3691534276,  705774780, 1590143843, 3193439880,
        1039175963, 1244054132, 1422283452, 2857425769, 1167033376,
@@ -473,10 +478,10 @@ def make_plots(solving_data):
                solving_data['interval'][-1])
 
     xlim(solving_data['interval'][0], solving_data['interval'][-1])
-    xlabel('Number of points collected', fontsize=PlotSettings.label_size)
-    ylabel('log10'.format(chosen_unit), fontsize=PlotSettings.label_size)
-    xticks(fontsize=PlotSettings.tick_size)
-    yticks(fontsize=PlotSettings.tick_size)
+    xlabel('Number of points collected', fontsize=LABEL_SIZE)
+    ylabel('log10'.format(chosen_unit), fontsize=LABEL_SIZE)
+    xticks(fontsize=TICK_SIZE)
+    yticks(fontsize=TICK_SIZE)
 
     index = 4-3
     plt.annotate("number of points = 4",
@@ -486,8 +491,8 @@ def make_plots(solving_data):
                                 connectionstyle="arc3"),
                 )
     grid()
-    title('Calibration algorithm verification using simulated geometry', fontsize=PlotSettings.title_size)
-    legend(fontsize=PlotSettings.legend_size)
+    title('Calibration algorithm verification using simulated geometry\n', fontsize=TITLE_SIZE)
+    legend(fontsize=LEGEND_SIZE)
     show()
 
 #----- SCRIPT START ---------
@@ -545,22 +550,21 @@ def main():
         hlines(tol, solving_data['interval'][0],
                     solving_data['interval'][-1],
                     label='Tolerance = 10^{}'.format(tol, unit_str))
-        legend(fontsize=PlotSettings.legend_size)
+        legend(fontsize=LEGEND_SIZE)
         if not key == 'err-tip-zoom':
           xlim(solving_data['interval'][0], solving_data['interval'][-1])
         else:
           xlim(solving_data['interval'][0], 101)
-        xlabel('Number of measured points', fontsize=PlotSettings.label_size)
-        ylabel('Log$_{{10}}$ error {}'.format(unit_str),
-               fontsize=PlotSettings.label_size)
-        xticks(fontsize=PlotSettings.tick_size)
-        yticks(fontsize=PlotSettings.tick_size)
+        xlabel('Number of measured points', fontsize=LABEL_SIZE)
+        ylabel('Log$_{{10}}$ error {}'.format(unit_str), fontsize=LABEL_SIZE)
+        xticks(fontsize=TICK_SIZE)
+        yticks(fontsize=TICK_SIZE)
         if 'tip' in key:
             ylim(-4, 4)
         elif 'wobj' in key:
             ylim(-6, 1)
         title('Calibration algorithm verification with repetition '+\
-              'using simulated geometry', fontsize=PlotSettings.title_size)
+              'using simulated geometry\n', fontsize=TITLE_SIZE)
         grid()
 
         # Qt4 backend - maximize plots

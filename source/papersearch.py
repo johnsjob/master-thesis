@@ -548,4 +548,3 @@ if __name__ == '__main__':
     robot.move_wobj_tcp(*(list(gridmm[index])+[3]))
     robot.paper_search(start_height = 3, start_index = index,
                        grid = gridmm,    angles = angles)
-

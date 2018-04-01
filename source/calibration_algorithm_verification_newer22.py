@@ -55,6 +55,11 @@ import time, os, os.path as path
 numpy.set_printoptions(precision=4)
 numpy.set_printoptions(suppress=True)
 
+TITLE_SIZE  = PlotSettings.title_size*1.25
+LEGEND_SIZE = PlotSettings.legend_size
+TICK_SIZE   = PlotSettings.tick_size*1.25
+LABEL_SIZE  = PlotSettings.label_size*1.25
+
 rand_state = ('MT19937', array([4272543851, 2552595568,  431289734,  494160517,   15621524,
        3365871479, 3691534276,  705774780, 1590143843, 3193439880,
        1039175963, 1244054132, 1422283452, 2857425769, 1167033376,
@@ -346,15 +351,15 @@ def main():
       plot(num_meas, n.max(o, axis=0), label="max")
       plot(num_meas, n.mean(o, axis=0), label="mean")
       plot(num_meas, n.min(o, axis=0), label="min")
-      legend(fontsize=PlotSettings.legend_size)
+      legend(fontsize=LEGEND_SIZE)
       grid()
       xlim([num_meas[0], num_meas[-1]])
-      xticks(fontsize=PlotSettings.tick_size)
-      yticks(fontsize=PlotSettings.tick_size)
+      xticks(fontsize=TICK_SIZE)
+      yticks(fontsize=TICK_SIZE)
       #xticks(arange(4,300,(300)/12))
-      xlabel("Number of measurements", fontsize=PlotSettings.label_size)
-      ylabel("Error [deg]", fontsize=PlotSettings.label_size)
-      title(t, fontsize=PlotSettings.title_size)
+      xlabel("Number of measurements", fontsize=LABEL_SIZE)
+      ylabel("Error [deg]", fontsize=LABEL_SIZE)
+      title(t, fontsize=TITLE_SIZE)
       # QT backend
       manager = plt.get_current_fig_manager()
       manager.window.showMaximized()
