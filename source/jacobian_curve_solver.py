@@ -43,6 +43,7 @@ import utils
 ##sys.path.append('../int/djikstra/')
 ##from graph import shortestPath as shortest_path
 
+#===============================================================================
 
 numpy.set_printoptions(precision=4)
 numpy.set_printoptions(suppress=True)
@@ -55,6 +56,8 @@ skew = numpy.linspace(0,0,num_points)
 angles = nzip(rot, tilt, skew)
 
 normalize = lambda x: x / norm(x)
+
+#===============================================================================
 
 def calc_robot_tcp(*joints):
     return forward_kinematics(*joints, **dh_table)['tcp']
@@ -88,10 +91,13 @@ def calc_robot_curve_j1():
     v = nmap(lambda x: reduce(n.cross, x), zip(w, r))
     return tcps, nzip(v,w).reshape(N,6),dts
 
+#===============================================================================
 
-XLABEL = 'time [s]'
+XLABEL = 'Time [s]'
 YLABEL_W = 'Joint angular velocity [deg / s]'
-YLABEL_Q = 'Joing angle [deg]'
+YLABEL_Q = 'Joint angle [deg]'
+
+#===============================================================================
 
 def main():
     dh_table['tool'] = hom(0,0,0,[0.0,0.0,0.1])
