@@ -24,6 +24,9 @@ def plot_robot_geometry(robot_info, color='k'):
         plot(tool_pos[:,0],
              tool_pos[:,2], color='g' ,linewidth=3)
 
+TICK_SIZE  = PlotSettings.tick_size*0.8
+LABEL_SIZE = PlotSettings.label_size*0.8
+
 def main():
         j1 =  0
         j2 =  0
@@ -53,10 +56,10 @@ def main():
         plot_robot_geometry(ik_up_back,'b--')
         plot_robot_geometry(ik_down,'r')
         plot_robot_geometry(ik_down_back,'r--')
-        xlabel('x [m]', fontsize=PlotSettings.label_size)
-        ylabel('z [m]', fontsize=PlotSettings.label_size)
-        xticks(fontsize=PlotSettings.tick_size)
-        yticks(fontsize=PlotSettings.tick_size)
+        xlabel('x [m]', fontsize=LABEL_SIZE)
+        ylabel('z [m]', fontsize=LABEL_SIZE)
+        xticks(fontsize=TICK_SIZE)
+        yticks(fontsize=TICK_SIZE)
         grid()
         axes().set_aspect('equal', 'datalim')
         # save figure plot

@@ -16,6 +16,10 @@ from helperfunctions_plot import maximize_plot
 
 basepath = r"C:\Users\***REMOVED***\Dropbox\exjobb\results\hid_capture"
 
+
+LABEL_SIZE = PlotSettings.label_size*1.25
+TICK_SIZE = PlotSettings.tick_size*1.25
+
 def main():
     lines = None
     with open(path.join(basepath, "raw_hid_data.txt")) as fp:
@@ -33,10 +37,10 @@ def main():
 
     plot( (pos[:,0] - pos[0,0])*cm,
          -(pos[:,1] - pos[0,1])*cm, 'b')
-    xlabel('x [cm]', fontsize=PlotSettings.label_size)
-    ylabel('y [cm]', fontsize=PlotSettings.label_size)
-    xticks(fontsize=PlotSettings.tick_size)
-    yticks(fontsize=PlotSettings.tick_size)
+    xlabel('x [cm]', fontsize=LABEL_SIZE)
+    ylabel('y [cm]', fontsize=LABEL_SIZE)
+    xticks(fontsize=TICK_SIZE)
+    yticks(fontsize=TICK_SIZE)
     grid()
     maximize_plot()
     savefig(path.join(basepath, "johnnys_local.png"),
@@ -44,10 +48,10 @@ def main():
     clf()
 
     plot(positions[:,0], -positions[:,1], 'r')
-    xlabel('x [ad]', fontsize=PlotSettings.label_size)
-    ylabel('y [ad]', fontsize=PlotSettings.label_size)
-    xticks(fontsize=PlotSettings.tick_size)
-    yticks(fontsize=PlotSettings.tick_size)
+    xlabel('x [ad]', fontsize=LABEL_SIZE)
+    ylabel('y [ad]', fontsize=LABEL_SIZE)
+    xticks(fontsize=TICK_SIZE)
+    yticks(fontsize=TICK_SIZE)
     grid()
     maximize_plot()
     savefig(path.join(basepath, "johnnys_errors_global.png"),
@@ -58,10 +62,10 @@ def main():
          -positions[:,1]*cm, 'r', linewidth=0.3)
     plot( pos[:,0]*cm,
          -pos[:,1]*cm, 'b')
-    xlabel('x [cm]', fontsize=PlotSettings.label_size)
-    ylabel('y [cm]', fontsize=PlotSettings.label_size)
-    xticks(fontsize=PlotSettings.tick_size)
-    yticks(fontsize=PlotSettings.tick_size)
+    xlabel('x [cm]', fontsize=LABEL_SIZE)
+    ylabel('y [cm]', fontsize=LABEL_SIZE)
+    xticks(fontsize=TICK_SIZE)
+    yticks(fontsize=TICK_SIZE)
     grid()
     maximize_plot()
     savefig(path.join(basepath, "johnnys_all.png"),
